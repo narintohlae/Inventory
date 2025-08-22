@@ -143,6 +143,12 @@
             height: 280px;
             object-fit: cover;
         }
+        
+        #scanner video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
         .scanner-placeholder {
             text-align: center;
@@ -636,6 +642,8 @@
             constructor() {
                 this.isScanning = false;
                 this.productDatabase = new Map();
+                // This Google Sheet URL is a public CSV export. 
+                // Replace with your own sheet's public CSV URL.
                 this.googleSheetsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTT3t_8Hx7WcD8uUi2IGt1zDbOMB3MSK57dYnfqrrut3do_Gw2hzYSG9IBIEg8fg7uTEL2sVq-IfVJR/pub?output=csv';
                 
                 this.initializeElements();
@@ -668,7 +676,9 @@
                 this.barcodeInput.addEventListener('input', (e) => {
                     const value = e.target.value.trim();
                     if (value.length >= 8 && /^\d+$/.test(value)) {
-                        setTimeout(() => this.searchBarcode(), 500);
+                        // Use a debounce to prevent too many searches
+                        clearTimeout(this.inputTimeout);
+                        this.inputTimeout = setTimeout(() => this.searchBarcode(), 300);
                     }
                 });
             }
@@ -679,7 +689,7 @@
                     
                     const response = await fetch(this.googleSheetsUrl);
                     if (!response.ok) {
-                        throw new Error('Failed to fetch data');
+                        throw new Error(`Network response was not ok: ${response.statusText}`);
                     }
                     
                     const csvText = await response.text();
@@ -695,11 +705,11 @@
             }
 
             parseCSVData(csvText) {
-                const lines = csvText.split('\n');
+                const lines = csvText.split(/\r?\n/);
+                if (lines.length === 0) return;
+
                 const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
                 
-                console.log('CSV Headers:', headers);
-
                 // Column mapping based on your exact headers
                 const columnMap = {
                     productCode: 'รหัสสินค้า',
@@ -711,31 +721,27 @@
                     cost: 'ต้นทุน'
                 };
 
-                // Find column indices
                 const indices = {};
                 for (const [key, headerName] of Object.entries(columnMap)) {
                     indices[key] = headers.findIndex(h => h === headerName);
                 }
 
-                console.log('Column indices:', indices);
-
-                // Parse data rows
                 for (let i = 1; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (!line) continue;
 
                     const values = this.parseCSVLine(line);
-                    if (values.length < Math.max(...Object.values(indices)) + 1) continue;
-
-                    const productCode = values[indices.productCode]?.replace(/"/g, '').trim();
-                    const name = values[indices.name]?.replace(/"/g, '').trim();
-                    const unit = values[indices.unit]?.replace(/"/g, '').trim();
+                    
                     const barcode = values[indices.barcode]?.replace(/"/g, '').trim();
-                    const price = values[indices.price]?.replace(/"/g, '').trim();
-                    const stock = values[indices.stock]?.replace(/"/g, '').trim();
-                    const cost = values[indices.cost]?.replace(/"/g, '').trim();
+                    const name = values[indices.name]?.replace(/"/g, '').trim();
 
                     if (barcode && name) {
+                        const productCode = values[indices.productCode]?.replace(/"/g, '').trim();
+                        const unit = values[indices.unit]?.replace(/"/g, '').trim();
+                        const price = values[indices.price]?.replace(/"/g, '').trim();
+                        const stock = values[indices.stock]?.replace(/"/g, '').trim();
+                        const cost = values[indices.cost]?.replace(/"/g, '').trim();
+
                         this.productDatabase.set(barcode, {
                             productCode: productCode || 'ไม่ระบุ',
                             name: name,
@@ -746,19 +752,15 @@
                         });
                     }
                 }
-
-                console.log('Loaded products:', this.productDatabase.size);
             }
 
             parseCSVLine(line) {
                 const result = [];
                 let current = '';
                 let inQuotes = false;
-                
                 for (let i = 0; i < line.length; i++) {
                     const char = line[i];
-                    
-                    if (char === '"') {
+                    if (char === '"' && (i === 0 || line[i-1] !== '\\')) {
                         inQuotes = !inQuotes;
                     } else if (char === ',' && !inQuotes) {
                         result.push(current);
@@ -767,39 +769,16 @@
                         current += char;
                     }
                 }
-                
                 result.push(current);
                 return result;
             }
 
             loadFallbackDatabase() {
                 const fallbackData = {
-                    '8851932141425': {
-                        productCode: 'SING001',
-                        name: 'น้ำดื่ม สิงห์ 600ml',
-                        unit: 'ขวด',
-                        price: 8.00,
-                        stock: 50,
-                        cost: 6.00
-                    },
-                    '8851932141432': {
-                        productCode: 'CRYS001',
-                        name: 'น้ำดื่ม คริสตัล 1.5L',
-                        unit: 'ขวด',
-                        price: 15.00,
-                        stock: 30,
-                        cost: 12.00
-                    },
-                    '8850718800018': {
-                        productCode: 'MAMA001',
-                        name: 'มาม่า หมูสับ 55g',
-                        unit: 'ซอง',
-                        price: 6.50,
-                        stock: 100,
-                        cost: 5.00
-                    }
+                    '8851932141425': { productCode: 'SING001', name: 'น้ำดื่ม สิงห์ 600ml', unit: 'ขวด', price: 8.00, stock: 50, cost: 6.00 },
+                    '8851932141432': { productCode: 'CRYS001', name: 'น้ำดื่ม คริสตัล 1.5L', unit: 'ขวด', price: 15.00, stock: 30, cost: 12.00 },
+                    '8850718800018': { productCode: 'MAMA001', name: 'มาม่า หมูสับ 55g', unit: 'ซอง', price: 6.50, stock: 100, cost: 5.00 }
                 };
-
                 for (const [barcode, product] of Object.entries(fallbackData)) {
                     this.productDatabase.set(barcode, product);
                 }
@@ -810,23 +789,18 @@
                 this.databaseStatus.textContent = message;
                 
                 if (type === 'success') {
-                    setTimeout(() => {
-                        this.databaseStatus.classList.add('hidden');
-                    }, 3000);
+                    setTimeout(() => { this.databaseStatus.classList.add('hidden'); }, 3000);
                 }
             }
 
             getStockStatus(stock) {
-                if (stock <= 0) {
-                    return { class: 'out-of-stock', text: 'หมดสต็อก' };
-                } else if (stock <= 10) {
-                    return { class: 'low-stock', text: 'สต็อกต่ำ' };
-                } else {
-                    return { class: 'in-stock', text: 'มีสต็อก' };
-                }
+                if (stock <= 0) return { class: 'out-of-stock', text: 'หมดสต็อก' };
+                if (stock <= 10) return { class: 'low-stock', text: 'สต็อกต่ำ' };
+                return { class: 'in-stock', text: 'มีสต็อก' };
             }
 
             async startScanning() {
+                if (this.isScanning) return;
                 try {
                     this.isScanning = true;
                     this.startBtn.classList.add('hidden');
@@ -834,7 +808,6 @@
                     this.scanner.classList.remove('hidden');
                     this.scannerPlaceholder.classList.add('hidden');
                     this.overlay.classList.remove('hidden');
-
                     await this.initQuagga();
                 } catch (error) {
                     console.error('Error starting scanner:', error);
@@ -848,7 +821,6 @@
                     Quagga.stop();
                     this.isScanning = false;
                 }
-                
                 this.startBtn.classList.remove('hidden');
                 this.stopBtn.classList.add('hidden');
                 this.scanner.classList.add('hidden');
@@ -863,31 +835,13 @@
                             name: "Live",
                             type: "LiveStream",
                             target: this.scanner,
-                            constraints: {
-                                width: 480,
-                                height: 320,
-                                facingMode: "environment"
-                            }
+                            constraints: { width: 480, height: 320, facingMode: "environment" }
                         },
-                        decoder: {
-                            readers: [
-                                "code_128_reader",
-                                "ean_reader",
-                                "ean_8_reader",
-                                "code_39_reader"
-                            ]
-                        },
+                        decoder: { readers: ["ean_reader", "ean_8_reader", "code_128_reader", "code_39_reader"] },
                         locate: true,
-                        locator: {
-                            halfSample: true,
-                            patchSize: "medium"
-                        }
+                        locator: { halfSample: true, patchSize: "medium" }
                     }, (err) => {
-                        if (err) {
-                            reject(err);
-                            return;
-                        }
-                        
+                        if (err) { reject(err); return; }
                         Quagga.start();
                         Quagga.onDetected(this.onBarcodeDetected.bind(this));
                         resolve();
@@ -897,4 +851,82 @@
 
             onBarcodeDetected(result) {
                 const barcode = result.codeResult.code;
-                console.log('Barcode
+                if (!this.isScanning) return;
+                if ('vibrate' in navigator) navigator.vibrate(100);
+                this.barcodeInput.value = barcode;
+                this.stopScanning();
+                this.searchBarcode();
+            }
+
+            searchBarcode() {
+                const barcode = this.barcodeInput.value.trim();
+                if (!barcode) { this.showError('กรุณาป้อนบาร์โค้ด'); return; }
+
+                this.loading.classList.remove('hidden');
+                this.result.classList.add('hidden');
+
+                setTimeout(() => { // Simulate network delay
+                    const product = this.productDatabase.get(barcode);
+                    this.loading.classList.add('hidden');
+                    if (product) {
+                        this.displayProductInfo(product, barcode);
+                    } else {
+                        this.showError(`ไม่พบสินค้าสำหรับบาร์โค้ด: ${barcode}`);
+                    }
+                }, 500);
+            }
+
+            displayProductInfo(product, barcode) {
+                const stockStatus = this.getStockStatus(product.stock);
+                const priceFormatted = product.price !== null ? `฿${product.price.toFixed(2)}` : 'N/A';
+                const costFormatted = product.cost !== null ? `฿${product.cost.toFixed(2)}` : 'N/A';
+
+                this.result.innerHTML = `
+                    <div class="result">
+                        <div class="result-header">
+                            <div class="result-icon success"><i class="fas fa-check"></i></div>
+                            <h3>พบข้อมูลสินค้า</h3>
+                        </div>
+                        <div class="barcode-display">${barcode}</div>
+                        <div class="product-info">
+                            <p class="product-name">${product.name}</p>
+                            <p class="product-code">รหัส: ${product.productCode} | หน่วย: ${product.unit}</p>
+                        </div>
+                        <div class="price">${priceFormatted}</div>
+                        <div class="product-details">
+                            <div class="detail-item">
+                                <div class="detail-label">สถานะสต็อก</div>
+                                <div class="detail-value"><span class="stock-indicator ${stockStatus.class}">${stockStatus.text}</span></div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">จำนวนคงเหลือ</div>
+                                <div class="detail-value">${product.stock} ${product.unit}</div>
+                            </div>
+                             <div class="detail-item full-width">
+                                <div class="detail-label">ราคาทุน</div>
+                                <div class="detail-value">${costFormatted}</div>
+                            </div>
+                        </div>
+                    </div>`;
+                this.result.classList.remove('hidden');
+            }
+
+            showError(message) {
+                this.result.innerHTML = `
+                    <div class="result error">
+                        <div class="result-header">
+                            <div class="result-icon error"><i class="fas fa-times"></i></div>
+                            <h3>เกิดข้อผิดพลาด</h3>
+                        </div>
+                        <p style="text-align: center; padding: 16px 0;">${message}</p>
+                    </div>`;
+                this.result.classList.remove('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new ModernBarcodeScanner();
+        });
+    </script>
+</body>
+</html>
