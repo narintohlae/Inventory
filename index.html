@@ -3,930 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Price Scanner - Modern Barcode Reader</title>
-    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>แสดงข้อมูลจาก Google Sheets</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #ec4899;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --error: #ef4444;
-            --dark: #1f2937;
-            --light: #f8fafc;
-            --border: #e5e7eb;
-            --text: #374151;
-            --text-light: #6b7280;
-            --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --glass: rgba(255, 255, 255, 0.25);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* Custom font for Thai characters */
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--gradient);
-            min-height: 100vh;
-            padding: 16px;
-            color: var(--text);
-            overflow-x: hidden;
-        }
-
-        .background-elements {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            opacity: 0.1;
-        }
-
-        .floating-shape {
-            position: absolute;
-            border-radius: 50%;
-            background: linear-gradient(45deg, #fff, #e0e7ff);
-            animation: float 6s ease-in-out infinite;
-        }
-
-        .shape-1 { width: 100px; height: 100px; top: 10%; left: 10%; animation-delay: 0s; }
-        .shape-2 { width: 150px; height: 150px; top: 70%; right: 10%; animation-delay: 2s; }
-        .shape-3 { width: 80px; height: 80px; top: 50%; left: 80%; animation-delay: 4s; }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(180deg); }
-        }
-
-        .app-container {
-            max-width: 420px;
-            margin: 0 auto;
-            position: relative;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 32px;
-            animation: slideDown 0.8s ease-out;
-        }
-
-        .logo {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 24px;
-            margin: 0 auto 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: var(--shadow);
-            animation: pulse 2s infinite;
-        }
-
-        .logo i {
-            font-size: 32px;
-            color: white;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 8px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .header p {
-            color: rgba(255,255,255,0.8);
-            font-weight: 400;
-            font-size: 16px;
-        }
-
-        .main-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 28px;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            overflow: hidden;
-            animation: slideUp 0.8s ease-out 0.2s both;
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
-            padding: 24px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .scanner-container {
-            position: relative;
-            margin-bottom: 24px;
-            border-radius: 20px;
-            overflow: hidden;
-            background: var(--dark);
-            min-height: 280px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #scanner {
-            width: 100%;
-            height: 280px;
-            object-fit: cover;
-        }
-        
-        #scanner video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .scanner-placeholder {
-            text-align: center;
-            color: var(--text-light);
-            padding: 40px 20px;
-        }
-
-        .scanner-placeholder i {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        .scanner-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 240px;
-            height: 120px;
-            border: 3px solid var(--success);
-            border-radius: 16px;
-            z-index: 10;
-            animation: scannerPulse 2s infinite;
-        }
-
-        .scanner-overlay::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--success);
-            animation: scanLine 2s infinite;
-        }
-
-        @keyframes scannerPulse {
-            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.05); }
-        }
-
-        @keyframes scanLine {
-            0% { transform: translateY(-60px); opacity: 0; }
-            50% { opacity: 1; }
-            100% { transform: translateY(60px); opacity: 0; }
-        }
-
-        .controls {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 16px 24px;
-            border: none;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .btn:hover::before {
-            left: 100%;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(99, 102, 241, 0.4);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, var(--error), #dc2626);
-            color: white;
-            box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);
-        }
-
-        .btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(239, 68, 68, 0.4);
-        }
-
-        .btn:disabled {
-            background: var(--border);
-            color: var(--text-light);
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .input-section {
-            padding: 24px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .input-group {
-            display: flex;
-            gap: 12px;
-            position: relative;
-        }
-
-        .input-wrapper {
-            flex: 1;
-            position: relative;
-        }
-
-        .input-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-light);
-            z-index: 2;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 16px 16px 16px 48px;
-            border: 2px solid var(--border);
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 500;
-            outline: none;
-            transition: all 0.3s ease;
-            background: white;
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-        }
-
-        .btn-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-
-        .result-section {
-            padding: 24px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 32px;
-            color: var(--text-light);
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--border);
-            border-top: 3px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .result {
-            background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
-            border: 2px solid var(--success);
-            border-radius: 20px;
-            padding: 24px;
-            position: relative;
-            overflow: hidden;
-            animation: resultSlide 0.5s ease-out;
-        }
-
-        .result.error {
-            background: linear-gradient(135deg, #fef2f2, #fef1f1);
-            border-color: var(--error);
-        }
-
-        .result-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .result-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            color: white;
-        }
-
-        .result-icon.success {
-            background: var(--success);
-        }
-
-        .result-icon.error {
-            background: var(--error);
-        }
-
-        .result h3 {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--dark);
-        }
-
-        .product-info {
-            margin: 16px 0;
-        }
-
-        .product-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 8px;
-        }
-
-        .product-code {
-            font-size: 14px;
-            color: var(--text-light);
-            margin-bottom: 8px;
-        }
-
-        .price {
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--success);
-            margin: 16px 0;
-            text-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
-        }
-
-        .price.unavailable {
-            color: var(--warning);
-        }
-
-        .product-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 16px;
-        }
-
-        .detail-item {
-            background: rgba(255, 255, 255, 0.7);
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-        }
-
-        .detail-item.full-width {
-            grid-column: span 2;
-        }
-
-        .detail-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-light);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-
-        .detail-value {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--dark);
-        }
-
-        .barcode-display {
-            background: var(--dark);
-            color: white;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            font-weight: 600;
-            text-align: center;
-            margin: 16px 0;
-            letter-spacing: 2px;
-        }
-
-        .database-status {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid var(--success);
-            color: var(--success);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            text-align: center;
-        }
-
-        .database-status.loading {
-            background: rgba(245, 158, 11, 0.1);
-            border-color: var(--warning);
-            color: var(--warning);
-        }
-
-        .database-status.error {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: var(--error);
-            color: var(--error);
-        }
-
-        .stock-indicator {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .stock-indicator.in-stock {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-        }
-
-        .stock-indicator.low-stock {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--warning);
-        }
-
-        .stock-indicator.out-of-stock {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--error);
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        /* Animations */
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes resultSlide {
-            from { opacity: 0; transform: translateY(20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        /* Responsive Design */
-        @media (max-width: 480px) {
-            .app-container {
-                margin: 0;
-                padding: 0 8px;
-            }
-
-            .main-card {
-                border-radius: 20px;
-            }
-
-            .controls {
-                flex-direction: column;
-            }
-
-            .input-group {
-                flex-direction: column;
-            }
-
-            .btn-icon {
-                width: 100%;
-                height: 56px;
-            }
-
-            .product-details {
-                grid-template-columns: 1fr;
-            }
-
-            .detail-item.full-width {
-                grid-column: span 1;
-            }
+            font-family: 'Inter', 'Kanit', sans-serif;
         }
     </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
-<body>
-    <div class="background-elements">
-        <div class="floating-shape shape-1"></div>
-        <div class="floating-shape shape-2"></div>
-        <div class="floating-shape shape-3"></div>
-    </div>
+<body class="bg-gray-100 text-gray-800">
 
-    <div class="app-container">
-        <div class="header">
-            <div class="logo">
-                <i class="fas fa-barcode"></i>
-            </div>
-            <h1>Price Scanner</h1>
-            <p>สแกนบาร์โค้ดเพื่อเช็คราคาและสต็อกสินค้า</p>
-        </div>
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">ตารางข้อมูลจาก Google Sheets</h1>
+            <p class="text-gray-600 mt-2">ข้อมูลล่าสุดจากลิงก์ที่ระบุ</p>
+        </header>
 
-        <div class="main-card">
-            <div class="card-header">
-                <div id="databaseStatus" class="database-status loading">
-                    กำลังโหลดข้อมูลสินค้า...
+        <!-- Controls Section -->
+        <div class="mb-6 bg-white p-4 rounded-lg shadow-md space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Category Filter -->
+                <div>
+                    <label for="category-filter" class="block text-sm font-medium text-gray-700 mb-1">กรองตามหมวดหมู่:</label>
+                    <select id="category-filter" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        <option value="all">ทุกหมวดหมู่</option>
+                        <!-- Categories populated by JS -->
+                    </select>
                 </div>
-
-                <div class="scanner-container">
-                    <div id="scanner" class="hidden"></div>
-                    <div class="scanner-placeholder" id="scannerPlaceholder">
-                        <i class="fas fa-camera"></i>
-                        <p>พร้อมสแกนบาร์โค้ด</p>
-                    </div>
-                    <div class="scanner-overlay hidden"></div>
-                </div>
-
-                <div class="controls">
-                    <button id="startBtn" class="btn btn-primary">
-                        <i class="fas fa-camera"></i>
-                        เริ่มสแกน
-                    </button>
-                    <button id="stopBtn" class="btn btn-danger hidden">
-                        <i class="fas fa-stop"></i>
-                        หยุดสแกน
-                    </button>
+                 <!-- Search Form -->
+                <div>
+                    <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">ค้นหาชื่อสินค้า:</label>
+                    <form id="search-form" class="flex gap-2">
+                        <input type="text" id="search-input" placeholder="เช่น carnation" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300">
+                            ค้นหา
+                        </button>
+                    </form>
                 </div>
             </div>
-
-            <div class="input-section">
-                <div class="input-group">
-                    <div class="input-wrapper">
-                        <i class="fas fa-barcode input-icon"></i>
-                        <input type="text" id="barcodeInput" placeholder="หรือพิมพ์บาร์โค้ดด้วยตนเอง">
-                    </div>
-                    <button id="searchBtn" class="btn btn-primary btn-icon">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="result-section">
-                <div id="loading" class="loading hidden">
-                    <div class="spinner"></div>
-                    <p>กำลังค้นหาข้อมูลสินค้า...</p>
-                </div>
-
-                <div id="result" class="hidden"></div>
+            
+            <div class="border-t pt-4">
+                 <button id="browse-category-button" class="w-full bg-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-700 transition duration-300">
+                    เรียกดูตามหมวดหมู่
+                </button>
             </div>
         </div>
+
+
+        <!-- Main container for all data -->
+        <div id="main-view">
+            <div id="data-container" class="bg-white rounded-lg shadow-md overflow-hidden">
+                <!-- Loading Message -->
+                <div id="loading" class="p-8 text-center text-gray-500">
+                    <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="http://www.w3.org/2000/svg">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p>กำลังโหลดข้อมูล กรุณารอสักครู่...</p>
+                </div>
+                <!-- Table will be inserted here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Container for search/category results (initially hidden) -->
+        <div id="results-view" class="hidden">
+             <!-- Results content will be inserted here -->
+        </div>
+
     </div>
 
     <script>
-        class ModernBarcodeScanner {
-            constructor() {
-                this.isScanning = false;
-                this.productDatabase = new Map();
-                // This Google Sheet URL is a public CSV export. 
-                // Replace with your own sheet's public CSV URL.
-                this.googleSheetsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTT3t_8Hx7WcD8uUi2IGt1zDbOMB3MSK57dYnfqrrut3do_Gw2hzYSG9IBIEg8fg7uTEL2sVq-IfVJR/pub?output=csv';
-                
-                this.initializeElements();
-                this.bindEvents();
-                this.loadProductDatabase();
+        document.addEventListener('DOMContentLoaded', function () {
+            const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTTAuS3LtuVN7wZC2QXUZCX9K6Lexh_E6IEuqeO9ck6EXlyhq8-8DPYU0sVYgGIcxgvY7EShar8lHjt/pub?gid=1580043152&single=true&output=csv';
+
+            // View containers
+            const mainView = document.getElementById('main-view');
+            const resultsView = document.getElementById('results-view');
+            const dataContainer = document.getElementById('data-container');
+            const loadingIndicator = document.getElementById('loading');
+            
+            // Controls
+            const searchForm = document.getElementById('search-form');
+            const searchInput = document.getElementById('search-input');
+            const browseCategoryButton = document.getElementById('browse-category-button');
+            const categoryFilter = document.getElementById('category-filter');
+
+            let allData = [];
+            let headers = [];
+            let categories = [];
+
+            // --- Utility Functions ---
+            function switchView(viewToShow) {
+                mainView.classList.add('hidden');
+                resultsView.classList.add('hidden');
+                viewToShow.classList.remove('hidden');
             }
 
-            initializeElements() {
-                this.startBtn = document.getElementById('startBtn');
-                this.stopBtn = document.getElementById('stopBtn');
-                this.scanner = document.getElementById('scanner');
-                this.scannerPlaceholder = document.getElementById('scannerPlaceholder');
-                this.overlay = document.querySelector('.scanner-overlay');
-                this.barcodeInput = document.getElementById('barcodeInput');
-                this.searchBtn = document.getElementById('searchBtn');
-                this.loading = document.getElementById('loading');
-                this.result = document.getElementById('result');
-                this.databaseStatus = document.getElementById('databaseStatus');
+            function goBackToMain() {
+                switchView(mainView);
+                searchInput.value = ''; // Clear search input
+                categoryFilter.value = 'all'; // Reset dropdown
+                applyFiltersAndRender(); // Re-apply category filter
             }
 
-            bindEvents() {
-                this.startBtn.addEventListener('click', () => this.startScanning());
-                this.stopBtn.addEventListener('click', () => this.stopScanning());
-                this.searchBtn.addEventListener('click', () => this.searchBarcode());
-                this.barcodeInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') this.searchBarcode();
-                });
-
-                // Auto-search when barcode length is sufficient
-                this.barcodeInput.addEventListener('input', (e) => {
-                    const value = e.target.value.trim();
-                    if (value.length >= 8 && /^\d+$/.test(value)) {
-                        // Use a debounce to prevent too many searches
-                        clearTimeout(this.inputTimeout);
-                        this.inputTimeout = setTimeout(() => this.searchBarcode(), 300);
-                    }
-                });
-            }
-
-            async loadProductDatabase() {
-                try {
-                    this.updateDatabaseStatus('loading', 'กำลังโหลดข้อมูลสินค้า...');
-                    
-                    const response = await fetch(this.googleSheetsUrl);
-                    if (!response.ok) {
-                        throw new Error(`Network response was not ok: ${response.statusText}`);
-                    }
-                    
-                    const csvText = await response.text();
-                    this.parseCSVData(csvText);
-                    
-                    this.updateDatabaseStatus('success', `โหลดข้อมูลสำเร็จ (${this.productDatabase.size} รายการ)`);
-                    
-                } catch (error) {
-                    console.error('Error loading product database:', error);
-                    this.updateDatabaseStatus('error', 'ไม่สามารถโหลดข้อมูลได้ - ใช้ข้อมูลตัวอย่าง');
-                    this.loadFallbackDatabase();
+            // --- Data Loading and Initialization ---
+            Papa.parse(csvUrl, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function (results) {
+                    loadingIndicator.style.display = 'none';
+                    allData = results.data;
+                    headers = results.meta.fields;
+                    populateCategoryFilter();
+                    applyFiltersAndRender(); // Initial render
+                },
+                error: function(error) {
+                    loadingIndicator.style.display = 'none';
+                    dataContainer.innerHTML = `<div class="p-8 text-center text-red-500"><p class="font-bold">เกิดข้อผิดพลาด</p><p>ไม่สามารถโหลดข้อมูลได้</p></div>`;
+                    console.error('Error parsing CSV:', error);
                 }
+            });
+
+            // --- Event Listeners ---
+            searchForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                if (!searchTerm) return;
+                const filteredData = allData.filter(row => row['ชื่อสินค้า'] && row['ชื่อสินค้า'].toLowerCase().includes(searchTerm));
+                displayResultsPage(filteredData, `ผลการค้นหาสำหรับ "${searchTerm}"`, `พบ ${filteredData.length} รายการ`);
+            });
+
+            browseCategoryButton.addEventListener('click', displayCategoryView);
+            
+            categoryFilter.addEventListener('change', applyFiltersAndRender);
+
+            // --- Core Logic ---
+            function populateCategoryFilter() {
+                if (!headers.includes('หมวดหมู่')) {
+                    categoryFilter.parentElement.style.display = 'none'; // Hide if no category column
+                    browseCategoryButton.style.display = 'none';
+                    return;
+                }
+                categories = [...new Set(allData.map(item => item['หมวดหมู่']).filter(Boolean))];
+                categories.sort();
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    categoryFilter.appendChild(option);
+                });
             }
 
-            parseCSVData(csvText) {
-                const lines = csvText.split(/\r?\n/);
-                if (lines.length === 0) return;
+            function applyFiltersAndRender() {
+                let dataToRender = [...allData];
+                const selectedCategory = categoryFilter.value;
 
-                const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-                
-                // Column mapping based on your exact headers
-                const columnMap = {
-                    productCode: 'รหัสสินค้า',
-                    name: 'ชื่อการค้า',
-                    unit: 'หน่วย',
-                    barcode: 'บาร์โค้ด',
-                    price: 'ราคา',
-                    stock: 'คงเหลือ',
-                    cost: 'ต้นทุน'
-                };
-
-                const indices = {};
-                for (const [key, headerName] of Object.entries(columnMap)) {
-                    indices[key] = headers.findIndex(h => h === headerName);
+                if (selectedCategory !== 'all') {
+                    dataToRender = dataToRender.filter(row => row['หมวดหมู่'] === selectedCategory);
                 }
+                
+                generateTable(dataToRender, headers, dataContainer);
+            }
 
-                for (let i = 1; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (!line) continue;
+            // --- Display Functions ---
+            function displayCategoryView() {
+                switchView(resultsView);
+                resultsView.innerHTML = ''; // Clear previous content
 
-                    const values = this.parseCSVLine(line);
-                    
-                    const barcode = values[indices.barcode]?.replace(/"/g, '').trim();
-                    const name = values[indices.name]?.replace(/"/g, '').trim();
+                const container = document.createElement('div');
+                container.className = 'bg-white rounded-lg shadow-md overflow-hidden';
+                
+                // Header
+                container.innerHTML = `
+                    <div class="p-4 sm:p-6 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">เลือกหมวดหมู่</h2>
+                            <p class="text-gray-600">กรุณาเลือกหมวดหมู่เพื่อดูสินค้า</p>
+                        </div>
+                        <button class="back-button bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700"> &larr; กลับไปหน้ารวม</button>
+                    </div>
+                `;
 
-                    if (barcode && name) {
-                        const productCode = values[indices.productCode]?.replace(/"/g, '').trim();
-                        const unit = values[indices.unit]?.replace(/"/g, '').trim();
-                        const price = values[indices.price]?.replace(/"/g, '').trim();
-                        const stock = values[indices.stock]?.replace(/"/g, '').trim();
-                        const cost = values[indices.cost]?.replace(/"/g, '').trim();
+                // Category Buttons
+                const categoryGrid = document.createElement('div');
+                categoryGrid.className = 'p-4 sm:p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4';
+                
+                categories.forEach(cat => {
+                    const catButton = document.createElement('button');
+                    catButton.className = 'w-full text-left p-4 bg-gray-100 rounded-lg hover:bg-blue-100 hover:text-blue-800 transition duration-200';
+                    catButton.textContent = cat;
+                    catButton.onclick = () => {
+                        const filteredData = allData.filter(row => row['หมวดหมู่'] === cat);
+                        displayResultsPage(filteredData, `สินค้าในหมวดหมู่: ${cat}`, `พบ ${filteredData.length} รายการ`);
+                    };
+                    categoryGrid.appendChild(catButton);
+                });
+                
+                container.appendChild(categoryGrid);
+                resultsView.appendChild(container);
+                resultsView.querySelector('.back-button').addEventListener('click', goBackToMain);
+            }
 
-                        this.productDatabase.set(barcode, {
-                            productCode: productCode || 'ไม่ระบุ',
-                            name: name,
-                            unit: unit || 'ชิ้น',
-                            price: price ? parseFloat(price.replace(/,/g, '')) : null,
-                            stock: stock ? parseFloat(stock.replace(/,/g, '')) : 0,
-                            cost: cost ? parseFloat(cost.replace(/,/g, '')) : null
+
+            function displayResultsPage(data, title, subtitle) {
+                switchView(resultsView);
+                resultsView.innerHTML = ''; 
+
+                const container = document.createElement('div');
+                container.className = 'bg-white rounded-lg shadow-md overflow-hidden';
+                
+                let headerHTML = `
+                    <div class="p-4 sm:p-6 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">${title}</h2>
+                            <p class="text-gray-600">${subtitle}</p>
+                        </div>
+                        <button class="back-button bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700"> &larr; กลับไปหน้ารวม</button>
+                    </div>`;
+                container.innerHTML = headerHTML;
+                
+                generateTable(data, headers, container);
+                resultsView.appendChild(container);
+                resultsView.querySelector('.back-button').addEventListener('click', goBackToMain);
+            }
+
+            function generateTable(data, tableHeaders, targetElement) {
+                const wrapper = document.createElement('div');
+                if (!data || data.length === 0) {
+                    wrapper.innerHTML = '<p class="p-8 text-center text-gray-500">ไม่พบข้อมูล</p>';
+                } else {
+                    let tableHTML = '<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600">';
+                    tableHTML += '<thead class="text-xs text-gray-700 uppercase bg-gray-50">';
+                    tableHTML += `<tr>${tableHeaders.map(h => `<th scope="col" class="px-6 py-3">${h}</th>`).join('')}</tr></thead>`;
+                    tableHTML += '<tbody>';
+                    data.forEach((row, index) => {
+                        const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                        tableHTML += `<tr class="${rowClass} border-b hover:bg-blue-50 transition">`;
+                        tableHeaders.forEach(header => {
+                            tableHTML += `<td class="px-6 py-4">${row[header] != null ? row[header] : ''}</td>`;
                         });
-                    }
-                }
-            }
-
-            parseCSVLine(line) {
-                const result = [];
-                let current = '';
-                let inQuotes = false;
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    if (char === '"' && (i === 0 || line[i-1] !== '\\')) {
-                        inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
-                        result.push(current);
-                        current = '';
-                    } else {
-                        current += char;
-                    }
-                }
-                result.push(current);
-                return result;
-            }
-
-            loadFallbackDatabase() {
-                const fallbackData = {
-                    '8851932141425': { productCode: 'SING001', name: 'น้ำดื่ม สิงห์ 600ml', unit: 'ขวด', price: 8.00, stock: 50, cost: 6.00 },
-                    '8851932141432': { productCode: 'CRYS001', name: 'น้ำดื่ม คริสตัล 1.5L', unit: 'ขวด', price: 15.00, stock: 30, cost: 12.00 },
-                    '8850718800018': { productCode: 'MAMA001', name: 'มาม่า หมูสับ 55g', unit: 'ซอง', price: 6.50, stock: 100, cost: 5.00 }
-                };
-                for (const [barcode, product] of Object.entries(fallbackData)) {
-                    this.productDatabase.set(barcode, product);
-                }
-            }
-
-            updateDatabaseStatus(type, message) {
-                this.databaseStatus.className = `database-status ${type}`;
-                this.databaseStatus.textContent = message;
-                
-                if (type === 'success') {
-                    setTimeout(() => { this.databaseStatus.classList.add('hidden'); }, 3000);
-                }
-            }
-
-            getStockStatus(stock) {
-                if (stock <= 0) return { class: 'out-of-stock', text: 'หมดสต็อก' };
-                if (stock <= 10) return { class: 'low-stock', text: 'สต็อกต่ำ' };
-                return { class: 'in-stock', text: 'มีสต็อก' };
-            }
-
-            async startScanning() {
-                if (this.isScanning) return;
-                try {
-                    this.isScanning = true;
-                    this.startBtn.classList.add('hidden');
-                    this.stopBtn.classList.remove('hidden');
-                    this.scanner.classList.remove('hidden');
-                    this.scannerPlaceholder.classList.add('hidden');
-                    this.overlay.classList.remove('hidden');
-                    await this.initQuagga();
-                } catch (error) {
-                    console.error('Error starting scanner:', error);
-                    this.showError('ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบการอนุญาตใช้กล้อง');
-                    this.stopScanning();
-                }
-            }
-
-            stopScanning() {
-                if (this.isScanning) {
-                    Quagga.stop();
-                    this.isScanning = false;
-                }
-                this.startBtn.classList.remove('hidden');
-                this.stopBtn.classList.add('hidden');
-                this.scanner.classList.add('hidden');
-                this.scannerPlaceholder.classList.remove('hidden');
-                this.overlay.classList.add('hidden');
-            }
-
-            async initQuagga() {
-                return new Promise((resolve, reject) => {
-                    Quagga.init({
-                        inputStream: {
-                            name: "Live",
-                            type: "LiveStream",
-                            target: this.scanner,
-                            constraints: { width: 480, height: 320, facingMode: "environment" }
-                        },
-                        decoder: { readers: ["ean_reader", "ean_8_reader", "code_128_reader", "code_39_reader"] },
-                        locate: true,
-                        locator: { halfSample: true, patchSize: "medium" }
-                    }, (err) => {
-                        if (err) { reject(err); return; }
-                        Quagga.start();
-                        Quagga.onDetected(this.onBarcodeDetected.bind(this));
-                        resolve();
+                        tableHTML += '</tr>';
                     });
-                });
+                    tableHTML += '</tbody></table></div>';
+                    wrapper.innerHTML = tableHTML;
+                }
+                
+                if (targetElement.id === 'data-container') {
+                    targetElement.innerHTML = '';
+                }
+                targetElement.appendChild(wrapper);
             }
-
-            onBarcodeDetected(result) {
-                const barcode = result.codeResult.code;
-                if (!this.isScanning) return;
-                if ('vibrate' in navigator) navigator.vibrate(100);
-                this.barcodeInput.value = barcode;
-                this.stopScanning();
-                this.searchBarcode();
-            }
-
-            searchBarcode() {
-                const barcode = this.barcodeInput.value.trim();
-                if (!barcode) { this.showError('กรุณาป้อนบาร์โค้ด'); return; }
-
-                this.loading.classList.remove('hidden');
-                this.result.classList.add('hidden');
-
-                setTimeout(() => { // Simulate network delay
-                    const product = this.productDatabase.get(barcode);
-                    this.loading.classList.add('hidden');
-                    if (product) {
-                        this.displayProductInfo(product, barcode);
-                    } else {
-                        this.showError(`ไม่พบสินค้าสำหรับบาร์โค้ด: ${barcode}`);
-                    }
-                }, 500);
-            }
-
-            displayProductInfo(product, barcode) {
-                const stockStatus = this.getStockStatus(product.stock);
-                const priceFormatted = product.price !== null ? `฿${product.price.toFixed(2)}` : 'N/A';
-                const costFormatted = product.cost !== null ? `฿${product.cost.toFixed(2)}` : 'N/A';
-
-                this.result.innerHTML = `
-                    <div class="result">
-                        <div class="result-header">
-                            <div class="result-icon success"><i class="fas fa-check"></i></div>
-                            <h3>พบข้อมูลสินค้า</h3>
-                        </div>
-                        <div class="barcode-display">${barcode}</div>
-                        <div class="product-info">
-                            <p class="product-name">${product.name}</p>
-                            <p class="product-code">รหัส: ${product.productCode} | หน่วย: ${product.unit}</p>
-                        </div>
-                        <div class="price">${priceFormatted}</div>
-                        <div class="product-details">
-                            <div class="detail-item">
-                                <div class="detail-label">สถานะสต็อก</div>
-                                <div class="detail-value"><span class="stock-indicator ${stockStatus.class}">${stockStatus.text}</span></div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-label">จำนวนคงเหลือ</div>
-                                <div class="detail-value">${product.stock} ${product.unit}</div>
-                            </div>
-                             <div class="detail-item full-width">
-                                <div class="detail-label">ราคาทุน</div>
-                                <div class="detail-value">${costFormatted}</div>
-                            </div>
-                        </div>
-                    </div>`;
-                this.result.classList.remove('hidden');
-            }
-
-            showError(message) {
-                this.result.innerHTML = `
-                    <div class="result error">
-                        <div class="result-header">
-                            <div class="result-icon error"><i class="fas fa-times"></i></div>
-                            <h3>เกิดข้อผิดพลาด</h3>
-                        </div>
-                        <p style="text-align: center; padding: 16px 0;">${message}</p>
-                    </div>`;
-                this.result.classList.remove('hidden');
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            new ModernBarcodeScanner();
         });
     </script>
 </body>
 </html>
+
