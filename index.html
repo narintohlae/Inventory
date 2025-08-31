@@ -3,153 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แสดงข้อมูลจาก Google Sheets</title>
-    <style>
-        body {
-            font-family: 'Sarabun', sans-serif; /* ใช้ฟอนต์ที่อ่านง่าย */
-            margin: 20px;
-            background-color: #f4f4f9;
-            color: #333;
-        }
-        h1 {
-            text-align: center;
-            color: #444;
-        }
-        #dataTable {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-            background-color: #fff;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #007bff;
-            color: white;
-            font-weight: bold;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        tr:hover {
-            background-color: #ddd;
-        }
-        img {
-            max-width: 100px; /* กำหนดขนาดรูปภาพสูงสุด */
-            height: auto;
-            border-radius: 5px;
-            display: block;
-        }
-        .loading, .error {
-            text-align: center;
-            font-size: 1.2em;
-            padding: 20px;
-            color: #888;
-        }
-    </style>
+    <title>Web Sheet Editor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --gs-blue: #4285f4; --gs-border: #e0e0e0; --gs-header-bg: #f8f9fa; }
+        body { font-family: 'Sarabun', sans-serif; margin: 0; background-color: #f5f7fa; }
+        .container { padding: 15px; }
+        
+        /* --- Toolbar --- */
+        .toolbar { padding: 8px 15px; background: white; border-bottom: 1px solid var(--gs-border); display: flex; align-items: center; gap: 20px; }
+        .toolbar button { background: none; border: 1px solid transparent; padding: 6px 12px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .toolbar button:hover { background-color: #f1f3f4; border-color: #dadce0; }
+        .toolbar input { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .toolbar-separator { width: 1px; height: 20px; background-color: var(--gs-border); }
+
+        /* --- Table / Grid --- */
+        .grid-container { width: 100%; overflow: auto; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        th, td { border: 1px solid var(--gs-border); padding: 8px; min-width: 150px; }
+        thead { position: sticky; top: 0; z-index: 10; }
+        th { background-color: var(--gs-header-bg); font-weight: bold; text-align: center; }
+        tbody tr:hover > td { background-color: #f1f3f4; }
+        td { background-color: white; cursor: cell; }
+        td.selected { box-shadow: 0 0 0 2px var(--gs-blue) inset; }
+        td.editing { padding: 0; }
+        td.editing input, td.editing select { width: 100%; height: 100%; border: none; outline: none; box-sizing: border-box; padding: 8px; }
+
+        /* --- Context Menu --- */
+        #contextMenu { position: absolute; background: white; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 8px 0; z-index: 100; display: none; }
+        #contextMenu div { padding: 8px 16px; cursor: pointer; }
+        #contextMenu div:hover { background-color: #f1f3f4; }
+
+        /* --- Status --- */
+        #statusIndicator { font-size: 0.9em; color: #555; margin-left: auto; }
+        .status-loading { color: #fbbc04; } .status-saved { color: #34a853; } .status-error { color: #ea4335; }
+    </style>
 </head>
 <body>
-
-    <h1>ตารางแสดงข้อมูล</h1>
-
-    <div id="loadingMessage" class="loading">กำลังโหลดข้อมูล...</div>
-
-    <div id="errorMessage" class="error" style="display:none;"></div>
-
-    <table id="dataTable" style="display:none;">
-        <thead id="tableHeader">
-            </thead>
-        <tbody id="tableBody">
-            </tbody>
-    </table>
+    <div class="toolbar">
+        <button id="addRowBtn">➕ เพิ่มแถวใหม่</button>
+        <div class="toolbar-separator"></div>
+        <input type="text" id="searchInput" placeholder="ค้นหา...">
+        <div id="statusIndicator">Ready</div>
+    </div>
+    <div class="container">
+        <div class="grid-container">
+            <table id="mainGrid">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <div id="contextMenu">
+        <div id="deleteRowOption">🗑️ ลบแถวนี้</div>
+    </div>
 
     <script>
-        // URL ของ Apps Script Web App
-        const url = 'https://script.google.com/macros/s/AKfycbz8ICdaOnlokvVyc8fZE9mc9PDIuFewGpYOZNEZOvMxOEoJd88m0DI5gD4IQQvNtTfS/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbz8ICdaOnlokvVyc8fZE9mc9PDIuFewGpYOZNEZOvMxOEoJd88m0DI5gD4IQQvNtTfS/exec';
 
-        // อ้างอิงถึง element ต่างๆ ใน HTML
-        const table = document.getElementById('dataTable');
-        const tableHeader = document.getElementById('tableHeader');
-        const tableBody = document.getElementById('tableBody');
-        const loadingMessage = document.getElementById('loadingMessage');
-        const errorMessage = document.getElementById('errorMessage');
+        // --- STATE ---
+        let products = [], categories = [];
+        let contextMenuRowIndex = null;
 
-        // ใช้ fetch API เพื่อดึงข้อมูลจาก URL
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
-                }
-                return response.json(); // แปลง response เป็น JSON
-            })
-            .then(data => {
-                // ซ่อนข้อความ "กำลังโหลด" และแสดงตาราง
-                loadingMessage.style.display = 'none';
-                table.style.display = 'table';
-                
-                if (data.length === 0) {
-                    errorMessage.textContent = 'ไม่พบข้อมูล';
-                    errorMessage.style.display = 'block';
-                    return;
-                }
+        // --- DOM ELEMENTS ---
+        const DOMElements = {
+            gridBody: document.querySelector("#mainGrid tbody"),
+            gridHead: document.querySelector("#mainGrid thead"),
+            addRowBtn: document.getElementById('addRowBtn'),
+            searchInput: document.getElementById('searchInput'),
+            statusIndicator: document.getElementById('statusIndicator'),
+            contextMenu: document.getElementById('contextMenu'),
+            deleteRowOption: document.getElementById('deleteRowOption'),
+        };
 
-                // สร้างหัวตาราง (Header)
-                const headers = Object.keys(data[0]);
-                const headerRow = document.createElement('tr');
-                headers.forEach(headerText => {
-                    const th = document.createElement('th');
-                    th.textContent = headerText;
-                    headerRow.appendChild(th);
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', fetchData);
+        
+        async function fetchData() {
+            setStatus('loading', 'กำลังโหลด...');
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                products = data.products || [];
+                categories = data.categories || [];
+                renderGrid();
+                setStatus('saved', 'โหลดข้อมูลสำเร็จ');
+            } catch (error) {
+                setStatus('error', `เกิดข้อผิดพลาด: ${error.message}`);
+                console.error(error);
+            }
+        }
+
+        // --- RENDERING ---
+        function renderGrid() {
+            const searchTerm = DOMElements.searchInput.value.toLowerCase();
+            const filteredProducts = products.filter(p => !searchTerm || Object.values(p).some(val => String(val).toLowerCase().includes(searchTerm)));
+
+            // Render Header
+            DOMElements.gridHead.innerHTML = '';
+            if(products.length > 0){
+                const headers = Object.keys(products[0]).filter(h => h !== '_rowIndex');
+                const tr = document.createElement('tr');
+                headers.forEach(h => tr.innerHTML += `<th>${h}</th>`);
+                DOMElements.gridHead.appendChild(tr);
+            }
+
+            // Render Body
+            DOMElements.gridBody.innerHTML = '';
+            filteredProducts.forEach(product => {
+                const tr = document.createElement('tr');
+                tr.dataset.rowIndex = product._rowIndex;
+                Object.keys(product).filter(h => h !== '_rowIndex').forEach(header => {
+                    const td = document.createElement('td');
+                    td.dataset.column = header;
+                    td.textContent = product[header];
+                    tr.appendChild(td);
                 });
-                tableHeader.appendChild(headerRow);
-
-                // วนลูปเพื่อสร้างแต่ละแถวของข้อมูล
-                data.forEach(rowData => {
-                    const row = document.createElement('tr');
-                    headers.forEach(header => {
-                        const cell = document.createElement('td');
-                        const cellValue = rowData[header];
-
-                        // ตรวจสอบพิเศษถ้าเป็นคอลัมน์ "รูปภาพ"
-                        if (header === 'รูปภาพ' && (cellValue.startsWith('http://') || cellValue.startsWith('https://'))) {
-                            const img = document.createElement('img');
-                            img.src = cellValue;
-                            img.alt = 'รูปภาพประกอบ';
-                            cell.appendChild(img);
-                        } 
-                        // ตรวจสอบถ้าเป็นคอลัมน์ "วันที่"
-                        else if (header === 'วันที่') {
-                            // จัดรูปแบบวันที่ให้อ่านง่ายขึ้น
-                            const date = new Date(cellValue);
-                            cell.textContent = date.toLocaleDateString('th-TH', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            });
-                        }
-                        else {
-                            cell.textContent = cellValue;
-                        }
-                        row.appendChild(cell);
-                    });
-                    tableBody.appendChild(row);
-                });
-            })
-            .catch(error => {
-                // หากเกิดข้อผิดพลาดในการดึงข้อมูล
-                console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error);
-                loadingMessage.style.display = 'none';
-                errorMessage.textContent = 'เกิดข้อผิดพลาด: ไม่สามารถโหลดข้อมูลได้';
-                errorMessage.style.display = 'block';
+                DOMElements.gridBody.appendChild(tr);
             });
-    </script>
+        }
 
+        // --- EVENT LISTENERS ---
+        DOMElements.addRowBtn.addEventListener('click', () => postData({ action: 'addRow' }));
+        DOMElements.searchInput.addEventListener('input', renderGrid);
+        DOMElements.deleteRowOption.addEventListener('click', () => {
+             if (contextMenuRowIndex && confirm('คุณแน่ใจหรือไม่ว่าต้องการลบแถวนี้?')) {
+                postData({ action: 'deleteRow', rowIndex: contextMenuRowIndex });
+             }
+        });
+
+        // Cell Editing Listeners
+        DOMElements.gridBody.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'TD') return;
+            document.querySelectorAll('td.selected').forEach(cell => cell.classList.remove('selected'));
+            e.target.classList.add('selected');
+        });
+
+        DOMElements.gridBody.addEventListener('dblclick', (e) => {
+            if (e.target.tagName !== 'TD') return;
+            const cell = e.target;
+            if (cell.classList.contains('editing')) return;
+            
+            cell.classList.add('editing');
+            const originalValue = cell.textContent;
+            const columnName = cell.dataset.column;
+            
+            let editor;
+            if (columnName === 'หมวดหมู่') {
+                editor = document.createElement('select');
+                categories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = option.textContent = cat;
+                    if (cat === originalValue) option.selected = true;
+                    editor.appendChild(option);
+                });
+            } else {
+                editor = document.createElement('input');
+                editor.type = 'text';
+                editor.value = originalValue;
+            }
+
+            cell.innerHTML = '';
+            cell.appendChild(editor);
+            editor.focus();
+
+            const saveChange = () => {
+                const newValue = editor.value;
+                cell.classList.remove('editing');
+                cell.textContent = newValue;
+                if (newValue !== originalValue) {
+                    const rowIndex = cell.parentElement.dataset.rowIndex;
+                    postData({ action: 'updateCell', rowIndex, columnName, newValue });
+                }
+            };
+
+            editor.addEventListener('blur', saveChange);
+            editor.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') editor.blur();
+                if (e.key === 'Escape') {
+                    cell.classList.remove('editing');
+                    cell.textContent = originalValue;
+                }
+            });
+        });
+
+        // Context Menu Listener
+        DOMElements.gridBody.addEventListener('contextmenu', (e) => {
+            const tr = e.target.closest('tr');
+            if (!tr) return;
+
+            e.preventDefault();
+            contextMenuRowIndex = tr.dataset.rowIndex;
+            DOMElements.contextMenu.style.display = 'block';
+            DOMElements.contextMenu.style.left = `${e.pageX}px`;
+            DOMElements.contextMenu.style.top = `${e.pageY}px`;
+        });
+        document.addEventListener('click', () => DOMElements.contextMenu.style.display = 'none');
+
+
+        // --- API & UTILITY ---
+        async function postData(payload) {
+            setStatus('loading', 'กำลังบันทึก...');
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    redirect: 'follow'
+                });
+                const result = await response.json();
+                if (result.status !== 'success') throw new Error(result.message);
+                
+                setStatus('saved', result.message);
+                await fetchData(); // Refresh all data to ensure consistency
+            } catch (error) {
+                setStatus('error', `เกิดข้อผิดพลาด: ${error.message}`);
+                console.error(error);
+            }
+        }
+
+        function setStatus(type, message) {
+            DOMElements.statusIndicator.textContent = message;
+            DOMElements.statusIndicator.className = `status-${type}`;
+        }
+    </script>
 </body>
 </html>
