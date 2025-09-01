@@ -4,12 +4,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>แสดงข้อมูลจาก Google Sheet</title>
+  <title>แสดงข้อมูลสินค้าพร้อมจัดการหมวดหมู่</title>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
       font-family: 'Sarabun', sans-serif;
+    }
+    .active-category {
+      background-color: #3b82f6 !important;
+      color: white !important;
+      border-color: #3b82f6 !important;
+    }
+    .modal {
+        transition: opacity 0.25s ease;
     }
   </style>
 </head>
@@ -17,108 +25,297 @@
 <body class="bg-gray-100 text-gray-800">
 
   <div class="container mx-auto p-4 sm:p-6 lg:p-8">
-    <h1 class="text-3xl font-bold mb-6 text-center text-gray-700">ตารางข้อมูลจาก Google Sheet</h1>
+    <h1 class="text-3xl font-bold mb-4 text-center text-gray-700">ตารางข้อมูลสินค้า</h1>
 
-    <!-- ส่วนแสดงสถานะการโหลด -->
+    <div class="mb-6">
+        <div class="flex justify-center mb-4">
+            <button id="manage-categories-btn" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75">
+                ⚙️ จัดการหมวดหมู่
+            </button>
+        </div>
+        <div id="category-buttons" class="flex flex-wrap justify-center gap-2">
+            </div>
+    </div>
+
     <div id="status-container" class="text-center p-8 bg-white rounded-lg shadow-md">
       <div id="loader" class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
       <p id="status-text" class="mt-4 text-lg">กำลังโหลดข้อมูล...</p>
     </div>
 
-    <!-- ตารางสำหรับแสดงข้อมูล (ซ่อนไว้ตอนแรก) -->
     <div class="overflow-x-auto bg-white rounded-lg shadow-md hidden" id="table-container">
       <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50" id="table-header-container">
-          <!-- Header จะถูกสร้างโดย JavaScript -->
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200" id="table-body-container">
-          <!-- ข้อมูลจะถูกสร้างโดย JavaScript -->
-        </tbody>
+        <thead class="bg-gray-50" id="table-header-container"></thead>
+        <tbody class="bg-white divide-y divide-gray-200" id="table-body-container"></tbody>
       </table>
     </div>
   </div>
 
+  <div id="category-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+          <div class="mt-3 text-center">
+              <h3 class="text-lg leading-6 font-medium text-gray-900">จัดการหมวดหมู่</h3>
+              <div class="mt-4">
+                  <input type="text" id="new-category-input" placeholder="เพิ่มหมวดหมู่ใหม่ (เช่น Carnation)" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                  <button id="add-category-btn" class="mt-2 w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600">เพิ่มหมวดหมู่</button>
+              </div>
+              <div id="category-list" class="mt-4 text-left max-h-60 overflow-y-auto">
+                  </div>
+              <div class="items-center px-4 py-3">
+                  <button id="close-modal-btn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 w-full">ปิด</button>
+              </div>
+          </div>
+      </div>
+  </div>
+
   <script>
-    // --- !! สำคัญ !! ---
-    // --- วาง Web app URL ที่คัดลอกมา ตรงนี้ ---
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyP0NlmEZflV4EpPkMTzJcEcsni9tQcwz3HIS4ZaCldMTafTN0Xts2xG-0PB_cFN5_Sbg/exec';
+    const PRODUCT_NAME_COLUMN = 'สินค้า';
+    const CATEGORY_STORAGE_KEY = 'userDefinedCategories';
 
-    const statusContainer = document.getElementById('status-container');
-    const statusText = document.getElementById('status-text');
-    const loader = document.getElementById('loader');
-    const tableContainer = document.getElementById('table-container');
-    const tableHeaderContainer = document.getElementById('table-header-container');
-    const tableBodyContainer = document.getElementById('table-body-container');
+    let allData = []; 
+    let categoriesMap = {}; 
 
+    // DOM Elements
+    const elements = {
+        statusContainer: document.getElementById('status-container'),
+        statusText: document.getElementById('status-text'),
+        loader: document.getElementById('loader'),
+        tableContainer: document.getElementById('table-container'),
+        tableHeaderContainer: document.getElementById('table-header-container'),
+        tableBodyContainer: document.getElementById('table-body-container'),
+        categoryButtonsContainer: document.getElementById('category-buttons'),
+        manageCategoriesBtn: document.getElementById('manage-categories-btn'),
+        categoryModal: document.getElementById('category-modal'),
+        closeModalBtn: document.getElementById('close-modal-btn'),
+        addCategoryBtn: document.getElementById('add-category-btn'),
+        newCategoryInput: document.getElementById('new-category-input'),
+        categoryList: document.getElementById('category-list'),
+    };
+    
+    // --- Core Functions ---
 
-    // ฟังก์ชันสำหรับดึงและแสดงข้อมูล
+    function loadCategoriesFromStorage() {
+        const storedCategories = localStorage.getItem(CATEGORY_STORAGE_KEY);
+        // ถ้าไม่มีข้อมูลใน storage, ใช้ค่าเริ่มต้น
+        if (!storedCategories) {
+            categoriesMap = {
+                'เครื่องดื่ม': ['กาแฟ', 'ชา', 'นม', 'น้ำผลไม้', 'โซดา'],
+                'เบเกอรี่': ['เค้ก', 'ขนมปัง', 'พาย', 'ครัวซองต์'],
+            };
+        } else {
+            categoriesMap = JSON.parse(storedCategories);
+        }
+    }
+
+    function saveCategoriesToStorage() {
+        localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(categoriesMap));
+    }
+
     async function fetchData() {
       try {
         const response = await fetch(WEB_APP_URL);
-        if (!response.ok) {
-          throw new Error(`Network response was not ok: ${response.statusText}`);
-        }
+        if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
         const result = await response.json();
 
         if (result.status === 'success' && result.data && result.data.length > 0) {
-          displayData(result.data);
+          allData = result.data;
+          renderCategoryButtons();
+          displayData(allData); 
         } else if (result.status === 'success') {
-          showStatus('ไม่พบข้อมูล', true);
+          showStatus('ไม่พบข้อมูล', false);
         } else {
           throw new Error(result.message || 'เกิดข้อผิดพลาดในการดึงข้อมูล');
         }
-
       } catch (error) {
         console.error('Fetch Error:', error);
         showStatus(`เกิดข้อผิดพลาด: ${error.message}`, true);
       }
     }
 
-    // ฟังก์ชันสำหรับแสดงผลข้อมูลในตาราง
+    function getProductCategory(productName) {
+        if (!productName || typeof productName !== 'string') return 'อื่นๆ';
+        const name = productName.toLowerCase();
+        for (const category in categoriesMap) {
+            const keywords = categoriesMap[category];
+            if (keywords.some(keyword => name.includes(keyword.toLowerCase()))) {
+                return category;
+            }
+        }
+        return 'อื่นๆ';
+    }
+
+    // --- UI Rendering Functions ---
+
+    function renderCategoryButtons() {
+        const categories = ['ทั้งหมด', ...Object.keys(categoriesMap), 'อื่นๆ'];
+        elements.categoryButtonsContainer.innerHTML = ''; 
+
+        categories.forEach(category => {
+            const button = document.createElement('button');
+            button.textContent = category;
+            button.className = 'px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors';
+            button.dataset.category = category;
+            button.addEventListener('click', () => filterByCategory(category));
+            elements.categoryButtonsContainer.appendChild(button);
+        });
+        
+        // Active 'ทั้งหมด' button by default
+        const allButton = elements.categoryButtonsContainer.querySelector('button[data-category="ทั้งหมด"]');
+        if (allButton) allButton.classList.add('active-category');
+    }
+    
     function displayData(data) {
-      // สร้าง Header ของตาราง
-      const headers = Object.keys(data[0]);
+      elements.tableHeaderContainer.innerHTML = '';
+      elements.tableBodyContainer.innerHTML = '';
+      
+      if (!allData || allData.length === 0) {
+          showStatus('ไม่พบข้อมูล', false);
+          return;
+      }
+      
+      const headers = Object.keys(allData[0]);
       const headerRow = document.createElement('tr');
       headers.forEach(headerText => {
         const th = document.createElement('th');
-        th.scope = 'col';
         th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
         th.textContent = headerText;
         headerRow.appendChild(th);
       });
-      tableHeaderContainer.appendChild(headerRow);
+      elements.tableHeaderContainer.appendChild(headerRow);
 
-      // สร้างแถวข้อมูล
-      data.forEach(rowData => {
+      if (data.length === 0) {
         const row = document.createElement('tr');
-        headers.forEach(header => {
-          const cell = document.createElement('td');
-          cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700';
-          cell.textContent = rowData[header];
-          row.appendChild(cell);
+        const cell = document.createElement('td');
+        cell.colSpan = headers.length;
+        cell.textContent = 'ไม่พบข้อมูลในหมวดหมู่นี้';
+        cell.className = 'text-center text-gray-500 py-8';
+        row.appendChild(cell);
+        elements.tableBodyContainer.appendChild(row);
+      } else {
+        data.forEach(rowData => {
+          const row = document.createElement('tr');
+          headers.forEach(header => {
+            const cell = document.createElement('td');
+            cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700';
+            cell.textContent = rowData[header] || '';
+            row.appendChild(cell);
+          });
+          elements.tableBodyContainer.appendChild(row);
         });
-        tableBodyContainer.appendChild(row);
-      });
-
-      // แสดงตารางและซ่อนสถานะ
-      statusContainer.classList.add('hidden');
-      tableContainer.classList.remove('hidden');
-    }
-
-    // ฟังก์ชันสำหรับแสดงสถานะ
-    function showStatus(message, isError = false) {
-      loader.classList.add('hidden');
-      statusText.textContent = message;
-      if (isError) {
-        statusText.classList.add('text-red-500');
       }
+
+      elements.statusContainer.classList.add('hidden');
+      elements.tableContainer.classList.remove('hidden');
     }
 
+    function showStatus(message, isError = false) {
+      elements.loader.classList.add('hidden');
+      elements.statusText.textContent = message;
+      if (isError) elements.statusText.classList.add('text-red-500');
+    }
 
-    // เริ่มทำงานเมื่อหน้าเว็บโหลดเสร็จ
-    document.addEventListener('DOMContentLoaded', fetchData);
+    function renderCategoryManagementList() {
+        elements.categoryList.innerHTML = '';
+        for(const category in categoriesMap) {
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between p-2 border-b';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = category;
+            input.className = 'flex-grow p-1 border rounded-md';
+            input.dataset.originalName = category;
+            input.addEventListener('change', (e) => {
+                const oldName = e.target.dataset.originalName;
+                const newName = e.target.value.trim();
+                if (newName && oldName !== newName && !categoriesMap[newName]) {
+                    categoriesMap[newName] = categoriesMap[oldName];
+                    delete categoriesMap[oldName];
+                    saveCategoriesToStorage();
+                    renderCategoryManagementList(); // Re-render to update state
+                } else {
+                    e.target.value = oldName; // Revert if invalid
+                }
+            });
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'ลบ';
+            deleteBtn.className = 'ml-2 px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600';
+            deleteBtn.addEventListener('click', () => {
+                delete categoriesMap[category];
+                saveCategoriesToStorage();
+                renderCategoryManagementList();
+            });
+
+            div.appendChild(input);
+            div.appendChild(deleteBtn);
+            elements.categoryList.appendChild(div);
+        }
+    }
+
+    // --- Event Handlers ---
+
+    function filterByCategory(selectedCategory) {
+        document.querySelectorAll('#category-buttons button').forEach(button => {
+            button.classList.toggle('active-category', button.dataset.category === selectedCategory);
+        });
+
+        if (selectedCategory === 'ทั้งหมด') {
+            displayData(allData);
+        } else {
+            const filteredData = allData.filter(item => {
+                const productName = item[PRODUCT_NAME_COLUMN] || '';
+                return getProductCategory(productName) === selectedCategory;
+            });
+            displayData(filteredData);
+        }
+    }
+    
+    function handleAddCategory() {
+        const newCategoryName = elements.newCategoryInput.value.trim();
+        if (newCategoryName && !categoriesMap[newCategoryName]) {
+            // ใช้ชื่อหมวดหมู่เป็น keyword หลัก
+            categoriesMap[newCategoryName] = [newCategoryName];
+            saveCategoriesToStorage();
+            renderCategoryManagementList();
+            elements.newCategoryInput.value = '';
+        }
+    }
+    
+    // --- Modal Control ---
+    function openModal() {
+        renderCategoryManagementList();
+        elements.categoryModal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+        elements.categoryModal.classList.add('hidden');
+        renderCategoryButtons(); // อัปเดตปุ่มด้านนอกหลังปิด Modal
+        filterByCategory('ทั้งหมด'); // กลับไปแสดงผลทั้งหมด
+    }
+
+    // --- Initial Setup ---
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCategoriesFromStorage();
+        fetchData();
+        
+        elements.manageCategoriesBtn.addEventListener('click', openModal);
+        elements.closeModalBtn.addEventListener('click', closeModal);
+        elements.addCategoryBtn.addEventListener('click', handleAddCategory);
+        elements.newCategoryInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleAddCategory();
+        });
+        
+        // Close modal on outside click
+        window.addEventListener('click', (event) => {
+            if (event.target === elements.categoryModal) {
+                closeModal();
+            }
+        });
+    });
+
   </script>
 
 </body>
 </html>
-
