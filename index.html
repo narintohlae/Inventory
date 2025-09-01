@@ -1,77 +1,123 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แสดงข้อมูลจาก Google Sheet</title>
-    <style>
-        body { font-family: sans-serif; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #dddddd; text-align: left; padding: 8px; }
-        th { background-color: #f2f2f2; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แสดงข้อมูลจาก Google Sheet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Sarabun', sans-serif;
+    }
+  </style>
 </head>
-<body>
 
-    <h1>ตารางข้อมูลจาก Google Sheet</h1>
-    <div id="loading">กำลังโหลดข้อมูล...</div>
-    <table id="data-table" style="display:none;">
-        <thead>
-            <tr id="table-header"></tr>
+<body class="bg-gray-100 text-gray-800">
+
+  <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+    <h1 class="text-3xl font-bold mb-6 text-center text-gray-700">ตารางข้อมูลจาก Google Sheet</h1>
+
+    <!-- ส่วนแสดงสถานะการโหลด -->
+    <div id="status-container" class="text-center p-8 bg-white rounded-lg shadow-md">
+      <div id="loader" class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+      <p id="status-text" class="mt-4 text-lg">กำลังโหลดข้อมูล...</p>
+    </div>
+
+    <!-- ตารางสำหรับแสดงข้อมูล (ซ่อนไว้ตอนแรก) -->
+    <div class="overflow-x-auto bg-white rounded-lg shadow-md hidden" id="table-container">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50" id="table-header-container">
+          <!-- Header จะถูกสร้างโดย JavaScript -->
         </thead>
-        <tbody id="table-body"></tbody>
-    </table>
+        <tbody class="bg-white divide-y divide-gray-200" id="table-body-container">
+          <!-- ข้อมูลจะถูกสร้างโดย JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-    <script>
-        // --- วาง URL ที่คัดลอกมา ตรงนี้ ---
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyP0NlmEZflV4EpPkMTzJcEcsni9tQcwz3HIS4ZaCldMTafTN0Xts2xG-0PB_cFN5_Sbg/exec'; 
+  <script>
+    // --- !! สำคัญ !! ---
+    // --- วาง Web app URL ที่คัดลอกมา ตรงนี้ ---
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyP0NlmEZflV4EpPkMTzJcEcsni9tQcwz3HIS4ZaCldMTafTN0Xts2xG-0PB_cFN5_Sbg/exec';
 
-        // ดึงข้อมูลจาก API ที่เราสร้าง
-        fetch(WEB_APP_URL)
-            .then(response => response.json())
-            .then(res => {
-                if (res.status === 'success') {
-                    const data = res.data;
-                    const table = document.getElementById('data-table');
-                    const headerRow = document.getElementById('table-header');
-                    const tableBody = document.getElementById('table-body');
-                    const loadingDiv = document.getElementById('loading');
-                    
-                    if (data.length > 0) {
-                        // สร้าง Header ของตาราง
-                        const headers = Object.keys(data[0]);
-                        headers.forEach(headerText => {
-                            const th = document.createElement('th');
-                            th.textContent = headerText;
-                            headerRow.appendChild(th);
-                        });
+    const statusContainer = document.getElementById('status-container');
+    const statusText = document.getElementById('status-text');
+    const loader = document.getElementById('loader');
+    const tableContainer = document.getElementById('table-container');
+    const tableHeaderContainer = document.getElementById('table-header-container');
+    const tableBodyContainer = document.getElementById('table-body-container');
 
-                        // สร้างแถวข้อมูล
-                        data.forEach(rowData => {
-                            const row = document.createElement('tr');
-                            headers.forEach(header => {
-                                const cell = document.createElement('td');
-                                cell.textContent = rowData[header];
-                                row.appendChild(cell);
-                            });
-                            tableBody.appendChild(row);
-                        });
-                        
-                        loadingDiv.style.display = 'none';
-                        table.style.display = 'table';
-                    } else {
-                         loadingDiv.textContent = 'ไม่พบข้อมูล';
-                    }
-                } else {
-                    console.error('Error from API:', res.message);
-                    document.getElementById('loading').textContent = 'เกิดข้อผิดพลาด: ' + res.message;
-                }
-            })
-            .catch(error => {
-                console.error('Fetch Error:', error);
-                document.getElementById('loading').textContent = 'ไม่สามารถเชื่อมต่อกับ API ได้';
-            });
-    </script>
+
+    // ฟังก์ชันสำหรับดึงและแสดงข้อมูล
+    async function fetchData() {
+      try {
+        const response = await fetch(WEB_APP_URL);
+        if (!response.ok) {
+          throw new Error(`Network response was not ok: ${response.statusText}`);
+        }
+        const result = await response.json();
+
+        if (result.status === 'success' && result.data && result.data.length > 0) {
+          displayData(result.data);
+        } else if (result.status === 'success') {
+          showStatus('ไม่พบข้อมูล', true);
+        } else {
+          throw new Error(result.message || 'เกิดข้อผิดพลาดในการดึงข้อมูล');
+        }
+
+      } catch (error) {
+        console.error('Fetch Error:', error);
+        showStatus(`เกิดข้อผิดพลาด: ${error.message}`, true);
+      }
+    }
+
+    // ฟังก์ชันสำหรับแสดงผลข้อมูลในตาราง
+    function displayData(data) {
+      // สร้าง Header ของตาราง
+      const headers = Object.keys(data[0]);
+      const headerRow = document.createElement('tr');
+      headers.forEach(headerText => {
+        const th = document.createElement('th');
+        th.scope = 'col';
+        th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+        th.textContent = headerText;
+        headerRow.appendChild(th);
+      });
+      tableHeaderContainer.appendChild(headerRow);
+
+      // สร้างแถวข้อมูล
+      data.forEach(rowData => {
+        const row = document.createElement('tr');
+        headers.forEach(header => {
+          const cell = document.createElement('td');
+          cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700';
+          cell.textContent = rowData[header];
+          row.appendChild(cell);
+        });
+        tableBodyContainer.appendChild(row);
+      });
+
+      // แสดงตารางและซ่อนสถานะ
+      statusContainer.classList.add('hidden');
+      tableContainer.classList.remove('hidden');
+    }
+
+    // ฟังก์ชันสำหรับแสดงสถานะ
+    function showStatus(message, isError = false) {
+      loader.classList.add('hidden');
+      statusText.textContent = message;
+      if (isError) {
+        statusText.classList.add('text-red-500');
+      }
+    }
+
+
+    // เริ่มทำงานเมื่อหน้าเว็บโหลดเสร็จ
+    document.addEventListener('DOMContentLoaded', fetchData);
+  </script>
 
 </body>
 </html>
