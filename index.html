@@ -13,32 +13,37 @@
         .container { padding: 15px; }
         
         /* --- Toolbar --- */
-        .toolbar { padding: 8px 15px; background: white; border-bottom: 1px solid var(--gs-border); display: flex; align-items: center; gap: 20px; }
+        .toolbar { padding: 8px 15px; background: white; border-bottom: 1px solid var(--gs-border); display: flex; align-items: center; gap: 20px; position: sticky; top: 0; z-index: 20; }
         .toolbar button { background: none; border: 1px solid transparent; padding: 6px 12px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
         .toolbar button:hover { background-color: #f1f3f4; border-color: #dadce0; }
-        .toolbar input { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .toolbar input, .toolbar select { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; }
         .toolbar-separator { width: 1px; height: 20px; background-color: var(--gs-border); }
+        #statusIndicator { font-size: 0.9em; color: #555; margin-left: auto; }
+
+        /* --- Bulk Action Toolbar --- */
+        #bulkActionToolbar { display: none; background-color: #e8f0fe; padding: 8px 15px; align-items: center; gap: 15px; border-bottom: 1px solid var(--gs-border); }
+        #bulkActionToolbar button { background-color: var(--gs-blue); color: white; }
 
         /* --- Table / Grid --- */
         .grid-container { width: 100%; overflow: auto; }
-        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid var(--gs-border); padding: 8px; min-width: 150px; }
-        thead { position: sticky; top: 0; z-index: 10; }
+        thead { position: sticky; top: 49px; z-index: 10; } /* Adjusted for toolbar */
         th { background-color: var(--gs-header-bg); font-weight: bold; text-align: center; }
         tbody tr:hover > td { background-color: #f1f3f4; }
         td { background-color: white; cursor: cell; }
         td.selected { box-shadow: 0 0 0 2px var(--gs-blue) inset; }
-        td.editing { padding: 0; }
         td.editing input, td.editing select { width: 100%; height: 100%; border: none; outline: none; box-sizing: border-box; padding: 8px; }
+        .checkbox-cell { min-width: 40px; text-align: center; }
+
+        /* --- Footer & Pagination --- */
+        .footer { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: white; border-top: 1px solid var(--gs-border); }
+        .pagination button { margin: 0 2px; }
 
         /* --- Context Menu --- */
         #contextMenu { position: absolute; background: white; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 8px 0; z-index: 100; display: none; }
         #contextMenu div { padding: 8px 16px; cursor: pointer; }
         #contextMenu div:hover { background-color: #f1f3f4; }
-
-        /* --- Status --- */
-        #statusIndicator { font-size: 0.9em; color: #555; margin-left: auto; }
-        .status-loading { color: #fbbc04; } .status-saved { color: #34a853; } .status-error { color: #ea4335; }
     </style>
 </head>
 <body>
@@ -48,6 +53,13 @@
         <input type="text" id="searchInput" placeholder="ค้นหา...">
         <div id="statusIndicator">Ready</div>
     </div>
+
+    <div id="bulkActionToolbar">
+        <span id="selectionCount"></span>
+        <select id="bulkCategorySelect"></select>
+        <button id="applyCategoryBtn">ย้ายไปที่หมวดหมู่นี้</button>
+    </div>
+
     <div class="container">
         <div class="grid-container">
             <table id="mainGrid">
@@ -56,6 +68,18 @@
             </table>
         </div>
     </div>
+    
+    <div class="footer">
+        <div id="rowsPerPageContainer">
+            <label>แสดง: </label>
+            <select id="rowsPerPageSelect">
+                <option>25</option><option>50</option><option>100</option>
+            </select>
+            <span> แถวต่อหน้า</span>
+        </div>
+        <div class="pagination" id="paginationContainer"></div>
+    </div>
+
     <div id="contextMenu">
         <div id="deleteRowOption">🗑️ ลบแถวนี้</div>
     </div>
@@ -65,6 +89,9 @@
 
         // --- STATE ---
         let products = [], categories = [];
+        let filteredProducts = [];
+        let currentPage = 1, rowsPerPage = 25;
+        const selectedRows = new Set();
         let contextMenuRowIndex = null;
 
         // --- DOM ELEMENTS ---
@@ -76,6 +103,12 @@
             statusIndicator: document.getElementById('statusIndicator'),
             contextMenu: document.getElementById('contextMenu'),
             deleteRowOption: document.getElementById('deleteRowOption'),
+            bulkActionToolbar: document.getElementById('bulkActionToolbar'),
+            selectionCount: document.getElementById('selectionCount'),
+            bulkCategorySelect: document.getElementById('bulkCategorySelect'),
+            applyCategoryBtn: document.getElementById('applyCategoryBtn'),
+            paginationContainer: document.getElementById('paginationContainer'),
+            rowsPerPageSelect: document.getElementById('rowsPerPageSelect'),
         };
 
         // --- INITIALIZATION ---
@@ -89,7 +122,8 @@
                 if (data.error) throw new Error(data.error);
                 products = data.products || [];
                 categories = data.categories || [];
-                renderGrid();
+                filterAndRender();
+                populateBulkCategorySelect();
                 setStatus('saved', 'โหลดข้อมูลสำเร็จ');
             } catch (error) {
                 setStatus('error', `เกิดข้อผิดพลาด: ${error.message}`);
@@ -98,24 +132,63 @@
         }
 
         // --- RENDERING ---
-        function renderGrid() {
+        function filterAndRender() {
             const searchTerm = DOMElements.searchInput.value.toLowerCase();
-            const filteredProducts = products.filter(p => !searchTerm || Object.values(p).some(val => String(val).toLowerCase().includes(searchTerm)));
+            filteredProducts = products.filter(p => !searchTerm || Object.values(p).some(val => String(val).toLowerCase().includes(searchTerm)));
+            currentPage = 1;
+            renderCurrentPage();
+        }
 
-            // Render Header
+        function renderCurrentPage() {
+            renderGridHeader();
+            renderGridBody();
+            renderPagination();
+            updateBulkActionToolbar();
+        }
+
+        function renderGridHeader() {
             DOMElements.gridHead.innerHTML = '';
-            if(products.length > 0){
-                const headers = Object.keys(products[0]).filter(h => h !== '_rowIndex');
-                const tr = document.createElement('tr');
-                headers.forEach(h => tr.innerHTML += `<th>${h}</th>`);
-                DOMElements.gridHead.appendChild(tr);
-            }
+            if (products.length === 0) return;
+            const headers = Object.keys(products[0]).filter(h => h !== '_rowIndex');
+            const tr = document.createElement('tr');
+            const thCheckbox = document.createElement('th');
+            thCheckbox.className = 'checkbox-cell';
+            thCheckbox.innerHTML = `<input type="checkbox" id="selectAllCheckbox">`;
+            tr.appendChild(thCheckbox);
+            headers.forEach(h => tr.innerHTML += `<th>${h}</th>`);
+            DOMElements.gridHead.appendChild(tr);
 
-            // Render Body
+            document.getElementById('selectAllCheckbox').addEventListener('change', (e) => {
+                const isChecked = e.target.checked;
+                const visibleRows = Array.from(DOMElements.gridBody.querySelectorAll('tr'));
+                visibleRows.forEach(row => {
+                    const rowIndex = parseInt(row.dataset.rowIndex, 10);
+                    if (isChecked) selectedRows.add(rowIndex);
+                    else selectedRows.delete(rowIndex);
+                });
+                updateBulkActionToolbar();
+                renderGridBody(); // Re-render to show checked state
+            });
+        }
+
+        function renderGridBody() {
             DOMElements.gridBody.innerHTML = '';
-            filteredProducts.forEach(product => {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+            paginatedProducts.forEach(product => {
                 const tr = document.createElement('tr');
                 tr.dataset.rowIndex = product._rowIndex;
+                const isSelected = selectedRows.has(product._rowIndex);
+
+                // Checkbox cell
+                const tdCheckbox = document.createElement('td');
+                tdCheckbox.className = 'checkbox-cell';
+                tdCheckbox.innerHTML = `<input type="checkbox" ${isSelected ? 'checked' : ''}>`;
+                tr.appendChild(tdCheckbox);
+
+                // Data cells
                 Object.keys(product).filter(h => h !== '_rowIndex').forEach(header => {
                     const td = document.createElement('td');
                     td.dataset.column = header;
@@ -125,27 +198,70 @@
                 DOMElements.gridBody.appendChild(tr);
             });
         }
+        
+        function renderPagination() {
+            const pageCount = Math.ceil(filteredProducts.length / rowsPerPage);
+            DOMElements.paginationContainer.innerHTML = '';
+            if (pageCount <= 1) return;
+            
+            // Prev button
+            const prev = document.createElement('button');
+            prev.textContent = '◀';
+            prev.disabled = currentPage === 1;
+            prev.onclick = () => { currentPage--; renderCurrentPage(); };
+            DOMElements.paginationContainer.appendChild(prev);
 
+            // Page info
+            const pageInfo = document.createElement('span');
+            pageInfo.textContent = ` หน้า ${currentPage} จาก ${pageCount} `;
+            pageInfo.style.margin = '0 10px';
+            DOMElements.paginationContainer.appendChild(pageInfo);
+
+            // Next button
+            const next = document.createElement('button');
+            next.textContent = '▶';
+            next.disabled = currentPage === pageCount;
+            next.onclick = () => { currentPage++; renderCurrentPage(); };
+            DOMElements.paginationContainer.appendChild(next);
+        }
+        
         // --- EVENT LISTENERS ---
         DOMElements.addRowBtn.addEventListener('click', () => postData({ action: 'addRow' }));
-        DOMElements.searchInput.addEventListener('input', renderGrid);
+        DOMElements.searchInput.addEventListener('input', filterAndRender);
         DOMElements.deleteRowOption.addEventListener('click', () => {
              if (contextMenuRowIndex && confirm('คุณแน่ใจหรือไม่ว่าต้องการลบแถวนี้?')) {
                 postData({ action: 'deleteRow', rowIndex: contextMenuRowIndex });
              }
         });
+        DOMElements.rowsPerPageSelect.addEventListener('change', (e) => {
+            rowsPerPage = parseInt(e.target.value, 10);
+            currentPage = 1;
+            renderCurrentPage();
+        });
+        DOMElements.applyCategoryBtn.addEventListener('click', handleBulkCategoryApply);
 
-        // Cell Editing Listeners
+        // --- EVENT DELEGATION FOR DYNAMIC CONTENT ---
         DOMElements.gridBody.addEventListener('click', (e) => {
-            if (e.target.tagName !== 'TD') return;
-            document.querySelectorAll('td.selected').forEach(cell => cell.classList.remove('selected'));
-            e.target.classList.add('selected');
+            const td = e.target.closest('td');
+            if (!td) return;
+            
+            if (td.classList.contains('checkbox-cell')) {
+                const rowIndex = parseInt(td.parentElement.dataset.rowIndex, 10);
+                if (selectedRows.has(rowIndex)) {
+                    selectedRows.delete(rowIndex);
+                } else {
+                    selectedRows.add(rowIndex);
+                }
+                updateBulkActionToolbar();
+            } else {
+                document.querySelectorAll('td.selected').forEach(cell => cell.classList.remove('selected'));
+                td.classList.add('selected');
+            }
         });
 
         DOMElements.gridBody.addEventListener('dblclick', (e) => {
-            if (e.target.tagName !== 'TD') return;
-            const cell = e.target;
-            if (cell.classList.contains('editing')) return;
+            const cell = e.target.closest('td');
+            if (!cell || cell.classList.contains('checkbox-cell') || cell.classList.contains('editing')) return;
             
             cell.classList.add('editing');
             const originalValue = cell.textContent;
@@ -190,11 +306,9 @@
             });
         });
 
-        // Context Menu Listener
         DOMElements.gridBody.addEventListener('contextmenu', (e) => {
             const tr = e.target.closest('tr');
             if (!tr) return;
-
             e.preventDefault();
             contextMenuRowIndex = tr.dataset.rowIndex;
             DOMElements.contextMenu.style.display = 'block';
@@ -203,6 +317,39 @@
         });
         document.addEventListener('click', () => DOMElements.contextMenu.style.display = 'none');
 
+        // --- BULK ACTIONS ---
+        function updateBulkActionToolbar() {
+            if (selectedRows.size > 0) {
+                DOMElements.bulkActionToolbar.style.display = 'flex';
+                DOMElements.selectionCount.textContent = `${selectedRows.size} รายการที่เลือก`;
+            } else {
+                DOMElements.bulkActionToolbar.style.display = 'none';
+            }
+        }
+        
+        function populateBulkCategorySelect() {
+            DOMElements.bulkCategorySelect.innerHTML = '';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = option.textContent = cat;
+                DOMElements.bulkCategorySelect.appendChild(option);
+            });
+        }
+
+        async function handleBulkCategoryApply() {
+            const newCategory = DOMElements.bulkCategorySelect.value;
+            if (!newCategory || selectedRows.size === 0) return;
+            if (confirm(`คุณต้องการย้าย ${selectedRows.size} รายการไปที่หมวดหมู่ "${newCategory}" หรือไม่?`)) {
+                const payload = {
+                    action: 'bulkUpdateCategory',
+                    rowIndexes: Array.from(selectedRows),
+                    newCategory: newCategory
+                };
+                await postData(payload);
+                selectedRows.clear();
+                updateBulkActionToolbar();
+            }
+        }
 
         // --- API & UTILITY ---
         async function postData(payload) {
@@ -217,7 +364,7 @@
                 if (result.status !== 'success') throw new Error(result.message);
                 
                 setStatus('saved', result.message);
-                await fetchData(); // Refresh all data to ensure consistency
+                await fetchData();
             } catch (error) {
                 setStatus('error', `เกิดข้อผิดพลาด: ${error.message}`);
                 console.error(error);
