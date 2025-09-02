@@ -23,15 +23,18 @@
     .row-hidden {
         display: none;
     }
-    #table-body-container tr {
+    #table-body-container tr, #category-buttons button:not(.no-drag) {
         cursor: grab;
     }
-    #table-body-container tr:active {
+    #table-body-container tr:active, #category-buttons button:not(.no-drag):active {
         cursor: grabbing;
     }
     .sortable-ghost {
         background-color: #dbeafe; /* blue-100 */
         opacity: 0.7;
+    }
+    .no-drag {
+        cursor: pointer;
     }
   </style>
 </head>
@@ -106,6 +109,7 @@
     let categoriesMap = {};
     let hiddenRowIds = [];
     let customRowOrder = [];
+    let customCategoryOrder = [];
     let sortableInstance = null;
     let userId = null;
     let db, auth;
@@ -136,6 +140,7 @@
             categories: categoriesMap,
             hidden: hiddenRowIds,
             order: customRowOrder,
+            categoryOrder: customCategoryOrder,
         };
         try {
             await setDoc(doc(db, "userSettings", userId), settings);
@@ -154,6 +159,7 @@
             categoriesMap = settings.categories || {};
             hiddenRowIds = settings.hidden || [];
             customRowOrder = settings.order || [];
+            customCategoryOrder = settings.categoryOrder || [];
         } else {
             // Default settings for new user
             categoriesMap = {
@@ -161,6 +167,14 @@
                 'เบเกอรี่': ['เค้ก', 'ขนมปัง'],
             };
         }
+        // Sync category order with map keys
+        const categoryKeys = Object.keys(categoriesMap);
+        customCategoryOrder = customCategoryOrder.filter(cat => categoryKeys.includes(cat));
+        categoryKeys.forEach(cat => {
+            if (!customCategoryOrder.includes(cat)) {
+                customCategoryOrder.push(cat);
+            }
+        });
     }
 
     // --- Core Functions ---
@@ -179,7 +193,6 @@
 
             if (result.status === 'success' && result.data && result.data.length > 0) {
                 allData = result.data.map((item, index) => ({...item, originalOrder: index }));
-                // Update custom order to include new items
                 const currentIds = allData.map(item => item.originalOrder);
                 customRowOrder = customRowOrder.filter(id => currentIds.includes(id));
                 currentIds.forEach(id => {
@@ -208,15 +221,25 @@
     // --- UI Rendering ---
 
     function renderCategoryButtons() {
-        const categories = ['ทั้งหมด', ...Object.keys(categoriesMap).sort(), 'อื่นๆ'];
+        const categories = ['ทั้งหมด', ...customCategoryOrder, 'อื่นๆ'];
         elements.categoryButtonsContainer.innerHTML = ''; 
         categories.forEach(category => {
             const button = document.createElement('button');
             button.textContent = category;
             button.className = 'px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors';
             button.dataset.category = category;
+            if (category === 'ทั้งหมด' || category === 'อื่นๆ') {
+                button.classList.add('no-drag');
+            }
             button.addEventListener('click', () => filterByCategory(category));
             elements.categoryButtonsContainer.appendChild(button);
+        });
+        
+        // Initialize SortableJS for category buttons
+        new Sortable(elements.categoryButtonsContainer, {
+            animation: 150,
+            filter: '.no-drag', // Prevent 'ทั้งหมด' and 'อื่นๆ' from being dragged
+            onEnd: handleCategoryDragEnd,
         });
     }
     
@@ -251,13 +274,10 @@
             data.forEach(rowData => {
                 const row = document.createElement('tr');
                 row.dataset.originalOrder = rowData.originalOrder;
-
                 if (hiddenRowIds.includes(rowData.originalOrder)) {
                     row.classList.add('row-hidden');
                 }
-                
                 row.addEventListener('dblclick', handleRowDoubleClick);
-
                 headers.forEach(header => {
                     const cell = document.createElement('td');
                     cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700';
@@ -301,11 +321,7 @@
             filteredData = allData.filter(item => getProductCategory(item[PRODUCT_NAME_COLUMN] || '') === selectedCategory);
         }
 
-        // Apply custom sort
-        filteredData.sort((a, b) => {
-            return customRowOrder.indexOf(a.originalOrder) - customRowOrder.indexOf(b.originalOrder);
-        });
-
+        filteredData.sort((a, b) => customRowOrder.indexOf(a.originalOrder) - customRowOrder.indexOf(b.originalOrder));
         displayData(filteredData);
     }
     
@@ -322,10 +338,16 @@
 
     function handleDragEnd() {
         const newOrder = Array.from(elements.tableBodyContainer.children).map(row => parseInt(row.dataset.originalOrder));
-        // Update the global order based on the visible items
         const visibleIds = new Set(newOrder);
         const oldOrderHidden = customRowOrder.filter(id => !visibleIds.has(id));
         customRowOrder = [...newOrder, ...oldOrderHidden];
+        saveSettings();
+    }
+    
+    function handleCategoryDragEnd() {
+        customCategoryOrder = Array.from(elements.categoryButtonsContainer.children)
+            .map(btn => btn.dataset.category)
+            .filter(cat => cat !== 'ทั้งหมด' && cat !== 'อื่นๆ');
         saveSettings();
     }
 
@@ -351,6 +373,7 @@
         const newCategoryName = elements.newCategoryInput.value.trim();
         if (newCategoryName && !categoriesMap[newCategoryName]) {
             categoriesMap[newCategoryName] = [newCategoryName];
+            customCategoryOrder.push(newCategoryName);
             saveSettings();
             renderCategoryManagementList();
             elements.newCategoryInput.value = '';
@@ -365,12 +388,15 @@
             const input = document.createElement('input');
             input.type = 'text'; input.value = category; input.className = 'flex-grow p-1 border rounded-md'; input.dataset.originalName = category;
             input.addEventListener('change', (e) => {
-                const oldName = e.target.originalName;
+                const oldName = e.target.dataset.originalName;
                 const newName = e.target.value.trim();
                 if (newName && oldName !== newName && !categoriesMap[newName]) {
                     categoriesMap[newName] = categoriesMap[oldName];
                     delete categoriesMap[oldName];
-                    saveSettings(); renderCategoryManagementList();
+                    const index = customCategoryOrder.indexOf(oldName);
+                    if (index > -1) customCategoryOrder[index] = newName;
+                    saveSettings(); 
+                    renderCategoryManagementList();
                 } else { e.target.value = oldName; }
             });
             
@@ -378,14 +404,15 @@
             deleteBtn.textContent = 'ลบ'; deleteBtn.className = 'ml-2 px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600';
             deleteBtn.addEventListener('click', () => {
                 delete categoriesMap[category];
-                saveSettings(); renderCategoryManagementList();
+                customCategoryOrder = customCategoryOrder.filter(cat => cat !== category);
+                saveSettings(); 
+                renderCategoryManagementList();
             });
 
             div.appendChild(input); div.appendChild(deleteBtn);
             elements.categoryList.appendChild(div);
         }
     }
-
 
     // --- App Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -395,11 +422,9 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // User is signed in.
                 userId = user.uid;
                 await startApp();
             } else {
-                // User is signed out. Sign in anonymously.
                 signInAnonymously(auth).catch((error) => {
                     console.error("Anonymous sign-in failed:", error);
                     showStatus("ไม่สามารถเชื่อมต่อกับบริการบันทึกข้อมูลได้", true);
