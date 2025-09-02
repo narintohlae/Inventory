@@ -179,6 +179,21 @@
       </div>
   </div>
 
+  <!-- Modal for Auto Dispense Summary -->
+  <div id="auto-dispense-summary-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+          <div class="mt-3">
+              <h3 class="text-lg leading-6 font-medium text-gray-900 text-center">สรุปรายการเบิกของอัตโนมัติ</h3>
+              <div id="auto-dispense-summary-list" class="mt-4 text-left max-h-80 overflow-y-auto p-3 bg-gray-50 rounded-md">
+                  <!-- Summary list will be populated here -->
+              </div>
+              <div class="items-center px-4 py-3 mt-4">
+                  <button id="close-summary-modal-btn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 w-full">ตกลง</button>
+              </div>
+          </div>
+      </div>
+  </div>
+
   <script type="module">
     // --- Firebase SDKs ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -241,6 +256,9 @@
         itemModalStock: document.getElementById('item-modal-stock'),
         itemModalReorderPoint: document.getElementById('item-modal-reorder-point'),
         itemModalAutoDispenseQty: document.getElementById('item-modal-auto-dispense-qty'),
+        autoDispenseSummaryModal: document.getElementById('auto-dispense-summary-modal'),
+        autoDispenseSummaryList: document.getElementById('auto-dispense-summary-list'),
+        closeSummaryModalBtn: document.getElementById('close-summary-modal-btn'),
     };
 
     // --- Firebase Functions ---
@@ -434,12 +452,12 @@
                 if (hiddenRowIds.includes(productId)) row.classList.add('row-hidden');
 
                 row.addEventListener('click', (e) => {
-                    // Prevent click if it's part of a drag action
                     if(row.classList.contains('sortable-chosen')) return;
-                    
                     clearTimeout(clickTimer);
                     clickTimer = setTimeout(() => {
-                        openItemModal(rowData);
+                        if (!row.classList.contains('sortable-ghost')) {
+                           openItemModal(rowData);
+                        }
                     }, 200);
                 });
                 row.addEventListener('dblclick', (e) => {
@@ -473,6 +491,7 @@
         sortableInstance = new Sortable(elements.tableBodyContainer, { 
             animation: 150, 
             ghostClass: 'sortable-ghost', 
+            delay: 50, // Add a small delay to distinguish from clicks
             onEnd: handleDragEnd
         });
         elements.statusContainer.classList.add('hidden');
@@ -551,13 +570,58 @@
         elements.resetHiddenRowsBtn.classList.add('hidden');
     }
     
-    function handleAutoDispense() { /* ... unchanged ... */ }
+    function handleAutoDispense() {
+        const itemsToDispense = [];
+        allData.forEach(item => {
+            const settings = itemSettings[item.originalOrder];
+            const stock = parseFloat(item[STOCK_COLUMN_NAME]);
+            
+            if (settings && settings.reorderPoint !== undefined && settings.autoDispenseQty > 0) {
+                if (!isNaN(stock) && stock <= settings.reorderPoint) {
+                    let dispenseQty = settings.autoDispenseQty;
+                    const babyShopStock = parseFloat(item[BABYSHOP_STOCK_COLUMN]);
+                    const halfBabyShopStock = 0.5 * babyShopStock;
+
+                    if (!isNaN(babyShopStock) && dispenseQty > halfBabyShopStock) {
+                        dispenseQty = Math.floor(halfBabyShopStock);
+                    }
+
+                    if (dispenseQty > 0) {
+                        itemsToDispense.push({
+                            name: item[PRODUCT_NAME_COLUMN],
+                            quantity: dispenseQty
+                        });
+                    }
+                }
+            }
+        });
+
+        const summaryListEl = elements.autoDispenseSummaryList;
+        summaryListEl.innerHTML = ''; 
+
+        if (itemsToDispense.length > 0) {
+            const ul = document.createElement('ul');
+            ul.className = 'list-disc list-inside space-y-2';
+            itemsToDispense.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = `${item.name} (จำนวน: ${item.quantity})`;
+                ul.appendChild(li);
+            });
+            summaryListEl.appendChild(ul);
+            console.log("--- Auto Dispense Items ---", itemsToDispense);
+        } else {
+            summaryListEl.innerHTML = '<p class="text-center text-gray-500">ไม่พบสินค้าที่ต้องเบิกอัตโนมัติ (สต็อกยังไม่ถึงจุดสั่งซื้อ)</p>';
+        }
+        
+        openModal('summary');
+    }
     
     // --- Modal Logic ---
 
     function openModal(modal) {
         if (modal === 'category') { renderCategoryManagementList(); elements.categoryModal.classList.remove('hidden'); }
         else if (modal === 'item') { elements.itemModal.classList.remove('hidden'); }
+        else if (modal === 'summary') { elements.autoDispenseSummaryModal.classList.remove('hidden'); }
     }
     function closeModal(modal) {
         if (modal === 'category') { 
@@ -567,6 +631,7 @@
             filterByCategory(firstCategory);
         }
         else if (modal === 'item') { elements.itemModal.classList.add('hidden'); }
+        else if (modal === 'summary') { elements.autoDispenseSummaryModal.classList.add('hidden'); }
     }
 
     function openItemModal(rowData) {
@@ -675,12 +740,14 @@
         elements.newCategoryInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleAddCategory(); });
         elements.closeItemModalBtn.addEventListener('click', () => closeModal('item'));
         elements.submitItemModalBtn.addEventListener('click', handleItemModalSubmit);
+        elements.closeSummaryModalBtn.addEventListener('click', () => closeModal('summary'));
         
         document.body.addEventListener('contextmenu', showContextMenu);
         document.body.addEventListener('click', hideContextMenu);
         window.addEventListener('click', (event) => { 
             if (event.target === elements.categoryModal) closeModal('category');
             if (event.target === elements.itemModal) closeModal('item');
+            if (event.target === elements.autoDispenseSummaryModal) closeModal('summary');
         });
     });
   </script>
