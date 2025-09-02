@@ -398,15 +398,16 @@
                 if (!isNaN(stock) && stock <= settings.reorderPoint) {
                     let dispenseQty = settings.autoDispenseQty;
                     const babyShopStock = parseFloat(item[BABYSHOP_STOCK_COLUMN]);
+                    const halfBabyShopStock = 0.5 * babyShopStock;
 
                     // เงื่อนไขที่ 1: ถ้าจำนวนเบิกอัตโนมัติ มากกว่า 50% ของสต็อกเบบี้ช็อป ให้ลดจำนวนเบิกลง 50%
-                    if (!isNaN(babyShopStock) && dispenseQty > (0.5 * babyShopStock)) {
+                    if (!isNaN(babyShopStock) && dispenseQty > halfBabyShopStock) {
                         dispenseQty = Math.floor(0.5 * dispenseQty);
                     }
 
-                    // เงื่อนไขที่ 2: ถ้าจำนวนเบิกที่ปรับแล้ว ยังคงมากกว่า 50% ของสต็อกเบบี้ช็อป ให้ลดลงอีก 50%
-                    if (!isNaN(babyShopStock) && dispenseQty > (0.5 * babyShopStock)) {
-                        dispenseQty = Math.floor(0.5 * dispenseQty);
+                    // เงื่อนไขที่ 2: ถ้าจำนวนเบิกที่ปรับแล้ว ยังคงมากกว่า 50% ของสต็อกเบบี้ช็อป ให้เบิกแค่ 50% ของสต็อก "เบบี้ช็อป"
+                    if (!isNaN(babyShopStock) && dispenseQty > halfBabyShopStock) {
+                        dispenseQty = Math.floor(halfBabyShopStock);
                     }
 
                     if (dispenseQty > 0) {
