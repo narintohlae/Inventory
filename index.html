@@ -149,6 +149,7 @@
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyP0NlmEZflV4EpPkMTzJcEcsni9tQcwz3HIS4ZaCldMTafTN0Xts2xG-0PB_cFN5_Sbg/exec';
     const PRODUCT_NAME_COLUMN = 'สินค้า';
     const STOCK_COLUMN_NAME = 'รักษ์ยา';
+    const BABYSHOP_STOCK_COLUMN = 'เบบี้ช็อป';
     
     let allData = []; 
     let categoriesMap = {};
@@ -392,9 +393,20 @@
         allData.forEach(item => {
             const settings = itemSettings[item.originalOrder];
             const stock = parseFloat(item[STOCK_COLUMN_NAME]);
+            
             if (settings && settings.reorderPoint !== undefined && settings.autoDispenseQty > 0) {
                 if (!isNaN(stock) && stock <= settings.reorderPoint) {
-                    itemsToDispense.push(`- ${item[PRODUCT_NAME_COLUMN]} (จำนวน: ${settings.autoDispenseQty})`);
+                    let dispenseQty = settings.autoDispenseQty;
+                    const babyShopStock = parseFloat(item[BABYSHOP_STOCK_COLUMN]);
+
+                    // New condition: if auto dispense qty is > 50% of babayshop stock, dispense only 50%
+                    if (!isNaN(babyShopStock) && dispenseQty > (0.5 * babyShopStock)) {
+                        dispenseQty = Math.floor(0.5 * dispenseQty);
+                    }
+
+                    if (dispenseQty > 0) {
+                        itemsToDispense.push(`- ${item[PRODUCT_NAME_COLUMN]} (จำนวน: ${dispenseQty})`);
+                    }
                 }
             }
         });
@@ -402,7 +414,6 @@
         if (itemsToDispense.length > 0) {
             const message = "รายการสินค้าที่จะเบิกอัตโนมัติ:\n\n" + itemsToDispense.join("\n");
             alert(message);
-            // Log to console for development
             console.log("--- Auto Dispense Items ---");
             console.log(itemsToDispense);
         } else {
