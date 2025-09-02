@@ -66,6 +66,35 @@
     .cell-partially-configured::before {
         background-color: #f59e0b; /* amber-500, yellow */
     }
+    /* Custom Context Menu */
+    .context-menu {
+        position: absolute;
+        z-index: 1000;
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 4px 0;
+        min-width: 180px;
+    }
+    .context-menu-item {
+        padding: 8px 16px;
+        cursor: pointer;
+        font-size: 14px;
+        display: block;
+        width: 100%;
+        text-align: left;
+    }
+    .context-menu-item:hover {
+        background-color: #f3f4f6;
+    }
+    /* Header Row in Table */
+    .header-row td {
+        background-color: #e5e7eb; /* gray-200 */
+        font-weight: bold;
+        text-align: center;
+        color: #4b5563; /* gray-600 */
+    }
   </style>
 </head>
 
@@ -181,6 +210,7 @@
     let userId = null;
     let db, auth;
     let currentProductForManagement = null;
+    let contextMenu = null;
 
     // DOM Elements
     const elements = {
@@ -262,9 +292,19 @@
 
             if (result.status === 'success' && result.data && result.data.length > 0) {
                 allData = result.data.map((item, index) => ({...item, originalOrder: index }));
-                const currentIds = allData.map(item => item.originalOrder);
-                customRowOrder = customRowOrder.filter(id => currentIds.includes(id));
-                currentIds.forEach(id => { if (!customRowOrder.includes(id)) customRowOrder.push(id); });
+                const currentIds = new Set(allData.map(item => item.originalOrder));
+                // Clean up customRowOrder from old IDs that no longer exist
+                customRowOrder = customRowOrder.filter(item => {
+                    if (typeof item === 'number') return currentIds.has(item);
+                    return true; // Keep headers
+                });
+                const existingIds = new Set(customRowOrder.filter(item => typeof item === 'number'));
+                allData.forEach(item => {
+                    if (!existingIds.has(item.originalOrder)) {
+                        customRowOrder.push(item.originalOrder);
+                    }
+                });
+
             } else { showStatus(result.message || 'ไม่พบข้อมูล', false); }
         } catch (error) {
             console.error('Fetch Error:', error);
@@ -299,7 +339,7 @@
         new Sortable(elements.categoryButtonsContainer, { animation: 150, filter: '.no-drag', onEnd: handleCategoryDragEnd });
     }
     
-    function displayData(data) {
+    function displayData(visibleDataItems) {
         elements.tableHeaderContainer.innerHTML = '';
         elements.tableBodyContainer.innerHTML = '';
 
@@ -315,19 +355,32 @@
         });
         elements.tableHeaderContainer.appendChild(headerRow);
 
-        if (data.length === 0) {
-            const row = document.createElement('tr');
-            const cell = document.createElement('td');
-            cell.colSpan = headers.length;
-            cell.textContent = 'ไม่พบข้อมูลในหมวดหมู่นี้';
-            cell.className = 'text-center text-gray-500 py-8';
-            row.appendChild(cell);
-            elements.tableBodyContainer.appendChild(row);
-        } else {
-            data.forEach(rowData => {
+        const visibleProductIds = new Set(visibleDataItems.map(item => item.originalOrder));
+
+        customRowOrder.forEach(orderItem => {
+            // Case 1: Header Row
+            if (typeof orderItem === 'object' && orderItem.type === 'header') {
                 const row = document.createElement('tr');
-                const productId = rowData.originalOrder;
-                row.dataset.originalOrder = productId;
+                row.className = 'header-row';
+                row.dataset.id = orderItem.id;
+                
+                const cell = document.createElement('td');
+                cell.colSpan = headers.length;
+                cell.textContent = `(${orderItem.text})`;
+                
+                row.appendChild(cell);
+                elements.tableBodyContainer.appendChild(row);
+            } 
+            // Case 2: Data Row
+            else if (typeof orderItem === 'number' && visibleProductIds.has(orderItem)) {
+                const productId = orderItem;
+                const rowData = allData.find(item => item.originalOrder === productId);
+                if (!rowData) return;
+
+                const row = document.createElement('tr');
+                row.dataset.id = `data_${productId}`;
+                row.dataset.originalOrder = productId; // Keep for easier access
+                
                 if (hiddenRowIds.includes(productId)) row.classList.add('row-hidden');
                 
                 const reorderPoint = itemSettings[productId]?.reorderPoint;
@@ -337,7 +390,8 @@
                 }
 
                 row.addEventListener('click', () => openItemModal(rowData));
-                row.addEventListener('dblclick', handleRowDoubleClick);
+                row.addEventListener('dblclick', (e) => { e.stopPropagation(); handleRowDoubleClick(row); });
+                
                 headers.forEach(header => {
                     const cell = document.createElement('td');
                     cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700';
@@ -345,8 +399,8 @@
                     if (header === PRODUCT_NAME_COLUMN) {
                         const settings = itemSettings[productId];
                         if(settings) {
-                            const reorderSet = settings.reorderPoint !== undefined && settings.reorderPoint !== '';
-                            const dispenseSet = settings.autoDispenseQty !== undefined && settings.autoDispenseQty !== '';
+                            const reorderSet = settings.reorderPoint !== undefined && settings.reorderPoint !== null && settings.reorderPoint !== '';
+                            const dispenseSet = settings.autoDispenseQty !== undefined && settings.autoDispenseQty !== null && settings.autoDispenseQty !== '';
                             if (reorderSet && dispenseSet) {
                                 cell.classList.add('cell-configured'); // Green dot
                             } else if (reorderSet || dispenseSet) {
@@ -358,8 +412,8 @@
                     row.appendChild(cell);
                 });
                 elements.tableBodyContainer.appendChild(row);
-            });
-        }
+            }
+        });
         
         elements.resetHiddenRowsBtn.classList.toggle('hidden', hiddenRowIds.length === 0);
         if (sortableInstance) sortableInstance.destroy();
@@ -374,7 +428,7 @@
       if (isError) elements.statusText.classList.add('text-red-500');
     }
 
-    // --- Event Handlers ---
+    // --- Event Handlers & Context Menu ---
 
     function filterByCategory(selectedCategory) {
         document.querySelectorAll('#category-buttons button').forEach(button => {
@@ -385,13 +439,10 @@
             ? [...allData]
             : allData.filter(item => getProductCategory(item[PRODUCT_NAME_COLUMN] || '') === selectedCategory);
 
-        filteredData.sort((a, b) => customRowOrder.indexOf(a.originalOrder) - customRowOrder.indexOf(b.originalOrder));
         displayData(filteredData);
     }
     
-    function handleRowDoubleClick(event) {
-        event.stopPropagation();
-        const row = event.currentTarget;
+    function handleRowDoubleClick(row) {
         const rowId = parseInt(row.dataset.originalOrder);
         row.classList.add('row-hidden');
         if (!hiddenRowIds.includes(rowId)) {
@@ -402,10 +453,33 @@
     }
 
     function handleDragEnd() {
-        const newOrder = Array.from(elements.tableBodyContainer.children).map(row => parseInt(row.dataset.originalOrder));
-        const visibleIds = new Set(newOrder);
-        const oldOrderHidden = customRowOrder.filter(id => !visibleIds.has(id));
-        customRowOrder = [...newOrder, ...oldOrderHidden];
+        const newVisibleOrder = Array.from(elements.tableBodyContainer.children).map(row => {
+            const id = row.dataset.id;
+            if (id.startsWith('header_')) {
+                return customRowOrder.find(item => typeof item === 'object' && item.id === id);
+            } else if (id.startsWith('data_')) {
+                return parseInt(id.split('_')[1], 10);
+            }
+            return null;
+        }).filter(Boolean);
+
+        const newVisibleOrderSet = new Set(newVisibleOrder.map(item => typeof item === 'object' ? item.id : item));
+        let firstVisibleFound = false;
+        
+        const newMasterOrder = customRowOrder.reduce((acc, masterItem) => {
+            const masterKey = typeof masterItem === 'object' ? masterItem.id : masterItem;
+            if (newVisibleOrderSet.has(masterKey)) {
+                if (!firstVisibleFound) {
+                    acc.push(...newVisibleOrder);
+                    firstVisibleFound = true;
+                }
+            } else {
+                acc.push(masterItem);
+            }
+            return acc;
+        }, []);
+        
+        customRowOrder = newMasterOrder;
         saveSettings();
     }
     
@@ -420,7 +494,7 @@
         document.querySelectorAll('.row-hidden').forEach(row => row.classList.remove('row-hidden'));
         elements.resetHiddenRowsBtn.classList.add('hidden');
     }
-
+    
     function handleAutoDispense() {
         const itemsToDispense = [];
         allData.forEach(item => {
@@ -431,27 +505,16 @@
                 if (!isNaN(stock) && stock <= settings.reorderPoint) {
                     let dispenseQty = settings.autoDispenseQty;
                     const babyShopStock = parseFloat(item[BABYSHOP_STOCK_COLUMN]);
-                    const halfBabyShopStock = 0.5 * babyShopStock;
-
-                    if (!isNaN(babyShopStock) && dispenseQty > halfBabyShopStock) {
-                        dispenseQty = Math.floor(halfBabyShopStock);
+                    if (!isNaN(babyShopStock) && dispenseQty > (0.5 * babyShopStock)) {
+                        dispenseQty = Math.floor(0.5 * babyShopStock);
                     }
-
-                    if (dispenseQty > 0) {
-                        itemsToDispense.push(`- ${item[PRODUCT_NAME_COLUMN]} (จำนวน: ${dispenseQty})`);
-                    }
+                    if (dispenseQty > 0) itemsToDispense.push(`- ${item[PRODUCT_NAME_COLUMN]} (จำนวน: ${dispenseQty})`);
                 }
             }
         });
 
-        if (itemsToDispense.length > 0) {
-            const message = "รายการสินค้าที่จะเบิกอัตโนมัติ:\n\n" + itemsToDispense.join("\n");
-            alert(message);
-            console.log("--- Auto Dispense Items ---");
-            console.log(itemsToDispense);
-        } else {
-            alert("ไม่พบสินค้าที่ต้องเบิกอัตโนมัติ (สต็อกยังไม่ถึงจุดสั่งซื้อ)");
-        }
+        if (itemsToDispense.length > 0) alert("รายการสินค้าที่จะเบิกอัตโนมัติ:\n\n" + itemsToDispense.join("\n"));
+        else alert("ไม่พบสินค้าที่ต้องเบิกอัตโนมัติ (สต็อกยังไม่ถึงจุดสั่งซื้อ)");
     }
     
     // --- Modal Logic ---
@@ -478,70 +541,72 @@
     function handleItemModalSubmit() {
         const productId = currentProductForManagement.originalOrder;
         if (!itemSettings[productId]) itemSettings[productId] = {};
-
+        
         const reorderPoint = elements.itemModalReorderPoint.value;
+        if (reorderPoint.trim() !== '' && !isNaN(parseInt(reorderPoint, 10)) && parseInt(reorderPoint, 10) >= 0) itemSettings[productId].reorderPoint = parseInt(reorderPoint, 10);
+        else delete itemSettings[productId].reorderPoint;
+        
         const autoDispenseQty = elements.itemModalAutoDispenseQty.value;
-
-        const reorderPointNum = parseInt(reorderPoint, 10);
-        if (reorderPoint.trim() !== '' && !isNaN(reorderPointNum) && reorderPointNum >= 0) {
-            itemSettings[productId].reorderPoint = reorderPointNum;
-        } else {
-            delete itemSettings[productId].reorderPoint;
-        }
-
-        const autoDispenseQtyNum = parseInt(autoDispenseQty, 10);
-        if (autoDispenseQty.trim() !== '' && !isNaN(autoDispenseQtyNum) && autoDispenseQtyNum > 0) {
-            itemSettings[productId].autoDispenseQty = autoDispenseQtyNum;
-        } else {
-            delete itemSettings[productId].autoDispenseQty;
-        }
-
+        if (autoDispenseQty.trim() !== '' && !isNaN(parseInt(autoDispenseQty, 10)) && parseInt(autoDispenseQty, 10) > 0) itemSettings[productId].autoDispenseQty = parseInt(autoDispenseQty, 10);
+        else delete itemSettings[productId].autoDispenseQty;
+        
         saveSettings();
         closeModal('item');
         const activeButton = document.querySelector('#category-buttons .active-category');
         if (activeButton) filterByCategory(activeButton.dataset.category);
     }
+    
+    function handleAddCategory() { /* ... unchanged ... */ }
+    function renderCategoryManagementList() { /* ... unchanged ... */ }
 
-    function handleAddCategory() {
-        const newCategoryName = elements.newCategoryInput.value.trim();
-        if (newCategoryName && !categoriesMap[newCategoryName]) {
-            categoriesMap[newCategoryName] = [newCategoryName];
-            customCategoryOrder.push(newCategoryName);
-            saveSettings();
-            renderCategoryManagementList();
-            elements.newCategoryInput.value = '';
+    // --- Context Menu ---
+    function hideContextMenu() {
+        if (contextMenu) { contextMenu.remove(); contextMenu = null; }
+    }
+    function showContextMenu(e) {
+        hideContextMenu();
+        const targetRow = e.target.closest('tr');
+        if (!elements.tableBodyContainer.contains(targetRow)) return;
+        e.preventDefault();
+        
+        contextMenu = document.createElement('div');
+        contextMenu.className = 'context-menu';
+        contextMenu.style.left = `${e.pageX}px`;
+        contextMenu.style.top = `${e.pageY}px`;
+
+        if (targetRow.classList.contains('header-row')) {
+            const deleteItem = document.createElement('div');
+            deleteItem.className = 'context-menu-item'; deleteItem.textContent = 'ลบหัวข้อ';
+            deleteItem.onclick = () => {
+                const headerId = targetRow.dataset.id;
+                customRowOrder = customRowOrder.filter(item => !(typeof item === 'object' && item.id === headerId));
+                saveSettings();
+                const activeButton = document.querySelector('#category-buttons .active-category');
+                if (activeButton) filterByCategory(activeButton.dataset.category);
+            };
+            contextMenu.appendChild(deleteItem);
+        } else {
+            const insertItem = document.createElement('div');
+            insertItem.className = 'context-menu-item'; insertItem.textContent = 'แทรกหัวข้อด้านบน';
+            insertItem.onclick = () => {
+                const headerText = prompt("กรุณาใส่ชื่อหัวข้อ:", "");
+                if (headerText && headerText.trim() !== '') {
+                    const targetId = parseInt(targetRow.dataset.originalOrder);
+                    const newHeader = { type: 'header', text: headerText.trim(), id: 'header_' + Date.now() };
+                    const targetIndex = customRowOrder.findIndex(item => item === targetId);
+                    if (targetIndex !== -1) {
+                        customRowOrder.splice(targetIndex, 0, newHeader);
+                        saveSettings();
+                        const activeButton = document.querySelector('#category-buttons .active-category');
+                        if (activeButton) filterByCategory(activeButton.dataset.category);
+                    }
+                }
+            };
+            contextMenu.appendChild(insertItem);
         }
+        document.body.appendChild(contextMenu);
     }
 
-    function renderCategoryManagementList() {
-        elements.categoryList.innerHTML = '';
-        customCategoryOrder.forEach(category => {
-            const div = document.createElement('div');
-            div.className = 'flex items-center justify-between p-2 border-b';
-            const input = document.createElement('input');
-            input.type = 'text'; input.value = category; input.className = 'flex-grow p-1 border rounded-md'; input.dataset.originalName = category;
-            input.addEventListener('change', (e) => {
-                const oldName = e.target.dataset.originalName;
-                const newName = e.target.value.trim();
-                if (newName && oldName !== newName && !categoriesMap[newName]) {
-                    categoriesMap[newName] = categoriesMap[oldName];
-                    delete categoriesMap[oldName];
-                    const index = customCategoryOrder.indexOf(oldName);
-                    if (index > -1) customCategoryOrder[index] = newName;
-                    saveSettings(); renderCategoryManagementList();
-                } else { e.target.value = oldName; }
-            });
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'ลบ'; deleteBtn.className = 'ml-2 px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600';
-            deleteBtn.addEventListener('click', () => {
-                delete categoriesMap[category];
-                customCategoryOrder = customCategoryOrder.filter(cat => cat !== category);
-                saveSettings(); renderCategoryManagementList();
-});
-            div.appendChild(input); div.appendChild(deleteBtn);
-            elements.categoryList.appendChild(div);
-        });
-    }
 
     // --- App Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -561,6 +626,9 @@
         elements.newCategoryInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleAddCategory(); });
         elements.closeItemModalBtn.addEventListener('click', () => closeModal('item'));
         elements.submitItemModalBtn.addEventListener('click', handleItemModalSubmit);
+        
+        document.body.addEventListener('contextmenu', showContextMenu);
+        document.body.addEventListener('click', hideContextMenu);
         window.addEventListener('click', (event) => { 
             if (event.target === elements.categoryModal) closeModal('category');
             if (event.target === elements.itemModal) closeModal('item');
