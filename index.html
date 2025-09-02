@@ -46,20 +46,25 @@
     .row-reorder:hover {
         background-color: #fef08a; /* yellow-200 */
     }
-    /* Style for configured items */
-    .cell-configured {
+    /* Style for configured items indicator */
+    .cell-configured, .cell-partially-configured {
         position: relative;
         display: flex;
         align-items: center;
     }
-    .cell-configured::after {
+    .cell-configured::before, .cell-partially-configured::before {
         content: '';
         flex-shrink: 0;
-        width: 8px;
-        height: 8px;
-        background-color: #10b981; /* emerald-500 */
+        width: 6px; /* Smaller size */
+        height: 6px;
         border-radius: 50%;
-        margin-left: 8px;
+        margin-right: 8px; /* Moved to the front */
+    }
+    .cell-configured::before {
+        background-color: #10b981; /* emerald-500, green */
+    }
+    .cell-partially-configured::before {
+        background-color: #f59e0b; /* amber-500, yellow */
     }
   </style>
 </head>
@@ -336,15 +341,20 @@
                 headers.forEach(header => {
                     const cell = document.createElement('td');
                     cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700';
-                    cell.textContent = rowData[header] || '';
-
+                    
                     if (header === PRODUCT_NAME_COLUMN) {
                         const settings = itemSettings[productId];
-                        if (settings && settings.reorderPoint !== undefined && settings.autoDispenseQty !== undefined) {
-                            cell.classList.add('cell-configured');
+                        if(settings) {
+                            const reorderSet = settings.reorderPoint !== undefined && settings.reorderPoint !== '';
+                            const dispenseSet = settings.autoDispenseQty !== undefined && settings.autoDispenseQty !== '';
+                            if (reorderSet && dispenseSet) {
+                                cell.classList.add('cell-configured'); // Green dot
+                            } else if (reorderSet || dispenseSet) {
+                                cell.classList.add('cell-partially-configured'); // Yellow dot
+                            }
                         }
                     }
-                    
+                    cell.textContent = rowData[header] || '';
                     row.appendChild(cell);
                 });
                 elements.tableBodyContainer.appendChild(row);
@@ -473,14 +483,14 @@
         const autoDispenseQty = elements.itemModalAutoDispenseQty.value;
 
         const reorderPointNum = parseInt(reorderPoint, 10);
-        if (!isNaN(reorderPointNum) && reorderPointNum >= 0) {
+        if (reorderPoint.trim() !== '' && !isNaN(reorderPointNum) && reorderPointNum >= 0) {
             itemSettings[productId].reorderPoint = reorderPointNum;
         } else {
             delete itemSettings[productId].reorderPoint;
         }
 
         const autoDispenseQtyNum = parseInt(autoDispenseQty, 10);
-        if (!isNaN(autoDispenseQtyNum) && autoDispenseQtyNum > 0) {
+        if (autoDispenseQty.trim() !== '' && !isNaN(autoDispenseQtyNum) && autoDispenseQtyNum > 0) {
             itemSettings[productId].autoDispenseQty = autoDispenseQtyNum;
         } else {
             delete itemSettings[productId].autoDispenseQty;
