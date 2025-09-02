@@ -401,7 +401,16 @@
         headerRow.className = 'divide-x divide-gray-200';
         headers.forEach(headerText => {
             const th = document.createElement('th');
-            th.className = 'px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+            let baseClass = 'px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider ';
+            // Alignment for headers
+            if (headerText === STOCK_COLUMN_NAME || headerText === BABYSHOP_STOCK_COLUMN) {
+                baseClass += 'text-center';
+            } else if (headerText === 'รวม') {
+                baseClass += 'text-right';
+            } else {
+                baseClass += 'text-left';
+            }
+            th.className = baseClass;
             th.textContent = headerText;
             headerRow.appendChild(th);
         });
@@ -471,7 +480,17 @@
                 
                 headers.forEach(header => {
                     const cell = document.createElement('td');
-                    cell.className = 'px-4 py-2 whitespace-nowrap text-sm text-gray-700';
+                    let baseClass = 'px-4 py-2 whitespace-nowrap text-sm text-gray-700 ';
+                     // Alignment for cells
+                    if (header === STOCK_COLUMN_NAME || header === BABYSHOP_STOCK_COLUMN) {
+                        baseClass += 'text-center';
+                    } else if (header === 'รวม') {
+                        baseClass += 'text-right';
+                    } else if (header === 'หน่วย') {
+                         baseClass += 'text-left';
+                    }
+
+                    cell.className = baseClass;
                     
                     if (header === PRODUCT_NAME_COLUMN) {
                         const settings = itemSettings[productId];
