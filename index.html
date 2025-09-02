@@ -285,7 +285,8 @@
         await loadSettings();
         await fetchData();
         renderCategoryButtons();
-        filterByCategory('ทั้งหมด');
+        const initialCategory = customCategoryOrder[0] || 'อื่นๆ';
+        filterByCategory(initialCategory);
     }
 
     async function fetchData() {
@@ -319,14 +320,14 @@
     // --- UI Rendering ---
 
     function renderCategoryButtons() {
-        const categories = ['ทั้งหมด', ...customCategoryOrder, 'อื่นๆ'];
+        const categories = [...customCategoryOrder, 'อื่นๆ'];
         elements.categoryButtonsContainer.innerHTML = ''; 
         categories.forEach(category => {
             const button = document.createElement('button');
             button.textContent = category;
             button.className = 'px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors';
             button.dataset.category = category;
-            if (category === 'ทั้งหมด' || category === 'อื่นๆ') button.classList.add('no-drag');
+            if (category === 'อื่นๆ') button.classList.add('no-drag');
             button.addEventListener('click', () => filterByCategory(category));
             elements.categoryButtonsContainer.appendChild(button);
         });
@@ -391,7 +392,7 @@
         customRowOrder.forEach(orderItem => {
             let shouldRender = false;
             if (typeof orderItem === 'object' && orderItem.type === 'header') {
-                if (selectedCategory === 'ทั้งหมด' || orderItem.category === selectedCategory) shouldRender = true;
+                if (orderItem.category === selectedCategory) shouldRender = true;
             } else if (typeof orderItem === 'number' && visibleProductIds.has(orderItem)) {
                 shouldRender = true;
             }
@@ -401,7 +402,7 @@
         
         let rowsToRender = allPossibleRows;
 
-        if ((selectedCategory === 'ทั้งหมด' || selectedCategory === 'อื่นๆ') && allPossibleRows.length > ITEMS_PER_PAGE) {
+        if (selectedCategory === 'อื่นๆ' && allPossibleRows.length > ITEMS_PER_PAGE) {
             renderPaginationControls(allPossibleRows.length, selectedCategory);
             const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
             const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -478,9 +479,7 @@
             button.classList.toggle('active-category', button.dataset.category === selectedCategory);
         });
         
-        let filteredData = (selectedCategory === 'ทั้งหมด')
-            ? [...allData]
-            : allData.filter(item => getProductCategory(item[PRODUCT_NAME_COLUMN] || '') === selectedCategory);
+        let filteredData = allData.filter(item => getProductCategory(item[PRODUCT_NAME_COLUMN] || '') === selectedCategory);
 
         displayData(filteredData, selectedCategory);
     }
@@ -524,7 +523,7 @@
     }
     
     function handleCategoryDragEnd() {
-        customCategoryOrder = Array.from(elements.categoryButtonsContainer.children).map(btn => btn.dataset.category).filter(cat => cat !== 'ทั้งหมด' && cat !== 'อื่นๆ');
+        customCategoryOrder = Array.from(elements.categoryButtonsContainer.children).map(btn => btn.dataset.category).filter(cat => cat !== 'อื่นๆ');
         saveSettings();
     }
 
@@ -544,7 +543,12 @@
         else if (modal === 'item') { elements.itemModal.classList.remove('hidden'); }
     }
     function closeModal(modal) {
-        if (modal === 'category') { elements.categoryModal.classList.add('hidden'); renderCategoryButtons(); filterByCategory('ทั้งหมด'); }
+        if (modal === 'category') { 
+            elements.categoryModal.classList.add('hidden'); 
+            renderCategoryButtons(); 
+            const firstCategory = customCategoryOrder[0] || 'อื่นๆ';
+            filterByCategory(firstCategory);
+        }
         else if (modal === 'item') { elements.itemModal.classList.add('hidden'); }
     }
 
@@ -594,7 +598,7 @@
                 customRowOrder = customRowOrder.filter(item => !(typeof item === 'object' && item.id === headerId));
                 saveSettings();
                 const activeButton = document.querySelector('#category-buttons .active-category');
-                filterByCategory(activeButton ? activeButton.dataset.category : 'ทั้งหมด');
+                filterByCategory(activeButton ? activeButton.dataset.category : (customCategoryOrder[0] || 'อื่นๆ'));
             };
             contextMenu.appendChild(deleteItem);
         } else {
@@ -602,9 +606,9 @@
             insertItem.className = 'context-menu-item'; insertItem.textContent = 'แทรกหัวข้อด้านบน';
 
             const activeButton = document.querySelector('#category-buttons .active-category');
-            const currentCategory = activeButton ? activeButton.dataset.category : 'ทั้งหมด';
+            const currentCategory = activeButton ? activeButton.dataset.category : (customCategoryOrder[0] || 'อื่นๆ');
             
-            if (currentCategory === 'ทั้งหมด' || currentCategory === 'อื่นๆ') {
+            if (currentCategory === 'อื่นๆ') {
                 insertItem.classList.add('disabled');
                 insertItem.title = 'ไม่สามารถเพิ่มหัวข้อในมุมมองนี้ได้';
             } else {
