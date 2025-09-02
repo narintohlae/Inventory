@@ -39,13 +39,6 @@
     #table-body-container tr {
         cursor: pointer;
     }
-    /* Style for rows that need reordering */
-    .row-reorder {
-        background-color: #fef9c3; /* yellow-100 */
-    }
-    .row-reorder:hover {
-        background-color: #fef08a; /* yellow-200 */
-    }
     /* Style for configured items indicator */
     .cell-configured, .cell-partially-configured {
         position: relative;
@@ -361,7 +354,7 @@
                     row.dataset.id = orderItem.id;
                     const cell = document.createElement('td');
                     cell.colSpan = headers.length;
-                    cell.textContent = `(${orderItem.text})`;
+                    cell.textContent = orderItem.text;
                     row.appendChild(cell);
                     elements.tableBodyContainer.appendChild(row);
                 }
@@ -376,12 +369,6 @@
                 row.dataset.originalOrder = productId;
                 
                 if (hiddenRowIds.includes(productId)) row.classList.add('row-hidden');
-                
-                const reorderPoint = itemSettings[productId]?.reorderPoint;
-                const currentStock = parseFloat(rowData[STOCK_COLUMN_NAME]);
-                if (reorderPoint !== undefined && !isNaN(currentStock) && currentStock <= reorderPoint) {
-                    row.classList.add('row-reorder');
-                }
 
                 row.addEventListener('click', () => openItemModal(rowData));
                 row.addEventListener('dblclick', (e) => { e.stopPropagation(); handleRowDoubleClick(row); });
