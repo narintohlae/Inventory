@@ -56,6 +56,9 @@
 
     <div class="mb-6">
         <div class="flex flex-wrap justify-center mb-4 gap-4">
+             <button id="auto-dispense-btn" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+                🚀 เบิกของอัตโนมัติ
+            </button>
             <button id="manage-categories-btn" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75">
                 ⚙️ จัดการหมวดหมู่
             </button>
@@ -113,14 +116,14 @@
                       <input type="number" id="item-modal-reorder-point" min="0" placeholder="กำหนดจำนวนที่ต้องสั่งซื้อ" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                   </div>
                    <div>
-                      <label for="item-modal-dispense-quantity" class="block text-sm font-medium text-gray-700">จำนวนที่ต้องการเบิก</label>
-                      <input type="number" id="item-modal-dispense-quantity" min="1" placeholder="กรอกเพื่อเบิก (ถ้ามี)" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                      <label for="item-modal-auto-dispense-qty" class="block text-sm font-medium text-gray-700">จำนวนเบิกอัตโนมัติ</label>
+                      <input type="number" id="item-modal-auto-dispense-qty" min="1" placeholder="กำหนดจำนวนที่จะเบิกอัตโนมัติ" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                   </div>
               </div>
 
               <div class="items-center px-4 py-3 mt-4 flex gap-2">
                   <button id="close-item-modal-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 w-full">ยกเลิก</button>
-                  <button id="submit-item-modal-btn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 w-full">บันทึก</button>
+                  <button id="submit-item-modal-btn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 w-full">บันทึกค่า</button>
               </div>
           </div>
       </div>
@@ -169,19 +172,19 @@
         categoryButtonsContainer: document.getElementById('category-buttons'),
         manageCategoriesBtn: document.getElementById('manage-categories-btn'),
         resetHiddenRowsBtn: document.getElementById('reset-hidden-rows-btn'),
+        autoDispenseBtn: document.getElementById('auto-dispense-btn'),
         categoryModal: document.getElementById('category-modal'),
         closeModalBtn: document.getElementById('close-modal-btn'),
         addCategoryBtn: document.getElementById('add-category-btn'),
         newCategoryInput: document.getElementById('new-category-input'),
         categoryList: document.getElementById('category-list'),
-        // Item Modal Elements
         itemModal: document.getElementById('item-modal'),
         closeItemModalBtn: document.getElementById('close-item-modal-btn'),
         submitItemModalBtn: document.getElementById('submit-item-modal-btn'),
         itemModalProductName: document.getElementById('item-modal-product-name'),
         itemModalStock: document.getElementById('item-modal-stock'),
         itemModalReorderPoint: document.getElementById('item-modal-reorder-point'),
-        itemModalDispenseQuantity: document.getElementById('item-modal-dispense-quantity'),
+        itemModalAutoDispenseQty: document.getElementById('item-modal-auto-dispense-qty'),
     };
 
     // --- Firebase Functions ---
@@ -306,7 +309,6 @@
                 row.dataset.originalOrder = productId;
                 if (hiddenRowIds.includes(productId)) row.classList.add('row-hidden');
                 
-                // Add reorder warning class
                 const reorderPoint = itemSettings[productId]?.reorderPoint;
                 const currentStock = parseFloat(rowData[STOCK_COLUMN_NAME]);
                 if (reorderPoint !== undefined && !isNaN(currentStock) && currentStock <= reorderPoint) {
@@ -384,6 +386,29 @@
         document.querySelectorAll('.row-hidden').forEach(row => row.classList.remove('row-hidden'));
         elements.resetHiddenRowsBtn.classList.add('hidden');
     }
+
+    function handleAutoDispense() {
+        const itemsToDispense = [];
+        allData.forEach(item => {
+            const settings = itemSettings[item.originalOrder];
+            const stock = parseFloat(item[STOCK_COLUMN_NAME]);
+            if (settings && settings.reorderPoint !== undefined && settings.autoDispenseQty > 0) {
+                if (!isNaN(stock) && stock <= settings.reorderPoint) {
+                    itemsToDispense.push(`- ${item[PRODUCT_NAME_COLUMN]} (จำนวน: ${settings.autoDispenseQty})`);
+                }
+            }
+        });
+
+        if (itemsToDispense.length > 0) {
+            const message = "รายการสินค้าที่จะเบิกอัตโนมัติ:\n\n" + itemsToDispense.join("\n");
+            alert(message);
+            // Log to console for development
+            console.log("--- Auto Dispense Items ---");
+            console.log(itemsToDispense);
+        } else {
+            alert("ไม่พบสินค้าที่ต้องเบิกอัตโนมัติ (สต็อกยังไม่ถึงจุดสั่งซื้อ)");
+        }
+    }
     
     // --- Modal Logic ---
 
@@ -402,28 +427,29 @@
         elements.itemModalProductName.textContent = rowData[PRODUCT_NAME_COLUMN] || 'N/A';
         elements.itemModalStock.textContent = rowData[STOCK_COLUMN_NAME] || 'N/A';
         elements.itemModalReorderPoint.value = itemSettings[productId]?.reorderPoint ?? '';
-        elements.itemModalDispenseQuantity.value = '';
+        elements.itemModalAutoDispenseQty.value = itemSettings[productId]?.autoDispenseQty ?? '';
         openModal('item');
     }
 
     function handleItemModalSubmit() {
-        const reorderPoint = elements.itemModalReorderPoint.value;
-        const dispenseQuantity = elements.itemModalDispenseQuantity.value;
         const productId = currentProductForManagement.originalOrder;
+        if (!itemSettings[productId]) itemSettings[productId] = {};
+
+        const reorderPoint = elements.itemModalReorderPoint.value;
+        const autoDispenseQty = elements.itemModalAutoDispenseQty.value;
 
         const reorderPointNum = parseInt(reorderPoint, 10);
         if (!isNaN(reorderPointNum) && reorderPointNum >= 0) {
-            if (!itemSettings[productId]) itemSettings[productId] = {};
             itemSettings[productId].reorderPoint = reorderPointNum;
-        } else if (itemSettings[productId]?.reorderPoint !== undefined) {
-             delete itemSettings[productId].reorderPoint;
+        } else {
+            delete itemSettings[productId].reorderPoint;
         }
 
-        const dispenseQuantityNum = parseInt(dispenseQuantity, 10);
-        if (!isNaN(dispenseQuantityNum) && dispenseQuantityNum > 0) {
-            console.log('--- ข้อมูลการเบิก ---');
-            console.log('สินค้า:', currentProductForManagement[PRODUCT_NAME_COLUMN]);
-            console.log('จำนวนที่เบิก:', dispenseQuantityNum);
+        const autoDispenseQtyNum = parseInt(autoDispenseQty, 10);
+        if (!isNaN(autoDispenseQtyNum) && autoDispenseQtyNum > 0) {
+            itemSettings[productId].autoDispenseQty = autoDispenseQtyNum;
+        } else {
+            delete itemSettings[productId].autoDispenseQty;
         }
 
         saveSettings();
@@ -467,7 +493,7 @@
                 delete categoriesMap[category];
                 customCategoryOrder = customCategoryOrder.filter(cat => cat !== category);
                 saveSettings(); renderCategoryManagementList();
-            });
+});
             div.appendChild(input); div.appendChild(deleteBtn);
             elements.categoryList.appendChild(div);
         });
@@ -484,6 +510,7 @@
         });
         
         elements.manageCategoriesBtn.addEventListener('click', () => openModal('category'));
+        elements.autoDispenseBtn.addEventListener('click', handleAutoDispense);
         elements.closeModalBtn.addEventListener('click', () => closeModal('category'));
         elements.addCategoryBtn.addEventListener('click', handleAddCategory);
         elements.resetHiddenRowsBtn.addEventListener('click', handleResetHiddenRows);
