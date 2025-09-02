@@ -433,7 +433,10 @@
                 
                 if (hiddenRowIds.includes(productId)) row.classList.add('row-hidden');
 
-                row.addEventListener('click', () => {
+                row.addEventListener('click', (e) => {
+                    // Prevent click if it's part of a drag action
+                    if(row.classList.contains('sortable-chosen')) return;
+                    
                     clearTimeout(clickTimer);
                     clickTimer = setTimeout(() => {
                         openItemModal(rowData);
@@ -467,7 +470,11 @@
         
         elements.resetHiddenRowsBtn.classList.toggle('hidden', hiddenRowIds.length === 0);
         if (sortableInstance) sortableInstance.destroy();
-        sortableInstance = new Sortable(elements.tableBodyContainer, { animation: 150, ghostClass: 'sortable-ghost', onEnd: handleDragEnd });
+        sortableInstance = new Sortable(elements.tableBodyContainer, { 
+            animation: 150, 
+            ghostClass: 'sortable-ghost', 
+            onEnd: handleDragEnd
+        });
         elements.statusContainer.classList.add('hidden');
         elements.tableContainer.classList.remove('hidden');
     }
@@ -562,7 +569,15 @@
         else if (modal === 'item') { elements.itemModal.classList.add('hidden'); }
     }
 
-    function openItemModal(rowData) { /* ... unchanged ... */ }
+    function openItemModal(rowData) {
+        currentProductForManagement = rowData;
+        const productId = rowData.originalOrder;
+        elements.itemModalProductName.textContent = rowData[PRODUCT_NAME_COLUMN] || 'N/A';
+        elements.itemModalStock.textContent = rowData[STOCK_COLUMN_NAME] || 'N/A';
+        elements.itemModalReorderPoint.value = itemSettings[productId]?.reorderPoint ?? '';
+        elements.itemModalAutoDispenseQty.value = itemSettings[productId]?.autoDispenseQty ?? '';
+        openModal('item');
+     }
 
     function handleItemModalSubmit() {
         const productId = currentProductForManagement.originalOrder;
