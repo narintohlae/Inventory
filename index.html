@@ -127,6 +127,9 @@
         <tbody class="bg-white divide-y divide-gray-200" id="table-body-container"></tbody>
       </table>
     </div>
+    
+    <!-- Pagination Controls -->
+    <div id="pagination-container" class="mt-4 flex justify-center items-center gap-2"></div>
   </div>
 
   <!-- Modal สำหรับจัดการหมวดหมู่ -->
@@ -197,6 +200,7 @@
     const PRODUCT_NAME_COLUMN = 'สินค้า';
     const STOCK_COLUMN_NAME = 'รักษ์ยา';
     const BABYSHOP_STOCK_COLUMN = 'เบบี้ช็อป';
+    const ITEMS_PER_PAGE = 25;
     
     let allData = []; 
     let categoriesMap = {};
@@ -209,6 +213,7 @@
     let db, auth;
     let currentProductForManagement = null;
     let contextMenu = null;
+    let currentPage = 1;
 
     // DOM Elements
     const elements = {
@@ -218,6 +223,7 @@
         tableContainer: document.getElementById('table-container'),
         tableHeaderContainer: document.getElementById('table-header-container'),
         tableBodyContainer: document.getElementById('table-body-container'),
+        paginationContainer: document.getElementById('pagination-container'),
         categoryButtonsContainer: document.getElementById('category-buttons'),
         manageCategoriesBtn: document.getElementById('manage-categories-btn'),
         resetHiddenRowsBtn: document.getElementById('reset-hidden-rows-btn'),
@@ -328,6 +334,41 @@
         new Sortable(elements.categoryButtonsContainer, { animation: 150, filter: '.no-drag', onEnd: handleCategoryDragEnd });
     }
     
+    function renderPaginationControls(totalItems, selectedCategory) {
+        elements.paginationContainer.innerHTML = '';
+        const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+        if (totalPages <= 1) return;
+
+        const prevButton = document.createElement('button');
+        prevButton.textContent = 'ก่อนหน้า';
+        prevButton.className = 'px-3 py-1 bg-white border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed';
+        if (currentPage === 1) prevButton.disabled = true;
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                filterByCategory(selectedCategory, true);
+            }
+        });
+        elements.paginationContainer.appendChild(prevButton);
+
+        const pageInfo = document.createElement('span');
+        pageInfo.className = 'text-sm text-gray-700';
+        pageInfo.textContent = `หน้า ${currentPage} / ${totalPages}`;
+        elements.paginationContainer.appendChild(pageInfo);
+
+        const nextButton = document.createElement('button');
+        nextButton.textContent = 'ถัดไป';
+        nextButton.className = 'px-3 py-1 bg-white border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed';
+        if (currentPage === totalPages) nextButton.disabled = true;
+        nextButton.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                filterByCategory(selectedCategory, true);
+            }
+        });
+        elements.paginationContainer.appendChild(nextButton);
+    }
+
     function displayData(visibleDataItems, selectedCategory) {
         elements.tableHeaderContainer.innerHTML = '';
         elements.tableBodyContainer.innerHTML = '';
@@ -345,22 +386,42 @@
         elements.tableHeaderContainer.appendChild(headerRow);
 
         const visibleProductIds = new Set(visibleDataItems.map(item => item.originalOrder));
+        let allPossibleRows = [];
 
         customRowOrder.forEach(orderItem => {
+            let shouldRender = false;
             if (typeof orderItem === 'object' && orderItem.type === 'header') {
-                if (selectedCategory === 'ทั้งหมด' || orderItem.category === selectedCategory) {
-                    const row = document.createElement('tr');
-                    row.className = 'header-row';
-                    row.dataset.id = orderItem.id;
-                    const cell = document.createElement('td');
-                    cell.colSpan = headers.length;
-                    cell.textContent = orderItem.text;
-                    row.appendChild(cell);
-                    elements.tableBodyContainer.appendChild(row);
-                }
-            } 
-            else if (typeof orderItem === 'number' && visibleProductIds.has(orderItem)) {
-                const productId = orderItem;
+                if (selectedCategory === 'ทั้งหมด' || orderItem.category === selectedCategory) shouldRender = true;
+            } else if (typeof orderItem === 'number' && visibleProductIds.has(orderItem)) {
+                shouldRender = true;
+            }
+
+            if(shouldRender) allPossibleRows.push(orderItem);
+        });
+        
+        let rowsToRender = allPossibleRows;
+
+        if ((selectedCategory === 'ทั้งหมด' || selectedCategory === 'อื่นๆ') && allPossibleRows.length > ITEMS_PER_PAGE) {
+            renderPaginationControls(allPossibleRows.length, selectedCategory);
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            rowsToRender = allPossibleRows.slice(startIndex, endIndex);
+        } else {
+            elements.paginationContainer.innerHTML = '';
+        }
+
+        rowsToRender.forEach(orderItem => {
+            if (typeof orderItem === 'object' && orderItem.type === 'header') {
+                const row = document.createElement('tr');
+                row.className = 'header-row';
+                row.dataset.id = orderItem.id;
+                const cell = document.createElement('td');
+                cell.colSpan = headers.length;
+                cell.textContent = orderItem.text;
+                row.appendChild(cell);
+                elements.tableBodyContainer.appendChild(row);
+            } else if (typeof orderItem === 'number') {
+                 const productId = orderItem;
                 const rowData = allData.find(item => item.originalOrder === productId);
                 if (!rowData) return;
 
@@ -408,7 +469,11 @@
 
     // --- Event Handlers & Context Menu ---
 
-    function filterByCategory(selectedCategory) {
+    function filterByCategory(selectedCategory, isPageChange = false) {
+        if (!isPageChange) {
+            currentPage = 1;
+        }
+
         document.querySelectorAll('#category-buttons button').forEach(button => {
             button.classList.toggle('active-category', button.dataset.category === selectedCategory);
         });
