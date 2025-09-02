@@ -214,6 +214,7 @@
     let currentProductForManagement = null;
     let contextMenu = null;
     let currentPage = 1;
+    let clickTimer = null; // Timer for distinguishing single/double clicks
 
     // DOM Elements
     const elements = {
@@ -432,8 +433,17 @@
                 
                 if (hiddenRowIds.includes(productId)) row.classList.add('row-hidden');
 
-                row.addEventListener('click', () => openItemModal(rowData));
-                row.addEventListener('dblclick', (e) => { e.stopPropagation(); handleRowDoubleClick(row); });
+                row.addEventListener('click', () => {
+                    clearTimeout(clickTimer);
+                    clickTimer = setTimeout(() => {
+                        openItemModal(rowData);
+                    }, 200);
+                });
+                row.addEventListener('dblclick', (e) => {
+                    clearTimeout(clickTimer);
+                    e.stopPropagation();
+                    handleRowDoubleClick(row);
+                });
                 
                 headers.forEach(header => {
                     const cell = document.createElement('td');
