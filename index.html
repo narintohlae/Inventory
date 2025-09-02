@@ -7,6 +7,8 @@
   <title>แสดงข้อมูลสินค้าพร้อมจัดการหมวดหมู่</title>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Library สำหรับลากและวาง -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <style>
     body {
       font-family: 'Sarabun', sans-serif;
@@ -19,6 +21,22 @@
     .modal {
         transition: opacity 0.25s ease;
     }
+    /* สไตล์สำหรับแถวที่ถูกซ่อน */
+    .row-hidden {
+        display: none;
+    }
+    /* เปลี่ยน cursor เมื่อเอาเมาส์ไปชี้แถว */
+    #table-body-container tr {
+        cursor: grab;
+    }
+    #table-body-container tr:active {
+        cursor: grabbing;
+    }
+    /* สไตล์ของเงาขณะที่ลาก */
+    .sortable-ghost {
+        background-color: #dbeafe; /* blue-100 */
+        opacity: 0.7;
+    }
   </style>
 </head>
 
@@ -27,21 +45,28 @@
   <div class="container mx-auto p-4 sm:p-6 lg:p-8">
     <h1 class="text-3xl font-bold mb-4 text-center text-gray-700">ตารางข้อมูลสินค้า</h1>
 
+    <!-- ส่วนจัดการและปุ่มหมวดหมู่ -->
     <div class="mb-6">
-        <div class="flex justify-center mb-4">
+        <div class="flex flex-wrap justify-center mb-4 gap-4">
             <button id="manage-categories-btn" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75">
                 ⚙️ จัดการหมวดหมู่
             </button>
+            <button id="reset-hidden-rows-btn" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-75 hidden">
+                แสดงแถวที่ซ่อน
+            </button>
         </div>
         <div id="category-buttons" class="flex flex-wrap justify-center gap-2">
-            </div>
+            <!-- ปุ่มหมวดหมู่จะถูกสร้างโดย JavaScript -->
+        </div>
     </div>
 
+    <!-- ส่วนแสดงสถานะ -->
     <div id="status-container" class="text-center p-8 bg-white rounded-lg shadow-md">
       <div id="loader" class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
       <p id="status-text" class="mt-4 text-lg">กำลังโหลดข้อมูล...</p>
     </div>
 
+    <!-- ตารางข้อมูล -->
     <div class="overflow-x-auto bg-white rounded-lg shadow-md hidden" id="table-container">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50" id="table-header-container"></thead>
@@ -50,6 +75,7 @@
     </div>
   </div>
 
+  <!-- Modal สำหรับจัดการหมวดหมู่ (โค้ดเดิม) -->
   <div id="category-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
       <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
           <div class="mt-3 text-center">
@@ -58,8 +84,7 @@
                   <input type="text" id="new-category-input" placeholder="เพิ่มหมวดหมู่ใหม่ (เช่น Carnation)" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                   <button id="add-category-btn" class="mt-2 w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600">เพิ่มหมวดหมู่</button>
               </div>
-              <div id="category-list" class="mt-4 text-left max-h-60 overflow-y-auto">
-                  </div>
+              <div id="category-list" class="mt-4 text-left max-h-60 overflow-y-auto"></div>
               <div class="items-center px-4 py-3">
                   <button id="close-modal-btn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 w-full">ปิด</button>
               </div>
@@ -73,7 +98,8 @@
     const CATEGORY_STORAGE_KEY = 'userDefinedCategories';
 
     let allData = []; 
-    let categoriesMap = {}; 
+    let categoriesMap = {};
+    let sortableInstance = null; // ตัวแปรสำหรับเก็บ instance ของ SortableJS
 
     // DOM Elements
     const elements = {
@@ -85,6 +111,7 @@
         tableBodyContainer: document.getElementById('table-body-container'),
         categoryButtonsContainer: document.getElementById('category-buttons'),
         manageCategoriesBtn: document.getElementById('manage-categories-btn'),
+        resetHiddenRowsBtn: document.getElementById('reset-hidden-rows-btn'),
         categoryModal: document.getElementById('category-modal'),
         closeModalBtn: document.getElementById('close-modal-btn'),
         addCategoryBtn: document.getElementById('add-category-btn'),
@@ -96,7 +123,6 @@
 
     function loadCategoriesFromStorage() {
         const storedCategories = localStorage.getItem(CATEGORY_STORAGE_KEY);
-        // ถ้าไม่มีข้อมูลใน storage, ใช้ค่าเริ่มต้น
         if (!storedCategories) {
             categoriesMap = {
                 'เครื่องดื่ม': ['กาแฟ', 'ชา', 'นม', 'น้ำผลไม้', 'โซดา'],
@@ -118,7 +144,7 @@
         const result = await response.json();
 
         if (result.status === 'success' && result.data && result.data.length > 0) {
-          allData = result.data;
+          allData = result.data.map((item, index) => ({...item, originalOrder: index }));
           renderCategoryButtons();
           displayData(allData); 
         } else if (result.status === 'success') {
@@ -136,8 +162,7 @@
         if (!productName || typeof productName !== 'string') return 'อื่นๆ';
         const name = productName.toLowerCase();
         for (const category in categoriesMap) {
-            const keywords = categoriesMap[category];
-            if (keywords.some(keyword => name.includes(keyword.toLowerCase()))) {
+            if (categoriesMap[category].some(keyword => name.includes(keyword.toLowerCase()))) {
                 return category;
             }
         }
@@ -149,7 +174,6 @@
     function renderCategoryButtons() {
         const categories = ['ทั้งหมด', ...Object.keys(categoriesMap), 'อื่นๆ'];
         elements.categoryButtonsContainer.innerHTML = ''; 
-
         categories.forEach(category => {
             const button = document.createElement('button');
             button.textContent = category;
@@ -158,8 +182,6 @@
             button.addEventListener('click', () => filterByCategory(category));
             elements.categoryButtonsContainer.appendChild(button);
         });
-        
-        // Active 'ทั้งหมด' button by default
         const allButton = elements.categoryButtonsContainer.querySelector('button[data-category="ทั้งหมด"]');
         if (allButton) allButton.classList.add('active-category');
     }
@@ -173,7 +195,7 @@
           return;
       }
       
-      const headers = Object.keys(allData[0]);
+      const headers = Object.keys(allData[0]).filter(h => h !== 'originalOrder');
       const headerRow = document.createElement('tr');
       headers.forEach(headerText => {
         const th = document.createElement('th');
@@ -194,6 +216,14 @@
       } else {
         data.forEach(rowData => {
           const row = document.createElement('tr');
+          row.dataset.originalOrder = rowData.originalOrder; // เก็บ index เดิมไว้
+          
+          // ---- EVENT: ดับเบิลคลิกเพื่อซ่อน ----
+          row.addEventListener('dblclick', () => {
+              row.classList.add('row-hidden');
+              elements.resetHiddenRowsBtn.classList.remove('hidden');
+          });
+
           headers.forEach(header => {
             const cell = document.createElement('td');
             cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700';
@@ -203,6 +233,15 @@
           elements.tableBodyContainer.appendChild(row);
         });
       }
+
+      // ---- FEATURE: เปิดใช้งานการลากและวาง ----
+      if (sortableInstance) {
+        sortableInstance.destroy(); // ทำลาย instance เก่าก่อนสร้างใหม่
+      }
+      sortableInstance = new Sortable(elements.tableBodyContainer, {
+          animation: 150,
+          ghostClass: 'sortable-ghost', // ใส่ class style ให้กับเงาตอนลาก
+      });
 
       elements.statusContainer.classList.add('hidden');
       elements.tableContainer.classList.remove('hidden');
@@ -232,9 +271,9 @@
                     categoriesMap[newName] = categoriesMap[oldName];
                     delete categoriesMap[oldName];
                     saveCategoriesToStorage();
-                    renderCategoryManagementList(); // Re-render to update state
+                    renderCategoryManagementList();
                 } else {
-                    e.target.value = oldName; // Revert if invalid
+                    e.target.value = oldName;
                 }
             });
             
@@ -259,27 +298,34 @@
         document.querySelectorAll('#category-buttons button').forEach(button => {
             button.classList.toggle('active-category', button.dataset.category === selectedCategory);
         });
+        
+        // ซ่อนปุ่มรีเซ็ตเมื่อเปลี่ยนหมวดหมู่
+        elements.resetHiddenRowsBtn.classList.add('hidden');
 
+        let filteredData;
         if (selectedCategory === 'ทั้งหมด') {
-            displayData(allData);
+            filteredData = [...allData];
         } else {
-            const filteredData = allData.filter(item => {
-                const productName = item[PRODUCT_NAME_COLUMN] || '';
-                return getProductCategory(productName) === selectedCategory;
-            });
-            displayData(filteredData);
+            filteredData = allData.filter(item => getProductCategory(item[PRODUCT_NAME_COLUMN] || '') === selectedCategory);
         }
+        displayData(filteredData);
     }
     
     function handleAddCategory() {
         const newCategoryName = elements.newCategoryInput.value.trim();
         if (newCategoryName && !categoriesMap[newCategoryName]) {
-            // ใช้ชื่อหมวดหมู่เป็น keyword หลัก
             categoriesMap[newCategoryName] = [newCategoryName];
             saveCategoriesToStorage();
             renderCategoryManagementList();
             elements.newCategoryInput.value = '';
         }
+    }
+
+    function handleResetHiddenRows() {
+        document.querySelectorAll('.row-hidden').forEach(row => {
+            row.classList.remove('row-hidden');
+        });
+        elements.resetHiddenRowsBtn.classList.add('hidden');
     }
     
     // --- Modal Control ---
@@ -290,12 +336,11 @@
 
     function closeModal() {
         elements.categoryModal.classList.add('hidden');
-        renderCategoryButtons(); // อัปเดตปุ่มด้านนอกหลังปิด Modal
-        filterByCategory('ทั้งหมด'); // กลับไปแสดงผลทั้งหมด
+        renderCategoryButtons(); 
+        filterByCategory('ทั้งหมด');
     }
 
     // --- Initial Setup ---
-
     document.addEventListener('DOMContentLoaded', () => {
         loadCategoriesFromStorage();
         fetchData();
@@ -303,15 +348,13 @@
         elements.manageCategoriesBtn.addEventListener('click', openModal);
         elements.closeModalBtn.addEventListener('click', closeModal);
         elements.addCategoryBtn.addEventListener('click', handleAddCategory);
+        elements.resetHiddenRowsBtn.addEventListener('click', handleResetHiddenRows);
         elements.newCategoryInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') handleAddCategory();
         });
         
-        // Close modal on outside click
         window.addEventListener('click', (event) => {
-            if (event.target === elements.categoryModal) {
-                closeModal();
-            }
+            if (event.target === elements.categoryModal) closeModal();
         });
     });
 
@@ -319,3 +362,4 @@
 
 </body>
 </html>
+
