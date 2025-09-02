@@ -46,6 +46,21 @@
     .row-reorder:hover {
         background-color: #fef08a; /* yellow-200 */
     }
+    /* Style for configured items */
+    .cell-configured {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    .cell-configured::after {
+        content: '';
+        flex-shrink: 0;
+        width: 8px;
+        height: 8px;
+        background-color: #10b981; /* emerald-500 */
+        border-radius: 50%;
+        margin-left: 8px;
+    }
   </style>
 </head>
 
@@ -322,6 +337,14 @@
                     const cell = document.createElement('td');
                     cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700';
                     cell.textContent = rowData[header] || '';
+
+                    if (header === PRODUCT_NAME_COLUMN) {
+                        const settings = itemSettings[productId];
+                        if (settings && settings.reorderPoint !== undefined && settings.autoDispenseQty !== undefined) {
+                            cell.classList.add('cell-configured');
+                        }
+                    }
+                    
                     row.appendChild(cell);
                 });
                 elements.tableBodyContainer.appendChild(row);
@@ -400,7 +423,6 @@
                     const babyShopStock = parseFloat(item[BABYSHOP_STOCK_COLUMN]);
                     const halfBabyShopStock = 0.5 * babyShopStock;
 
-                    // เงื่อนไขที่แก้ไขตามตัวอย่าง
                     if (!isNaN(babyShopStock) && dispenseQty > halfBabyShopStock) {
                         dispenseQty = Math.floor(halfBabyShopStock);
                     }
