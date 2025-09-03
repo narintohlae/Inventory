@@ -195,6 +195,7 @@
             let hiddenItemIds = new Set();
             let sortableInstance = null;
             let itemOrder = [];
+            let activeCategoryName = null;
             
             // Firebase State
             let userId = null;
@@ -327,6 +328,15 @@
                 try { await setDoc(doc(hiddenItemsCollectionRef, itemId), { hidden: true }); } 
                 catch (error) { showError("ไม่สามารถซ่อนรายการได้"); }
             }
+            async function unhideItems(itemIdsToUnhide) {
+                if (!hiddenItemsCollectionRef || !itemIdsToUnhide || itemIdsToUnhide.length === 0) return;
+                try {
+                    const deletePromises = itemIdsToUnhide.map(id => deleteDoc(doc(hiddenItemsCollectionRef, id)));
+                    await Promise.all(deletePromises);
+                } catch (error) {
+                    showError("ไม่สามารถแสดงรายการที่ซ่อนได้");
+                }
+            }
             async function unhideAllItems() {
                 if (!hiddenItemsCollectionRef) return;
                 try {
@@ -378,6 +388,7 @@
                         if (!itemColumnName) return;
                         const filtered = allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase()));
                         noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`;
+                        activeCategoryName = category.name;
                         displayData(filtered);
                         clearFilterBtn.classList.remove('hidden');
                         document.querySelectorAll('#category-list > div').forEach(el => el.classList.remove('ring-2', 'ring-blue-500'));
@@ -498,11 +509,24 @@
             categoryInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addCategory(); });
             clearFilterBtn.addEventListener('click', () => {
                 noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล';
+                activeCategoryName = null;
                 displayData(allRecords);
                 clearFilterBtn.classList.add('hidden');
                 document.querySelectorAll('#category-list > div').forEach(el => el.classList.remove('ring-2', 'ring-blue-500'));
             });
-            showHiddenBtn.addEventListener('click', unhideAllItems);
+            showHiddenBtn.addEventListener('click', () => {
+                if (activeCategoryName) {
+                    const hiddenItemsInCurrentView = currentRecords
+                        .map(record => record[itemColumnName])
+                        .filter(id => hiddenItemIds.has(id));
+                    
+                    if (hiddenItemsInCurrentView.length > 0) {
+                        unhideItems(hiddenItemsInCurrentView);
+                    }
+                } else {
+                    unhideAllItems();
+                }
+            });
         });
     </script>
 
