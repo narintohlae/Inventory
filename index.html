@@ -87,11 +87,14 @@
             
             <!-- Category Management Section -->
             <div class="mb-8 bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-bold text-gray-700 mb-4">จัดการหมวดหมู่</h2>
+                <h2 class="text-2xl font-bold text-gray-700 mb-4">จัดการหมวดหมู่และหัวข้อ</h2>
                 <div class="flex flex-col sm:flex-row gap-4 mb-4">
                     <input type="text" id="category-input" placeholder="ใส่ชื่อหมวดหมู่ที่นี่..." class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                     <button id="add-category-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
                         เพิ่มหมวดหมู่
+                    </button>
+                     <button id="add-header-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                        เพิ่มหัวข้อ
                     </button>
                 </div>
                 <div id="category-list-container">
@@ -183,6 +186,7 @@
             const tableBody = document.getElementById('table-body');
             const categoryInput = document.getElementById('category-input');
             const addCategoryBtn = document.getElementById('add-category-btn');
+            const addHeaderBtn = document.getElementById('add-header-btn');
             const categoryList = document.getElementById('category-list');
             const clearFilterBtn = document.getElementById('clear-filter-btn');
             const showHiddenBtn = document.getElementById('show-hidden-btn');
@@ -191,6 +195,7 @@
             let allRecords = [];
             let currentRecords = [];
             let categories = []; 
+            let customRows = new Map();
             let itemColumnName = '';
             let hiddenItemIds = new Set();
             let sortableInstance = null;
@@ -205,6 +210,8 @@
             let unsubscribeHiddenItems;
             let sortOrderDocRef;
             let unsubscribeSortOrder;
+            let customRowsCollectionRef;
+            let unsubscribeCustomRows;
 
 
             // Firebase Config
@@ -240,9 +247,11 @@
                     if (unsubscribeCategories) unsubscribeCategories();
                     if (unsubscribeHiddenItems) unsubscribeHiddenItems();
                     if (unsubscribeSortOrder) unsubscribeSortOrder();
+                    if (unsubscribeCustomRows) unsubscribeCustomRows();
                     categories = [];
                     hiddenItemIds.clear();
                     itemOrder = [];
+                    customRows.clear();
                     displayCategories(); 
                 }
             });
@@ -252,6 +261,7 @@
                  initializeCategoryListener(currentUserId);
                  initializeHiddenItemsListener(currentUserId);
                  initializeSortOrderListener(currentUserId);
+                 initializeCustomRowsListener(currentUserId);
             }
 
             // --- Auth UI Toggling & Event Handlers ---
@@ -316,6 +326,18 @@
                     if (allRecords.length > 0) displayData(currentRecords);
                 }, (error) => showError("ไม่สามารถโหลดลำดับการจัดเรียงได้"));
             }
+            function initializeCustomRowsListener(currentUserId) {
+                if(unsubscribeCustomRows) unsubscribeCustomRows();
+                customRowsCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/customRows`);
+                unsubscribeCustomRows = onSnapshot(customRowsCollectionRef, (snapshot) => {
+                    customRows.clear();
+                    snapshot.docs.forEach(doc => {
+                        customRows.set(doc.id, doc.data());
+                    });
+                    if (allRecords.length > 0) displayData(currentRecords);
+                }, (error) => showError("ไม่สามารถโหลดหัวข้อได้"));
+            }
+
 
             // --- Firestore Write Functions ---
             async function saveSortOrder(newOrder) {
@@ -336,13 +358,6 @@
                 } catch (error) {
                     showError("ไม่สามารถแสดงรายการที่ซ่อนได้");
                 }
-            }
-            async function unhideAllItems() {
-                if (!hiddenItemsCollectionRef) return;
-                try {
-                    const snapshot = await getDocs(hiddenItemsCollectionRef);
-                    await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
-                } catch(error) { showError("ไม่สามารถแสดงรายการที่ซ่อนได้"); }
             }
             async function addCategory() {
                 if (!categoriesCollectionRef) return;
@@ -368,6 +383,39 @@
                     clearFilterBtn.classList.add('hidden');
                 } catch(error) { showError("ไม่สามารถลบหมวดหมู่ได้"); }
             }
+            async function addHeaderRow() {
+                const text = prompt("ใส่ชื่อหัวข้อ:");
+                if (!text || !text.trim()) return;
+
+                try {
+                    const newDocRef = await addDoc(customRowsCollectionRef, { text: text.trim() });
+                    const newOrder = [newDocRef.id, ...itemOrder];
+                    await saveSortOrder(newOrder);
+                } catch(error) {
+                    showError("ไม่สามารถเพิ่มหัวข้อได้");
+                }
+            }
+            async function editHeaderRow(id, oldText) {
+                const newText = prompt("แก้ไขชื่อหัวข้อ:", oldText);
+                if (newText && newText.trim() && newText.trim() !== oldText) {
+                    try {
+                        await updateDoc(doc(customRowsCollectionRef, id), { text: newText.trim() });
+                    } catch (error) {
+                        showError("ไม่สามารถแก้ไขหัวข้อได้");
+                    }
+                }
+            }
+            async function deleteHeaderRow(id) {
+                if (!customRowsCollectionRef) return;
+                try {
+                    await deleteDoc(doc(customRowsCollectionRef, id));
+                    const newOrder = itemOrder.filter(itemId => itemId !== id);
+                    await saveSortOrder(newOrder);
+                } catch (error) {
+                    showError("ไม่สามารถลบหัวข้อได้");
+                }
+            }
+
 
             // --- UI Display Functions ---
             function displayCategories() {
@@ -429,28 +477,31 @@
                 tableBody.innerHTML = '';
                 if (sortableInstance) sortableInstance.destroy();
 
-                const recordsToSort = [...records];
+                const allRecordsMap = new Map(allRecords.map(r => [r[itemColumnName], r]));
+                const currentRecordIds = new Set(records.map(r => r[itemColumnName]));
 
-                // Apply custom sort order if it exists
-                if (itemOrder.length > 0) {
-                    recordsToSort.sort((a, b) => {
-                        const indexA = itemOrder.indexOf(a[itemColumnName]);
-                        const indexB = itemOrder.indexOf(b[itemColumnName]);
-                        if (indexA === -1 && indexB === -1) return 0; // Both not in order list
-                        if (indexA === -1) return 1;  // a is not in list, sort to end
-                        if (indexB === -1) return -1; // b is not in list, sort to end
-                        return indexA - indexB;
-                    });
+                // Combine saved order with new items from the sheet
+                const orderedIdSet = new Set(itemOrder);
+                const combinedOrder = [...itemOrder];
+                for(const record of allRecords) {
+                    const id = record[itemColumnName];
+                    if(!orderedIdSet.has(id)){
+                        combinedOrder.push(id);
+                    }
                 }
-                
-                const visibleRecords = recordsToSort.filter(record => !hiddenItemIds.has(record[itemColumnName]));
 
-                if (visibleRecords.length === 0) {
+                // Filter the combined list based on current view (all or category)
+                const displayOrder = combinedOrder.filter(id => customRows.has(id) || currentRecordIds.has(id));
+
+                const visibleIds = new Set(displayOrder.filter(id => !hiddenItemIds.has(id)));
+
+                if (visibleIds.size === 0) {
                     tableEl.classList.add('hidden'); noDataEl.classList.remove('hidden'); return;
                 }
 
                 noDataEl.classList.add('hidden'); tableEl.classList.remove('hidden');
-                const headers = Object.keys(visibleRecords[0]);
+                
+                const headers = allRecords.length > 0 ? Object.keys(allRecords[0]) : [];
                 const headerRow = document.createElement('tr');
                 headers.forEach(header => {
                     const th = document.createElement('th');
@@ -461,22 +512,59 @@
                 });
                 tableHead.appendChild(headerRow);
                 
-                visibleRecords.forEach(record => {
-                    const row = document.createElement('tr');
-                    const itemId = record[itemColumnName];
-                    row.dataset.id = itemId; // Set data-id for sortable
-                    row.className = 'hover:bg-gray-50';
-                    row.addEventListener('dblclick', () => hideItem(itemId));
-                    headers.forEach(header => {
-                        const td = document.createElement('td');
-                        td.className = `px-2 sm:px-6 py-2 text-sm text-gray-700 whitespace-normal break-all ${header === itemColumnName ? 'w-2/5' : 'w-auto'}`;
-                        td.textContent = record[header];
-                        row.appendChild(td);
-                    });
-                    tableBody.appendChild(row);
+                displayOrder.forEach(id => {
+                    if (!visibleIds.has(id)) return; // Skip hidden items
+
+                    if(customRows.has(id)){
+                        const rowData = customRows.get(id);
+                        const row = document.createElement('tr');
+                        row.dataset.id = id;
+                        row.className = 'bg-gray-200 font-bold';
+                        
+                        const cell = document.createElement('td');
+                        cell.colSpan = headers.length;
+                        cell.className = 'px-4 py-2 text-gray-800';
+                        
+                        const contentWrapper = document.createElement('div');
+                        contentWrapper.className = 'flex justify-between items-center';
+                        
+                        const textSpan = document.createElement('span');
+                        textSpan.textContent = rowData.text;
+                        
+                        const buttonsWrapper = document.createElement('div');
+
+                        const editBtn = document.createElement('button');
+                        editBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" /></svg>`;
+                        editBtn.className = 'ml-2 text-gray-500 hover:text-blue-600 focus:outline-none';
+                        editBtn.onclick = (e) => { e.stopPropagation(); editHeaderRow(id, rowData.text); };
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
+                        deleteBtn.className = 'ml-1 text-gray-500 hover:text-red-600 focus:outline-none';
+                        deleteBtn.onclick = (e) => { e.stopPropagation(); deleteHeaderRow(id); };
+
+                        buttonsWrapper.append(editBtn, deleteBtn);
+                        contentWrapper.append(textSpan, buttonsWrapper);
+                        cell.appendChild(contentWrapper);
+                        row.appendChild(cell);
+                        tableBody.appendChild(row);
+
+                    } else if (allRecordsMap.has(id)) {
+                        const record = allRecordsMap.get(id);
+                        const row = document.createElement('tr');
+                        row.dataset.id = id; 
+                        row.className = 'hover:bg-gray-50';
+                        row.addEventListener('dblclick', () => hideItem(id));
+                        headers.forEach(header => {
+                            const td = document.createElement('td');
+                            td.className = `px-2 sm:px-6 py-2 text-sm text-gray-700 whitespace-normal break-all ${header === itemColumnName ? 'w-2/5' : 'w-auto'}`;
+                            td.textContent = record[header];
+                            row.appendChild(td);
+                        });
+                        tableBody.appendChild(row);
+                    }
                 });
 
-                // Initialize SortableJS
                 sortableInstance = new Sortable(tableBody, {
                     animation: 150,
                     ghostClass: 'sortable-ghost',
@@ -506,6 +594,7 @@
             
             // --- General Event Listeners ---
             addCategoryBtn.addEventListener('click', addCategory);
+            addHeaderBtn.addEventListener('click', addHeaderRow);
             categoryInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addCategory(); });
             clearFilterBtn.addEventListener('click', () => {
                 noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล';
@@ -524,7 +613,10 @@
                         unhideItems(hiddenItemsInCurrentView);
                     }
                 } else {
-                    unhideAllItems();
+                    const allHiddenInView = allRecords
+                        .map(record => record[itemColumnName])
+                        .filter(id => hiddenItemIds.has(id));
+                    unhideItems(allHiddenInView);
                 }
             });
         });
