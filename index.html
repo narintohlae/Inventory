@@ -119,13 +119,9 @@
                     headers.forEach(header => {
                         const td = document.createElement('td');
                         
-                        // Start with base classes that allow text wrapping for all columns
-                        let tdClass = 'px-6 py-2 text-sm text-gray-700 whitespace-normal';
-                        
-                        // Add specific class for 'Item' to break long words without spaces
-                        if (header === 'Item') {
-                            tdClass += ' break-all';
-                        }
+                        // Apply classes to allow text wrapping and breaking long words in all columns
+                        // This prevents table overflow on mobile devices.
+                        const tdClass = 'px-6 py-2 text-sm text-gray-700 whitespace-normal break-all';
                         
                         td.className = tdClass;
 
