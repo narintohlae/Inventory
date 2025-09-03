@@ -388,7 +388,10 @@
                 if (!text || !text.trim()) return;
 
                 try {
-                    const newDocRef = await addDoc(customRowsCollectionRef, { text: text.trim() });
+                    const newDocRef = await addDoc(customRowsCollectionRef, { 
+                        text: text.trim(),
+                        categoryName: activeCategoryName // Associate with the current category
+                    });
                     const newOrder = [newDocRef.id, ...itemOrder];
                     await saveSortOrder(newOrder);
                 } catch(error) {
@@ -517,38 +520,40 @@
 
                     if(customRows.has(id)){
                         const rowData = customRows.get(id);
-                        const row = document.createElement('tr');
-                        row.dataset.id = id;
-                        row.className = 'bg-gray-200 font-bold';
-                        
-                        const cell = document.createElement('td');
-                        cell.colSpan = headers.length;
-                        cell.className = 'px-4 py-2 text-gray-800';
-                        
-                        const contentWrapper = document.createElement('div');
-                        contentWrapper.className = 'flex justify-between items-center';
-                        
-                        const textSpan = document.createElement('span');
-                        textSpan.textContent = rowData.text;
-                        
-                        const buttonsWrapper = document.createElement('div');
+                        // Only display header if its category matches the active one
+                        if (rowData.categoryName === activeCategoryName) {
+                            const row = document.createElement('tr');
+                            row.dataset.id = id;
+                            row.className = 'bg-gray-200 font-bold';
+                            
+                            const cell = document.createElement('td');
+                            cell.colSpan = headers.length;
+                            cell.className = 'px-4 py-2 text-gray-800';
+                            
+                            const contentWrapper = document.createElement('div');
+                            contentWrapper.className = 'flex justify-between items-center';
+                            
+                            const textSpan = document.createElement('span');
+                            textSpan.textContent = rowData.text;
+                            
+                            const buttonsWrapper = document.createElement('div');
 
-                        const editBtn = document.createElement('button');
-                        editBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" /></svg>`;
-                        editBtn.className = 'ml-2 text-gray-500 hover:text-blue-600 focus:outline-none';
-                        editBtn.onclick = (e) => { e.stopPropagation(); editHeaderRow(id, rowData.text); };
+                            const editBtn = document.createElement('button');
+                            editBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" /></svg>`;
+                            editBtn.className = 'ml-2 text-gray-500 hover:text-blue-600 focus:outline-none';
+                            editBtn.onclick = (e) => { e.stopPropagation(); editHeaderRow(id, rowData.text); };
 
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
-                        deleteBtn.className = 'ml-1 text-gray-500 hover:text-red-600 focus:outline-none';
-                        deleteBtn.onclick = (e) => { e.stopPropagation(); deleteHeaderRow(id); };
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
+                            deleteBtn.className = 'ml-1 text-gray-500 hover:text-red-600 focus:outline-none';
+                            deleteBtn.onclick = (e) => { e.stopPropagation(); deleteHeaderRow(id); };
 
-                        buttonsWrapper.append(editBtn, deleteBtn);
-                        contentWrapper.append(textSpan, buttonsWrapper);
-                        cell.appendChild(contentWrapper);
-                        row.appendChild(cell);
-                        tableBody.appendChild(row);
-
+                            buttonsWrapper.append(editBtn, deleteBtn);
+                            contentWrapper.append(textSpan, buttonsWrapper);
+                            cell.appendChild(contentWrapper);
+                            row.appendChild(cell);
+                            tableBody.appendChild(row);
+                        }
                     } else if (allRecordsMap.has(id)) {
                         const record = allRecordsMap.get(id);
                         const row = document.createElement('tr');
