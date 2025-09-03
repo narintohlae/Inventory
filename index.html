@@ -94,67 +94,6 @@
         color: #4b5563; /* gray-600 */
         font-size: 0.875rem; /* text-sm */
     }
-
-    /* --- Responsive Table Styles for Mobile --- */
-    @media (max-width: 767px) {
-        /* Hide the original table header on mobile */
-        #table-header-container {
-            display: none;
-        }
-
-        /* Make the table container full width */
-        #table-container {
-            width: 100% !important;
-            margin: 0 !important;
-        }
-
-        /* Treat each row as a separate card */
-        #table-body-container tr:not(.header-row) {
-            display: block;
-            margin-bottom: 1rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            padding: 0.5rem;
-        }
-        
-        /* Make cells stack vertically and act like label-value pairs */
-        #table-body-container td {
-            display: flex;
-            justify-content: space-between;
-            text-align: right;
-            padding: 0.5rem;
-            border-bottom: 1px solid #f3f4f6;
-        }
-
-        #table-body-container td:last-child {
-            border-bottom: none;
-        }
-
-        /* Use the data-label attribute to create a label */
-        #table-body-container td::before {
-            content: attr(data-label);
-            font-weight: 600;
-            text-align: left;
-            margin-right: 1rem;
-            color: #4b5563;
-        }
-        
-        /* Special style for the product name to act as a card header */
-        #table-body-container td.product-name-cell {
-            font-weight: bold;
-            font-size: 1.125rem;
-            justify-content: center;
-            background-color: #f9fafb;
-            border-top-left-radius: 0.5rem;
-            border-top-right-radius: 0.5rem;
-        }
-        
-        /* Hide the label for the product name cell */
-        #table-body-container td.product-name-cell::before {
-            display: none;
-        }
-    }
   </style>
 </head>
 
