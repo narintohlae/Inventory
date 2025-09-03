@@ -88,9 +88,14 @@
                     <div id="category-list" class="flex flex-wrap gap-2 items-center">
                         <!-- Categories will be injected here by JavaScript -->
                     </div>
-                    <button id="clear-filter-btn" class="hidden mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                        แสดงทั้งหมด
-                    </button>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <button id="clear-filter-btn" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                            แสดงทั้งหมด
+                        </button>
+                        <button id="show-hidden-btn" class="hidden bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                            แสดงแถวที่ซ่อน
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -136,7 +141,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setLogLevel, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         document.addEventListener('DOMContentLoaded', () => {
             const sheetUrl = 'https://script.google.com/macros/s/AKfycbyW37lyYs-WKqsSyoG8PO2emr3bH1J0CnkNWKnZ409-y43qo-hbOy9UFO6L3dnSP8FlHg/exec';
@@ -168,16 +173,21 @@
             const addCategoryBtn = document.getElementById('add-category-btn');
             const categoryList = document.getElementById('category-list');
             const clearFilterBtn = document.getElementById('clear-filter-btn');
+            const showHiddenBtn = document.getElementById('show-hidden-btn');
             
             // App State
             let allRecords = [];
+            let currentRecords = [];
             let categories = []; 
             let itemColumnName = '';
+            let hiddenItemIds = new Set();
             
             // Firebase State
             let userId = null;
             let categoriesCollectionRef;
             let unsubscribeCategories;
+            let hiddenItemsCollectionRef;
+            let unsubscribeHiddenItems;
 
             // Firebase Config
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -205,15 +215,18 @@
                     appContainer.classList.remove('hidden');
                     userEmailEl.textContent = user.email;
                     initializeCategoryListener(userId);
-                    if(allRecords.length === 0) fetchData(); // Fetch data only if not already fetched
+                    initializeHiddenItemsListener(userId);
+                    if(allRecords.length === 0) fetchData(); 
                 } else {
                     // User is logged out
                     userId = null;
                     authContainer.classList.remove('hidden');
                     appContainer.classList.add('hidden');
                     if (unsubscribeCategories) unsubscribeCategories();
+                    if (unsubscribeHiddenItems) unsubscribeHiddenItems();
                     categories = [];
-                    displayCategories(); // Clear categories UI
+                    hiddenItemIds.clear();
+                    displayCategories(); 
                 }
             });
 
@@ -233,7 +246,6 @@
                 loginErrorEl.textContent = '';
                 try {
                     await signInWithEmailAndPassword(auth, loginEmailInput.value, loginPasswordInput.value);
-                    // onAuthStateChanged will handle the rest
                 } catch (error) {
                     console.error("Login failed:", error.message);
                     loginErrorEl.textContent = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
@@ -245,7 +257,6 @@
                 registerErrorEl.textContent = '';
                 try {
                     await createUserWithEmailAndPassword(auth, registerEmailInput.value, registerPasswordInput.value);
-                    // onAuthStateChanged will handle the rest
                 } catch (error) {
                     console.error("Registration failed:", error.message);
                     if (error.code === 'auth/weak-password') {
@@ -284,11 +295,52 @@
                 });
             }
 
+            // --- Hidden Items Functions (Firestore) ---
+            function initializeHiddenItemsListener(currentUserId) {
+                if (!currentUserId) return;
+                if (unsubscribeHiddenItems) unsubscribeHiddenItems();
+
+                hiddenItemsCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/hiddenItems`);
+
+                unsubscribeHiddenItems = onSnapshot(hiddenItemsCollectionRef, (snapshot) => {
+                    hiddenItemIds = new Set(snapshot.docs.map(doc => doc.id));
+                    if (allRecords.length > 0) {
+                        displayData(currentRecords); // Re-render the currently viewed data
+                    }
+                    updateShowHiddenButtonVisibility();
+                }, (error) => {
+                    console.error("Error listening to hidden items:", error);
+                    showError("ไม่สามารถโหลดข้อมูลรายการที่ซ่อนได้");
+                });
+            }
+
+            async function hideItem(itemId) {
+                if (!hiddenItemsCollectionRef || !itemId) return;
+                try {
+                    const itemDocRef = doc(hiddenItemsCollectionRef, itemId);
+                    await setDoc(itemDocRef, { hidden: true });
+                } catch (error) {
+                    console.error("Error hiding item:", error);
+                    showError("ไม่สามารถซ่อนรายการได้");
+                }
+            }
+
+            async function unhideAllItems() {
+                if (!hiddenItemsCollectionRef) return;
+                try {
+                    const snapshot = await getDocs(hiddenItemsCollectionRef);
+                    const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref));
+                    await Promise.all(deletePromises);
+                } catch(error) {
+                    console.error("Error unhiding items:", error);
+                    showError("ไม่สามารถแสดงรายการที่ซ่อนได้");
+                }
+            }
+
+
             function displayCategories() {
                 categoryList.innerHTML = '';
-                if (!userId) { // Don't display if logged out
-                    return;
-                }
+                if (!userId) return;
                 if (categories.length === 0) {
                     categoryList.innerHTML = '<p class="text-gray-500 text-sm">ยังไม่มีหมวดหมู่ที่บันทึกไว้</p>';
                     return;
@@ -411,16 +463,27 @@
             }
             
             function displayData(records) {
+                currentRecords = records; // Keep track of the currently displayed dataset
                 tableHead.innerHTML = '';
                 tableBody.innerHTML = '';
+
                 if (!records || records.length === 0) {
                     tableEl.classList.add('hidden');
                     noDataEl.classList.remove('hidden');
                     return;
                 }
+                
+                const visibleRecords = records.filter(record => !hiddenItemIds.has(record[itemColumnName]));
+
+                if (visibleRecords.length === 0) {
+                    tableEl.classList.add('hidden');
+                    noDataEl.classList.remove('hidden');
+                    return;
+                }
+
                 noDataEl.classList.add('hidden');
                 tableEl.classList.remove('hidden');
-                const headers = Object.keys(records[0]);
+                const headers = Object.keys(visibleRecords[0]);
                 const headerRow = document.createElement('tr');
                 headers.forEach(header => {
                     const th = document.createElement('th');
@@ -432,9 +495,16 @@
                     headerRow.appendChild(th);
                 });
                 tableHead.appendChild(headerRow);
-                records.forEach(record => {
+                
+                visibleRecords.forEach(record => {
                     const row = document.createElement('tr');
                     row.className = 'hover:bg-gray-50';
+                    const itemId = record[itemColumnName];
+
+                    row.addEventListener('dblclick', () => {
+                        hideItem(itemId);
+                    });
+
                     headers.forEach(header => {
                         const td = document.createElement('td');
                         const baseClasses = 'px-2 sm:px-6 py-2 text-sm text-gray-700 whitespace-normal break-all';
@@ -445,6 +515,7 @@
                     });
                     tableBody.appendChild(row);
                 });
+                updateShowHiddenButtonVisibility();
             }
 
             function showError(message) {
@@ -457,6 +528,14 @@
                 noDataEl.classList.remove('hidden');
                 tableEl.classList.add('hidden');
             }
+
+            function updateShowHiddenButtonVisibility() {
+                if (hiddenItemIds.size > 0) {
+                    showHiddenBtn.classList.remove('hidden');
+                } else {
+                    showHiddenBtn.classList.add('hidden');
+                }
+            }
             
             // Event Listeners for category management
             addCategoryBtn.addEventListener('click', addCategory);
@@ -468,6 +547,9 @@
                 displayData(allRecords);
                 clearFilterBtn.classList.add('hidden');
                 document.querySelectorAll('#category-list > div').forEach(el => el.classList.remove('ring-2', 'ring-blue-500'));
+            });
+            showHiddenBtn.addEventListener('click', () => {
+                unhideAllItems();
             });
         });
     </script>
