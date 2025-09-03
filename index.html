@@ -119,14 +119,14 @@
                     headers.forEach(header => {
                         const td = document.createElement('td');
                         
-                        let tdClass = 'px-6 py-2 text-sm text-gray-700';
+                        // Start with base classes that allow text wrapping for all columns
+                        let tdClass = 'px-6 py-2 text-sm text-gray-700 whitespace-normal';
+                        
+                        // Add specific class for 'Item' to break long words without spaces
                         if (header === 'Item') {
-                            // For the 'Item' column, allow text to wrap and break words to prevent overflow
-                            tdClass += ' whitespace-normal break-all'; 
-                        } else {
-                            // For other columns, keep the text on a single line
-                            tdClass += ' whitespace-nowrap';
+                            tdClass += ' break-all';
                         }
+                        
                         td.className = tdClass;
 
                         td.textContent = record[header];
