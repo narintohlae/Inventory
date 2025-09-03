@@ -23,22 +23,28 @@
     .row-hidden {
         display: none;
     }
-    #table-body-container tr, #category-buttons button:not(.no-drag) {
-        cursor: grab;
+    
+    /* Desktop Styles */
+    @media (min-width: 768px) {
+      #table-body-container tr, #category-buttons button:not(.no-drag) {
+          cursor: grab;
+      }
+      #table-body-container tr:active, #category-buttons button:not(.no-drag):active {
+          cursor: grabbing;
+      }
+      #table-body-container tr {
+          cursor: pointer;
+      }
     }
-    #table-body-container tr:active, #category-buttons button:not(.no-drag):active {
-        cursor: grabbing;
-    }
+    
     .sortable-ghost {
-        background-color: #dbeafe; /* blue-100 */
+        background-color: #dbeafe;
         opacity: 0.7;
     }
     .no-drag {
         cursor: pointer;
     }
-    #table-body-container tr {
-        cursor: pointer;
-    }
+    
     /* Style for configured items indicator */
     .cell-configured, .cell-partially-configured {
         position: relative;
@@ -48,17 +54,18 @@
     .cell-configured::before, .cell-partially-configured::before {
         content: '';
         flex-shrink: 0;
-        width: 6px; /* Smaller size */
+        width: 6px;
         height: 6px;
         border-radius: 50%;
-        margin-right: 8px; /* Moved to the front */
+        margin-right: 8px;
     }
     .cell-configured::before {
-        background-color: #10b981; /* emerald-500, green */
+        background-color: #10b981;
     }
     .cell-partially-configured::before {
-        background-color: #f59e0b; /* amber-500, yellow */
+        background-color: #f59e0b;
     }
+    
     /* Custom Context Menu */
     .context-menu {
         position: absolute;
@@ -86,13 +93,159 @@
         cursor: not-allowed;
         background-color: transparent;
     }
+    
     /* Header Row in Table */
     .header-row td {
-        background-color: #e5e7eb; /* gray-200 */
+        background-color: #e5e7eb;
         font-weight: bold;
         text-align: center;
-        color: #4b5563; /* gray-600 */
-        font-size: 0.875rem; /* text-sm */
+        color: #4b5563;
+        font-size: 0.875rem;
+    }
+    
+    /* Mobile Card Styles */
+    .mobile-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 12px;
+        padding: 16px;
+        border-left: 4px solid #e5e7eb;
+        transition: all 0.2s ease;
+    }
+    
+    .mobile-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transform: translateY(-1px);
+    }
+    
+    .mobile-card.configured {
+        border-left-color: #10b981;
+    }
+    
+    .mobile-card.partially-configured {
+        border-left-color: #f59e0b;
+    }
+    
+    .mobile-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .mobile-card-title {
+        font-weight: 600;
+        font-size: 16px;
+        color: #1f2937;
+        flex: 1;
+        margin-right: 8px;
+        line-height: 1.3;
+    }
+    
+    .mobile-card-status {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        color: #6b7280;
+    }
+    
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    
+    .status-dot.configured {
+        background-color: #10b981;
+    }
+    
+    .status-dot.partially-configured {
+        background-color: #f59e0b;
+    }
+    
+    .mobile-card-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        font-size: 14px;
+    }
+    
+    .mobile-card-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+    }
+    
+    .mobile-card-label {
+        color: #6b7280;
+        font-size: 12px;
+        margin-bottom: 2px;
+    }
+    
+    .mobile-card-value {
+        color: #1f2937;
+        font-weight: 500;
+    }
+    
+    .mobile-card-value.highlight {
+        color: #3b82f6;
+        font-weight: 600;
+    }
+    
+    .mobile-card-value.stock {
+        color: #059669;
+        font-weight: 600;
+        text-align: center;
+        background: #f0f9f4;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    
+    /* Mobile Header Row */
+    .mobile-header-card {
+        background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 16px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    /* Hide desktop table on mobile */
+    @media (max-width: 767px) {
+      .desktop-table {
+        display: none !important;
+      }
+      .mobile-view {
+        display: block !important;
+      }
+    }
+    
+    /* Hide mobile view on desktop */
+    @media (min-width: 768px) {
+      .mobile-view {
+        display: none !important;
+      }
+      .desktop-table {
+        display: block !important;
+      }
+    }
+    
+    /* Responsive adjustments for buttons */
+    @media (max-width: 640px) {
+      .mobile-card-content {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
     }
   </style>
 </head>
@@ -122,11 +275,17 @@
       <p id="status-text" class="mt-4 text-lg">กำลังโหลดข้อมูล...</p>
     </div>
 
-    <div class="overflow-x-auto bg-white rounded-lg shadow-md hidden md:w-fit md:mx-auto" id="table-container">
-      <table class="divide-y divide-gray-200 table-auto md:table-fixed">
+    <!-- Desktop Table View -->
+    <div class="desktop-table overflow-x-auto bg-white rounded-lg shadow-md md:w-fit md:mx-auto" id="table-container">
+      <table class="divide-y divide-gray-200">
         <thead class="bg-gray-50" id="table-header-container"></thead>
         <tbody class="bg-white" id="table-body-container"></tbody>
       </table>
+    </div>
+    
+    <!-- Mobile Card View -->
+    <div class="mobile-view" id="mobile-container">
+      <div id="mobile-content-container"></div>
     </div>
     
     <!-- Pagination Controls -->
@@ -230,10 +389,7 @@
     let currentProductForManagement = null;
     let contextMenu = null;
     let currentPage = 1;
-    let clickTimer = null; // Timer for distinguishing single/double clicks
-    
-    // --- Column Resizing State ---
-    let pageX, curCol, curColWidth;
+    let clickTimer = null;
 
     // DOM Elements
     const elements = {
@@ -243,6 +399,8 @@
         tableContainer: document.getElementById('table-container'),
         tableHeaderContainer: document.getElementById('table-header-container'),
         tableBodyContainer: document.getElementById('table-body-container'),
+        mobileContainer: document.getElementById('mobile-container'),
+        mobileContentContainer: document.getElementById('mobile-content-container'),
         paginationContainer: document.getElementById('pagination-container'),
         categoryButtonsContainer: document.getElementById('category-buttons'),
         manageCategoriesBtn: document.getElementById('manage-categories-btn'),
@@ -393,13 +551,172 @@
         elements.paginationContainer.appendChild(nextButton);
     }
 
+    function renderMobileCards(visibleDataItems, selectedCategory) {
+        elements.mobileContentContainer.innerHTML = '';
+
+        if (!allData || allData.length === 0) {
+            showStatus('ไม่พบข้อมูล', false);
+            return;
+        }
+
+        const headers = Object.keys(allData[0]).filter(h => h !== 'originalOrder');
+        const visibleProductIds = new Set(visibleDataItems.map(item => item.originalOrder));
+        let allPossibleRows = [];
+
+        customRowOrder.forEach(orderItem => {
+            let shouldRender = false;
+            if (typeof orderItem === 'object' && orderItem.type === 'header') {
+                if (orderItem.category === selectedCategory) shouldRender = true;
+            } else if (typeof orderItem === 'number' && visibleProductIds.has(orderItem)) {
+                shouldRender = true;
+            }
+            if(shouldRender) allPossibleRows.push(orderItem);
+        });
+        
+        let rowsToRender = allPossibleRows;
+
+        if (selectedCategory === 'อื่นๆ' && allPossibleRows.length > ITEMS_PER_PAGE) {
+            renderPaginationControls(allPossibleRows.length, selectedCategory);
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            rowsToRender = allPossibleRows.slice(startIndex, endIndex);
+        } else {
+            elements.paginationContainer.innerHTML = '';
+        }
+
+        rowsToRender.forEach(orderItem => {
+            if (typeof orderItem === 'object' && orderItem.type === 'header') {
+                const headerCard = document.createElement('div');
+                headerCard.className = 'mobile-header-card';
+                headerCard.dataset.id = orderItem.id;
+                headerCard.textContent = orderItem.text;
+                elements.mobileContentContainer.appendChild(headerCard);
+            } else if (typeof orderItem === 'number') {
+                const productId = orderItem;
+                const rowData = allData.find(item => item.originalOrder === productId);
+                if (!rowData) return;
+
+                if (hiddenRowIds.includes(productId)) return;
+
+                const card = document.createElement('div');
+                card.className = 'mobile-card';
+                card.dataset.id = `data_${productId}`;
+                card.dataset.originalOrder = productId;
+
+                // Check configuration status
+                const settings = itemSettings[productId];
+                if(settings) {
+                    const reorderSet = settings.reorderPoint !== undefined && settings.reorderPoint !== null && settings.reorderPoint !== '';
+                    const dispenseSet = settings.autoDispenseQty !== undefined && settings.autoDispenseQty !== null && settings.autoDispenseQty !== '';
+                    if (reorderSet && dispenseSet) {
+                        card.classList.add('configured');
+                    } else if (reorderSet || dispenseSet) {
+                        card.classList.add('partially-configured');
+                    }
+                }
+
+                // Card header
+                const cardHeader = document.createElement('div');
+                cardHeader.className = 'mobile-card-header';
+
+                const cardTitle = document.createElement('div');
+                cardTitle.className = 'mobile-card-title';
+                cardTitle.textContent = rowData[PRODUCT_NAME_COLUMN] || 'ไม่ระบุชื่อ';
+
+                const cardStatus = document.createElement('div');
+                cardStatus.className = 'mobile-card-status';
+                
+                if (settings) {
+                    const statusDot = document.createElement('div');
+                    statusDot.className = 'status-dot';
+                    const reorderSet = settings.reorderPoint !== undefined && settings.reorderPoint !== null && settings.reorderPoint !== '';
+                    const dispenseSet = settings.autoDispenseQty !== undefined && settings.autoDispenseQty !== null && settings.autoDispenseQty !== '';
+                    
+                    if (reorderSet && dispenseSet) {
+                        statusDot.classList.add('configured');
+                        cardStatus.appendChild(statusDot);
+                        cardStatus.appendChild(document.createTextNode('ตั้งค่าแล้ว'));
+                    } else if (reorderSet || dispenseSet) {
+                        statusDot.classList.add('partially-configured');
+                        cardStatus.appendChild(statusDot);
+                        cardStatus.appendChild(document.createTextNode('ตั้งค่าบางส่วน'));
+                    }
+                }
+
+                cardHeader.appendChild(cardTitle);
+                if (cardStatus.hasChildNodes()) {
+                    cardHeader.appendChild(cardStatus);
+                }
+
+                // Card content
+                const cardContent = document.createElement('div');
+                cardContent.className = 'mobile-card-content';
+
+                // Important fields first
+                const importantFields = [STOCK_COLUMN_NAME, BABYSHOP_STOCK_COLUMN, 'รวม', 'หน่วย'];
+                const otherFields = headers.filter(h => h !== PRODUCT_NAME_COLUMN && !importantFields.includes(h));
+
+                [...importantFields, ...otherFields].forEach(header => {
+                    if (header === PRODUCT_NAME_COLUMN) return; // Already shown in header
+
+                    const item = document.createElement('div');
+                    item.className = 'mobile-card-item';
+
+                    const label = document.createElement('div');
+                    label.className = 'mobile-card-label';
+                    label.textContent = header;
+
+                    const value = document.createElement('div');
+                    value.className = 'mobile-card-value';
+                    
+                    if (header === STOCK_COLUMN_NAME || header === BABYSHOP_STOCK_COLUMN) {
+                        value.classList.add('stock');
+                    } else if (header === 'รวม') {
+                        value.classList.add('highlight');
+                    }
+                    
+                    value.textContent = rowData[header] || '-';
+
+                    item.appendChild(label);
+                    item.appendChild(value);
+                    cardContent.appendChild(item);
+                });
+
+                card.appendChild(cardHeader);
+                card.appendChild(cardContent);
+
+                // Add click handler for opening item modal
+                card.addEventListener('click', () => {
+                    openItemModal(rowData);
+                });
+
+                // Add double-click handler for hiding
+                card.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    card.style.display = 'none';
+                    if (!hiddenRowIds.includes(productId)) {
+                        hiddenRowIds.push(productId);
+                        saveSettings();
+                    }
+                    elements.resetHiddenRowsBtn.classList.remove('hidden');
+                });
+
+                elements.mobileContentContainer.appendChild(card);
+            }
+        });
+
+        elements.resetHiddenRowsBtn.classList.toggle('hidden', hiddenRowIds.length === 0);
+    }
+
     function displayData(visibleDataItems, selectedCategory) {
-        const table = elements.tableContainer.querySelector('table');
-        table.style.tableLayout = 'auto'; // Reset for content-based width calculation
+        // Desktop table rendering (unchanged from original)
         elements.tableHeaderContainer.innerHTML = '';
         elements.tableBodyContainer.innerHTML = '';
 
-        if (!allData || allData.length === 0) { showStatus('ไม่พบข้อมูล', false); return; }
+        if (!allData || allData.length === 0) { 
+            showStatus('ไม่พบข้อมูล', false); 
+            return; 
+        }
 
         const headers = Object.keys(allData[0]).filter(h => h !== 'originalOrder');
         const headerRow = document.createElement('tr');
@@ -407,7 +724,6 @@
         headers.forEach(headerText => {
             const th = document.createElement('th');
             let baseClass = 'px-2 py-2 sm:px-4 sm:py-3 text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider ';
-            // Alignment for headers
             if (headerText === STOCK_COLUMN_NAME || headerText === BABYSHOP_STOCK_COLUMN) {
                 baseClass += 'text-center';
             } else if (headerText === 'รวม') {
@@ -431,7 +747,6 @@
             } else if (typeof orderItem === 'number' && visibleProductIds.has(orderItem)) {
                 shouldRender = true;
             }
-
             if(shouldRender) allPossibleRows.push(orderItem);
         });
         
@@ -486,9 +801,13 @@
                 headers.forEach(header => {
                     const cell = document.createElement('td');
                     let baseClass = 'px-2 py-2 sm:px-4 whitespace-nowrap text-xs sm:text-sm text-gray-700 ';
-                    if (header === STOCK_COLUMN_NAME || header === BABYSHOP_STOCK_COLUMN) baseClass += 'text-center';
-                    else if (header === 'รวม') baseClass += 'text-right';
-                    else if (header === 'หน่วย') baseClass += 'text-left';
+                    if (header === STOCK_COLUMN_NAME || header === BABYSHOP_STOCK_COLUMN) {
+                        baseClass += 'text-center';
+                    } else if (header === 'รวม') {
+                        baseClass += 'text-right';
+                    } else if (header === 'หน่วย') {
+                         baseClass += 'text-left';
+                    }
 
                     cell.className = baseClass;
                     cell.dataset.label = header;
@@ -510,26 +829,6 @@
             }
         });
         
-        // --- Column Resizing Logic ---
-        const ths = Array.from(elements.tableHeaderContainer.querySelectorAll('th'));
-        ths.forEach(th => {
-            th.style.width = `${th.offsetWidth}px`;
-        });
-        table.style.tableLayout = 'fixed';
-        ths.forEach(th => {
-            th.style.position = 'relative';
-            const resizer = document.createElement('div');
-            resizer.style.position = 'absolute';
-            resizer.style.top = '0';
-            resizer.style.right = '-2.5px';
-            resizer.style.width = '5px';
-            resizer.style.cursor = 'col-resize';
-            resizer.style.userSelect = 'none';
-            resizer.style.height = '100%';
-            resizer.addEventListener('mousedown', initResize);
-            th.appendChild(resizer);
-        });
-
         elements.resetHiddenRowsBtn.classList.toggle('hidden', hiddenRowIds.length === 0);
         if (sortableInstance) sortableInstance.destroy();
         sortableInstance = new Sortable(elements.tableBodyContainer, { 
@@ -538,8 +837,13 @@
             delay: 50,
             onEnd: handleDragEnd
         });
+
+        // Render mobile cards
+        renderMobileCards(visibleDataItems, selectedCategory);
+
         elements.statusContainer.classList.add('hidden');
         elements.tableContainer.classList.remove('hidden');
+        elements.mobileContainer.classList.remove('hidden');
     }
 
     function showStatus(message, isError = false) {
@@ -548,35 +852,6 @@
       if (isError) elements.statusText.classList.add('text-red-500');
     }
 
-    // --- Column Resizing Handlers ---
-    function initResize(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        pageX = e.pageX;
-        curCol = e.target.parentElement;
-        curColWidth = curCol.offsetWidth;
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    }
-
-    function onMouseMove(e) {
-        if (curCol) {
-            const diffX = e.pageX - pageX;
-            const newWidth = curColWidth + diffX;
-            if (newWidth > 40) {
-                curCol.style.width = newWidth + 'px';
-            }
-        }
-    }
-
-    function onMouseUp() {
-        curCol = undefined;
-        pageX = undefined;
-        curColWidth = undefined;
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-    }
-    
     // --- Event Handlers & Context Menu ---
 
     function filterByCategory(selectedCategory, isPageChange = false) {
@@ -640,6 +915,9 @@
         hiddenRowIds = [];
         saveSettings();
         document.querySelectorAll('.row-hidden').forEach(row => row.classList.remove('row-hidden'));
+        document.querySelectorAll('.mobile-card').forEach(card => {
+            if (card.style.display === 'none') card.style.display = '';
+        });
         elements.resetHiddenRowsBtn.classList.add('hidden');
     }
     
@@ -735,8 +1013,49 @@
         if (activeButton) filterByCategory(activeButton.dataset.category);
     }
     
-    function handleAddCategory() { /* ... unchanged ... */ }
-    function renderCategoryManagementList() { /* ... unchanged ... */ }
+    function handleAddCategory() {
+        const categoryName = elements.newCategoryInput.value.trim();
+        if (categoryName && !categoriesMap[categoryName]) {
+            const keywords = prompt(`กรุณาใส่คำค้นหาสำหรับหมวดหมู่ "${categoryName}" (คั่นด้วยเครื่องหมายจุลภาค):`, '');
+            if (keywords) {
+                categoriesMap[categoryName] = keywords.split(',').map(k => k.trim()).filter(k => k !== '');
+                customCategoryOrder.push(categoryName);
+                saveSettings();
+                elements.newCategoryInput.value = '';
+                renderCategoryManagementList();
+            }
+        } else if (categoriesMap[categoryName]) {
+            alert('หมวดหมู่นี้มีอยู่แล้ว');
+        }
+    }
+
+    function renderCategoryManagementList() {
+        elements.categoryList.innerHTML = '';
+        Object.entries(categoriesMap).forEach(([category, keywords]) => {
+            const div = document.createElement('div');
+            div.className = 'flex justify-between items-center py-2 px-3 bg-gray-50 rounded-md mb-2';
+            
+            const text = document.createElement('span');
+            text.textContent = `${category}: ${keywords.join(', ')}`;
+            text.className = 'text-sm';
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'ลบ';
+            deleteBtn.className = 'text-red-500 hover:text-red-700 text-sm';
+            deleteBtn.onclick = () => {
+                if (confirm(`ต้องการลบหมวดหมู่ "${category}" หรือไม่?`)) {
+                    delete categoriesMap[category];
+                    customCategoryOrder = customCategoryOrder.filter(cat => cat !== category);
+                    saveSettings();
+                    renderCategoryManagementList();
+                }
+            };
+            
+            div.appendChild(text);
+            div.appendChild(deleteBtn);
+            elements.categoryList.appendChild(div);
+        });
+    }
 
     // --- Context Menu ---
     function hideContextMenu() {
@@ -794,7 +1113,6 @@
         document.body.appendChild(contextMenu);
     }
 
-
     // --- App Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
         const app = initializeApp(firebaseConfig);
@@ -815,8 +1133,12 @@
         elements.submitItemModalBtn.addEventListener('click', handleItemModalSubmit);
         elements.closeSummaryModalBtn.addEventListener('click', () => closeModal('summary'));
         
-        document.body.addEventListener('contextmenu', showContextMenu);
-        document.body.addEventListener('click', hideContextMenu);
+        // Only add context menu for desktop
+        if (window.innerWidth >= 768) {
+            document.body.addEventListener('contextmenu', showContextMenu);
+            document.body.addEventListener('click', hideContextMenu);
+        }
+        
         window.addEventListener('click', (event) => { 
             if (event.target === elements.categoryModal) closeModal('category');
             if (event.target === elements.itemModal) closeModal('item');
@@ -827,4 +1149,3 @@
 
 </body>
 </html>
-
