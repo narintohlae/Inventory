@@ -106,7 +106,8 @@
                 headers.forEach(header => {
                     const th = document.createElement('th');
                     th.scope = 'col';
-                    let baseClasses = 'px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                    // Responsive padding: smaller on mobile, larger on bigger screens
+                    let baseClasses = 'px-2 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
                     
                     // Give 'Item' column a hint to be wider
                     if (header === 'Item') {
@@ -127,7 +128,8 @@
                     headers.forEach(header => {
                         const td = document.createElement('td');
                         
-                        const baseClasses = 'px-6 py-2 text-sm text-gray-700 whitespace-normal break-all';
+                        // Responsive padding and word break for all columns
+                        const baseClasses = 'px-2 sm:px-6 py-2 text-sm text-gray-700 whitespace-normal break-all';
                         
                         if (header === 'Item') {
                             td.className = `${baseClasses} w-2/5`;
