@@ -348,15 +348,20 @@
             }
 
 
-            // --- Firestore Write Functions ---
+            // --- Firestore Write Functions (Robust Read-Modify-Write) ---
             async function saveCurrentSortOrder(newOrder) {
                 if (!sortOrdersDocRef) return;
                 const key = activeCategoryName || '__global__';
-                sortOrdersMap[key] = newOrder;
-                try { await setDoc(sortOrdersDocRef, { orders: sortOrdersMap }); } 
-                catch (error) { showError("ไม่สามารถบันทึกลำดับการจัดเรียงได้"); }
+                try {
+                    const docSnap = await getDoc(sortOrdersDocRef);
+                    const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {};
+                    currentOrders[key] = newOrder;
+                    await setDoc(sortOrdersDocRef, { orders: currentOrders });
+                } catch (error) {
+                    showError("ไม่สามารถบันทึกลำดับการจัดเรียงได้: " + error.message);
+                }
             }
-             async function saveCategoryOrder(newOrder) {
+            async function saveCategoryOrder(newOrder) {
                 if (!categoryOrderDocRef) return;
                 try { await setDoc(categoryOrderDocRef, { order: newOrder }); } 
                 catch (error) { showError("ไม่สามารถบันทึกลำดับหมวดหมู่ได้"); }
@@ -401,14 +406,19 @@
                 if (!text || !text.trim()) return;
                 try {
                     const key = activeCategoryName || '__global__';
-                    const currentOrder = sortOrdersMap[key] || [];
+                    
                     const newDocRef = await addDoc(customRowsCollectionRef, { 
                         text: text.trim(),
                         categoryName: activeCategoryName 
                     });
-                    const newOrder = [newDocRef.id, ...currentOrder];
-                    await saveCurrentSortOrder(newOrder);
-                } catch(error) { showError("ไม่สามารถเพิ่มหัวข้อได้"); }
+                    
+                    const docSnap = await getDoc(sortOrdersDocRef);
+                    const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {};
+                    const currentCategoryOrder = currentOrders[key] || [];
+                    currentOrders[key] = [newDocRef.id, ...currentCategoryOrder];
+
+                    await setDoc(sortOrdersDocRef, { orders: currentOrders });
+                } catch(error) { showError("ไม่สามารถเพิ่มหัวข้อได้: " + error.message); }
             }
             async function editHeaderRow(id, oldText) {
                 const newText = prompt("แก้ไขชื่อหัวข้อ:", oldText);
@@ -418,14 +428,18 @@
                 }
             }
             async function deleteHeaderRow(id) {
-                if (!customRowsCollectionRef) return;
+                if (!customRowsCollectionRef || !sortOrdersDocRef) return;
                 try {
                     const key = activeCategoryName || '__global__';
-                    const currentOrder = sortOrdersMap[key] || [];
-                    const newOrder = currentOrder.filter(itemId => itemId !== id);
-                    await saveCurrentSortOrder(newOrder);
+                    
+                    const docSnap = await getDoc(sortOrdersDocRef);
+                    const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {};
+                    const currentCategoryOrder = currentOrders[key] || [];
+                    currentOrders[key] = currentCategoryOrder.filter(itemId => itemId !== id);
+
+                    await setDoc(sortOrdersDocRef, { orders: currentOrders });
                     await deleteDoc(doc(customRowsCollectionRef, id));
-                } catch (error) { showError("ไม่สามารถลบหัวข้อได้"); }
+                } catch (error) { showError("ไม่สามารถลบหัวข้อได้: " + error.message); }
             }
 
 
