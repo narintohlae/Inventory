@@ -19,7 +19,7 @@
         .sortable-chosen {
             cursor: grabbing;
         }
-        #table-body tr {
+        #table-body tr, #category-list > div {
             cursor: grab;
         }
     </style>
@@ -199,7 +199,9 @@
             let itemColumnName = '';
             let hiddenItemIds = new Set();
             let sortableInstance = null;
+            let categorySortableInstance = null;
             let itemOrder = [];
+            let categoryOrder = [];
             let activeCategoryName = null;
             
             // Firebase State
@@ -212,6 +214,8 @@
             let unsubscribeSortOrder;
             let customRowsCollectionRef;
             let unsubscribeCustomRows;
+            let categoryOrderDocRef;
+            let unsubscribeCategoryOrder;
 
 
             // Firebase Config
@@ -248,9 +252,11 @@
                     if (unsubscribeHiddenItems) unsubscribeHiddenItems();
                     if (unsubscribeSortOrder) unsubscribeSortOrder();
                     if (unsubscribeCustomRows) unsubscribeCustomRows();
+                    if (unsubscribeCategoryOrder) unsubscribeCategoryOrder();
                     categories = [];
                     hiddenItemIds.clear();
                     itemOrder = [];
+                    categoryOrder = [];
                     customRows.clear();
                     displayCategories(); 
                 }
@@ -262,6 +268,7 @@
                  initializeHiddenItemsListener(currentUserId);
                  initializeSortOrderListener(currentUserId);
                  initializeCustomRowsListener(currentUserId);
+                 initializeCategoryOrderListener(currentUserId);
             }
 
             // --- Auth UI Toggling & Event Handlers ---
@@ -301,7 +308,7 @@
                 if (unsubscribeCategories) unsubscribeCategories();
                 categoriesCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/categories`);
                 unsubscribeCategories = onSnapshot(categoriesCollectionRef, (snapshot) => {
-                    categories = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name })).sort((a, b) => a.name.localeCompare(b.name, 'th'));
+                    categories = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
                     displayCategories();
                 }, (error) => showError("ไม่สามารถโหลดหมวดหมู่ได้"));
             }
@@ -318,22 +325,24 @@
                 if (unsubscribeSortOrder) unsubscribeSortOrder();
                 sortOrderDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/settings`, 'sortOrder');
                 unsubscribeSortOrder = onSnapshot(sortOrderDocRef, (docSnap) => {
-                    if (docSnap.exists() && docSnap.data().order) {
-                        itemOrder = docSnap.data().order;
-                    } else {
-                        itemOrder = [];
-                    }
+                    itemOrder = (docSnap.exists() && docSnap.data().order) ? docSnap.data().order : [];
                     if (allRecords.length > 0) displayData(currentRecords);
                 }, (error) => showError("ไม่สามารถโหลดลำดับการจัดเรียงได้"));
+            }
+            function initializeCategoryOrderListener(currentUserId) {
+                if (unsubscribeCategoryOrder) unsubscribeCategoryOrder();
+                categoryOrderDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/settings`, 'categoryOrder');
+                unsubscribeCategoryOrder = onSnapshot(categoryOrderDocRef, (docSnap) => {
+                    categoryOrder = (docSnap.exists() && docSnap.data().order) ? docSnap.data().order : [];
+                    if (categories.length > 0) displayCategories();
+                }, (error) => showError("ไม่สามารถโหลดลำดับหมวดหมู่ได้"));
             }
             function initializeCustomRowsListener(currentUserId) {
                 if(unsubscribeCustomRows) unsubscribeCustomRows();
                 customRowsCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/customRows`);
                 unsubscribeCustomRows = onSnapshot(customRowsCollectionRef, (snapshot) => {
                     customRows.clear();
-                    snapshot.docs.forEach(doc => {
-                        customRows.set(doc.id, doc.data());
-                    });
+                    snapshot.docs.forEach(doc => customRows.set(doc.id, doc.data()));
                     if (allRecords.length > 0) displayData(currentRecords);
                 }, (error) => showError("ไม่สามารถโหลดหัวข้อได้"));
             }
@@ -345,6 +354,11 @@
                 try { await setDoc(sortOrderDocRef, { order: newOrder }); } 
                 catch (error) { showError("ไม่สามารถบันทึกลำดับการจัดเรียงได้"); }
             }
+             async function saveCategoryOrder(newOrder) {
+                if (!categoryOrderDocRef) return;
+                try { await setDoc(categoryOrderDocRef, { order: newOrder }); } 
+                catch (error) { showError("ไม่สามารถบันทึกลำดับหมวดหมู่ได้"); }
+            }
             async function hideItem(itemId) {
                 if (!hiddenItemsCollectionRef || !itemId) return;
                 try { await setDoc(doc(hiddenItemsCollectionRef, itemId), { hidden: true }); } 
@@ -353,11 +367,8 @@
             async function unhideItems(itemIdsToUnhide) {
                 if (!hiddenItemsCollectionRef || !itemIdsToUnhide || itemIdsToUnhide.length === 0) return;
                 try {
-                    const deletePromises = itemIdsToUnhide.map(id => deleteDoc(doc(hiddenItemsCollectionRef, id)));
-                    await Promise.all(deletePromises);
-                } catch (error) {
-                    showError("ไม่สามารถแสดงรายการที่ซ่อนได้");
-                }
+                    await Promise.all(itemIdsToUnhide.map(id => deleteDoc(doc(hiddenItemsCollectionRef, id))));
+                } catch (error) { showError("ไม่สามารถแสดงรายการที่ซ่อนได้"); }
             }
             async function addCategory() {
                 if (!categoriesCollectionRef) return;
@@ -386,26 +397,20 @@
             async function addHeaderRow() {
                 const text = prompt("ใส่ชื่อหัวข้อ:");
                 if (!text || !text.trim()) return;
-
                 try {
                     const newDocRef = await addDoc(customRowsCollectionRef, { 
                         text: text.trim(),
-                        categoryName: activeCategoryName // Associate with the current category
+                        categoryName: activeCategoryName 
                     });
                     const newOrder = [newDocRef.id, ...itemOrder];
                     await saveSortOrder(newOrder);
-                } catch(error) {
-                    showError("ไม่สามารถเพิ่มหัวข้อได้");
-                }
+                } catch(error) { showError("ไม่สามารถเพิ่มหัวข้อได้"); }
             }
             async function editHeaderRow(id, oldText) {
                 const newText = prompt("แก้ไขชื่อหัวข้อ:", oldText);
                 if (newText && newText.trim() && newText.trim() !== oldText) {
-                    try {
-                        await updateDoc(doc(customRowsCollectionRef, id), { text: newText.trim() });
-                    } catch (error) {
-                        showError("ไม่สามารถแก้ไขหัวข้อได้");
-                    }
+                    try { await updateDoc(doc(customRowsCollectionRef, id), { text: newText.trim() }); } 
+                    catch (error) { showError("ไม่สามารถแก้ไขหัวข้อได้"); }
                 }
             }
             async function deleteHeaderRow(id) {
@@ -414,22 +419,33 @@
                     await deleteDoc(doc(customRowsCollectionRef, id));
                     const newOrder = itemOrder.filter(itemId => itemId !== id);
                     await saveSortOrder(newOrder);
-                } catch (error) {
-                    showError("ไม่สามารถลบหัวข้อได้");
-                }
+                } catch (error) { showError("ไม่สามารถลบหัวข้อได้"); }
             }
 
 
             // --- UI Display Functions ---
             function displayCategories() {
+                if (categorySortableInstance) categorySortableInstance.destroy();
                 categoryList.innerHTML = '';
                 if (!userId) return;
+
                 if (categories.length === 0) {
                     categoryList.innerHTML = '<p class="text-gray-500 text-sm">ยังไม่มีหมวดหมู่ที่บันทึกไว้</p>';
                     return;
                 }
-                categories.forEach((category) => {
+                
+                const sortedCategories = [...categories].sort((a, b) => {
+                    const indexA = categoryOrder.indexOf(a.id);
+                    const indexB = categoryOrder.indexOf(b.id);
+                    if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name, 'th');
+                    if (indexA === -1) return 1;
+                    if (indexB === -1) return -1;
+                    return indexA - indexB;
+                });
+
+                sortedCategories.forEach((category) => {
                     const categoryEl = document.createElement('div');
+                    categoryEl.dataset.id = category.id;
                     categoryEl.className = 'flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 transition-shadow duration-200';
                     const nameBtn = document.createElement('button');
                     nameBtn.textContent = category.name;
@@ -455,6 +471,15 @@
                     deleteBtn.onclick = () => deleteCategory(category.id);
                     categoryEl.append(nameBtn, editBtn, deleteBtn);
                     categoryList.appendChild(categoryEl);
+                });
+
+                categorySortableInstance = new Sortable(categoryList, {
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    onEnd: (evt) => {
+                        const newOrder = Array.from(categoryList.querySelectorAll('div')).map(el => el.dataset.id);
+                        saveCategoryOrder(newOrder);
+                    }
                 });
             }
 
@@ -483,19 +508,14 @@
                 const allRecordsMap = new Map(allRecords.map(r => [r[itemColumnName], r]));
                 const currentRecordIds = new Set(records.map(r => r[itemColumnName]));
 
-                // Combine saved order with new items from the sheet
                 const orderedIdSet = new Set(itemOrder);
                 const combinedOrder = [...itemOrder];
                 for(const record of allRecords) {
                     const id = record[itemColumnName];
-                    if(!orderedIdSet.has(id)){
-                        combinedOrder.push(id);
-                    }
+                    if(!orderedIdSet.has(id)) combinedOrder.push(id);
                 }
 
-                // Filter the combined list based on current view (all or category)
                 const displayOrder = combinedOrder.filter(id => customRows.has(id) || currentRecordIds.has(id));
-
                 const visibleIds = new Set(displayOrder.filter(id => !hiddenItemIds.has(id)));
 
                 if (visibleIds.size === 0) {
@@ -516,11 +536,10 @@
                 tableHead.appendChild(headerRow);
                 
                 displayOrder.forEach(id => {
-                    if (!visibleIds.has(id)) return; // Skip hidden items
+                    if (!visibleIds.has(id)) return;
 
                     if(customRows.has(id)){
                         const rowData = customRows.get(id);
-                        // Only display header if its category matches the active one
                         if (rowData.categoryName === activeCategoryName) {
                             const row = document.createElement('tr');
                             row.dataset.id = id;
@@ -579,7 +598,6 @@
                         saveSortOrder(newOrder);
                     }
                 });
-
                 updateShowHiddenButtonVisibility();
             }
 
@@ -609,20 +627,10 @@
                 document.querySelectorAll('#category-list > div').forEach(el => el.classList.remove('ring-2', 'ring-blue-500'));
             });
             showHiddenBtn.addEventListener('click', () => {
-                if (activeCategoryName) {
-                    const hiddenItemsInCurrentView = currentRecords
-                        .map(record => record[itemColumnName])
-                        .filter(id => hiddenItemIds.has(id));
-                    
-                    if (hiddenItemsInCurrentView.length > 0) {
-                        unhideItems(hiddenItemsInCurrentView);
-                    }
-                } else {
-                    const allHiddenInView = allRecords
-                        .map(record => record[itemColumnName])
-                        .filter(id => hiddenItemIds.has(id));
-                    unhideItems(allHiddenInView);
-                }
+                const itemsToUnhide = (activeCategoryName ? currentRecords : allRecords)
+                    .map(record => record[itemColumnName])
+                    .filter(id => hiddenItemIds.has(id));
+                if (itemsToUnhide.length > 0) unhideItems(itemsToUnhide);
             });
         });
     </script>
