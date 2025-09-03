@@ -496,6 +496,9 @@
                 categorySortableInstance = new Sortable(categoryList, {
                     animation: 150,
                     ghostClass: 'sortable-ghost',
+                    delay: 200,
+                    delayOnTouchOnly: true,
+                    touchStartThreshold: 5,
                     onEnd: (evt) => {
                         const newOrder = Array.from(categoryList.querySelectorAll('div')).map(el => el.dataset.id);
                         saveCategoryOrder(newOrder);
@@ -616,6 +619,9 @@
                     animation: 150,
                     ghostClass: 'sortable-ghost',
                     chosenClass: 'sortable-chosen',
+                    delay: 200,
+                    delayOnTouchOnly: true,
+                    touchStartThreshold: 5,
                     onEnd: (evt) => {
                         const newOrder = Array.from(tableBody.querySelectorAll('tr')).map(row => row.dataset.id);
                         saveCurrentSortOrder(newOrder);
