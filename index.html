@@ -94,6 +94,67 @@
         color: #4b5563; /* gray-600 */
         font-size: 0.875rem; /* text-sm */
     }
+
+    /* --- Responsive Table Styles for Mobile --- */
+    @media (max-width: 767px) {
+        /* Hide the original table header on mobile */
+        #table-header-container {
+            display: none;
+        }
+
+        /* Make the table container full width */
+        #table-container {
+            width: 100% !important;
+            margin: 0 !important;
+        }
+
+        /* Treat each row as a separate card */
+        #table-body-container tr:not(.header-row) {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            padding: 0.5rem;
+        }
+        
+        /* Make cells stack vertically and act like label-value pairs */
+        #table-body-container td {
+            display: flex;
+            justify-content: space-between;
+            text-align: right;
+            padding: 0.5rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        #table-body-container td:last-child {
+            border-bottom: none;
+        }
+
+        /* Use the data-label attribute to create a label */
+        #table-body-container td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            text-align: left;
+            margin-right: 1rem;
+            color: #4b5563;
+        }
+        
+        /* Special style for the product name to act as a card header */
+        #table-body-container td.product-name-cell {
+            font-weight: bold;
+            font-size: 1.125rem;
+            justify-content: center;
+            background-color: #f9fafb;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+        
+        /* Hide the label for the product name cell */
+        #table-body-container td.product-name-cell::before {
+            display: none;
+        }
+    }
   </style>
 </head>
 
@@ -125,7 +186,7 @@
     <div class="overflow-x-auto bg-white rounded-lg shadow-md hidden md:w-fit md:mx-auto" id="table-container">
       <table class="divide-y divide-gray-200">
         <thead class="bg-gray-50" id="table-header-container"></thead>
-        <tbody class="bg-white divide-y divide-gray-200" id="table-body-container"></tbody>
+        <tbody class="bg-white" id="table-body-container"></tbody>
       </table>
     </div>
     
@@ -457,7 +518,7 @@
                 if (!rowData) return;
 
                 const row = document.createElement('tr');
-                row.className = 'divide-x divide-gray-200';
+                row.className = 'md:divide-x md:divide-gray-200';
                 row.dataset.id = `data_${productId}`;
                 row.dataset.originalOrder = productId;
                 
@@ -491,6 +552,7 @@
                     }
 
                     cell.className = baseClass;
+                    cell.dataset.label = header;
                     
                     if (header === PRODUCT_NAME_COLUMN) {
                         const settings = itemSettings[productId];
@@ -500,6 +562,7 @@
                             if (reorderSet && dispenseSet) cell.classList.add('cell-configured');
                             else if (reorderSet || dispenseSet) cell.classList.add('cell-partially-configured');
                         }
+                        cell.classList.add('product-name-cell');
                     }
                     cell.textContent = rowData[header] || '';
                     row.appendChild(cell);
