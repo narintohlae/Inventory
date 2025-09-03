@@ -20,58 +20,113 @@
             <p class="text-gray-500 mt-2">ข้อมูลล่าสุดจาก Google Sheet</p>
         </header>
 
-        <!-- Category Management Section -->
-        <div class="mb-8 bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-bold text-gray-700 mb-4">จัดการหมวดหมู่</h2>
-            <div class="flex flex-col sm:flex-row gap-4 mb-4">
-                <input type="text" id="category-input" placeholder="ใส่ชื่อหมวดหมู่ที่นี่..." class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                <button id="add-category-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                    เพิ่มหมวดหมู่
-                </button>
+        <!-- Auth Container -->
+        <div id="auth-container" class="mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <!-- Login Form -->
+                <form id="login-form">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4 text-center">เข้าสู่ระบบ</h2>
+                    <div class="mb-4">
+                        <label for="login-email" class="block text-sm font-medium text-gray-700">อีเมล</label>
+                        <input type="email" id="login-email" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-6">
+                        <label for="login-password" class="block text-sm font-medium text-gray-700">รหัสผ่าน</label>
+                        <input type="password" id="login-password" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">เข้าสู่ระบบ</button>
+                    <p id="login-error" class="text-red-500 text-sm mt-2 text-center h-4"></p>
+                    <p class="text-sm text-center text-gray-600 mt-4">
+                        ยังไม่มีบัญชี? <button type="button" id="show-register-btn" class="font-medium text-blue-600 hover:text-blue-500">สมัครสมาชิกที่นี่</button>
+                    </p>
+                </form>
+
+                <!-- Registration Form -->
+                <form id="register-form" class="hidden">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4 text-center">สมัครสมาชิกใหม่</h2>
+                     <div class="mb-4">
+                        <label for="register-email" class="block text-sm font-medium text-gray-700">อีเมล</label>
+                        <input type="email" id="register-email" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-6">
+                        <label for="register-password" class="block text-sm font-medium text-gray-700">รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
+                        <input type="password" id="register-password" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">สมัครสมาชิก</button>
+                    <p id="register-error" class="text-red-500 text-sm mt-2 text-center h-4"></p>
+                    <p class="text-sm text-center text-gray-600 mt-4">
+                        มีบัญชีอยู่แล้ว? <button type="button" id="show-login-btn" class="font-medium text-blue-600 hover:text-blue-500">เข้าสู่ระบบที่นี่</button>
+                    </p>
+                </form>
             </div>
-            <div id="category-list-container">
-                <h3 class="text-lg font-semibold text-gray-600 mb-2">หมวดหมู่ของฉัน:</h3>
-                <p class="text-sm text-gray-500 mb-2">คลิกที่ชื่อหมวดหมู่เพื่อกรองข้อมูล</p>
-                <div id="category-list" class="flex flex-wrap gap-2 items-center">
-                    <!-- Categories will be injected here by JavaScript -->
+        </div>
+
+
+        <!-- App Container (Hidden by default) -->
+        <div id="app-container" class="hidden">
+            <!-- User Info and Logout -->
+            <div class="mb-8 bg-white rounded-lg shadow-md p-4 flex justify-between items-center">
+                <div>
+                     <p class="text-sm text-gray-500">ลงชื่อเข้าใช้ในชื่อ:</p>
+                     <p id="user-email" class="font-semibold text-gray-800"></p>
                 </div>
-                <button id="clear-filter-btn" class="hidden mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                    แสดงทั้งหมด
-                </button>
+                <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">ออกจากระบบ</button>
             </div>
-        </div>
-
-        <!-- Container for the table and loading/error states -->
-        <div id="data-container" class="bg-white rounded-lg shadow-md overflow-hidden">
             
-            <!-- Loading State -->
-            <div id="loading" class="p-8 text-center">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <p class="mt-4 text-gray-600">กำลังโหลดข้อมูล...</p>
+            <!-- Category Management Section -->
+            <div class="mb-8 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold text-gray-700 mb-4">จัดการหมวดหมู่</h2>
+                <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                    <input type="text" id="category-input" placeholder="ใส่ชื่อหมวดหมู่ที่นี่..." class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                    <button id="add-category-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                        เพิ่มหมวดหมู่
+                    </button>
+                </div>
+                <div id="category-list-container">
+                    <h3 class="text-lg font-semibold text-gray-600 mb-2">หมวดหมู่ของฉัน:</h3>
+                    <p class="text-sm text-gray-500 mb-2">คลิกที่ชื่อหมวดหมู่เพื่อกรองข้อมูล</p>
+                    <div id="category-list" class="flex flex-wrap gap-2 items-center">
+                        <!-- Categories will be injected here by JavaScript -->
+                    </div>
+                    <button id="clear-filter-btn" class="hidden mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                        แสดงทั้งหมด
+                    </button>
+                </div>
             </div>
 
-            <!-- Error State -->
-            <div id="error" class="hidden p-8 text-center text-red-600 bg-red-50 rounded-lg">
-                <h3 class="font-bold text-lg">เกิดข้อผิดพลาด</h3>
-                <p id="error-message" class="mt-2">ไม่สามารถโหลดข้อมูลได้ในขณะนี้</p>
-            </div>
+            <!-- Container for the table and loading/error states -->
+            <div id="data-container" class="bg-white rounded-lg shadow-md overflow-hidden">
+                
+                <!-- Loading State -->
+                <div id="loading" class="p-8 text-center">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <p class="mt-4 text-gray-600">กำลังโหลดข้อมูล...</p>
+                </div>
 
-            <!-- Table will be inserted here -->
-            <div class="overflow-x-auto">
-                <table id="data-table" class="hidden w-full min-w-full divide-y divide-gray-200">
-                    <thead id="table-head" class="bg-gray-50">
-                        <!-- Header row will be generated by JavaScript -->
-                    </thead>
-                    <tbody id="table-body" class="bg-white divide-y divide-gray-200">
-                        <!-- Data rows will be generated by JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-             <!-- No data state -->
-            <div id="no-data" class="hidden p-8 text-center text-gray-500">
-                <p>ไม่พบข้อมูล</p>
+                <!-- Error State -->
+                <div id="error" class="hidden p-8 text-center text-red-600 bg-red-50 rounded-lg">
+                    <h3 class="font-bold text-lg">เกิดข้อผิดพลาด</h3>
+                    <p id="error-message" class="mt-2">ไม่สามารถโหลดข้อมูลได้ในขณะนี้</p>
+                </div>
+
+                <!-- Table will be inserted here -->
+                <div class="overflow-x-auto">
+                    <table id="data-table" class="hidden w-full min-w-full divide-y divide-gray-200">
+                        <thead id="table-head" class="bg-gray-50">
+                            <!-- Header row will be generated by JavaScript -->
+                        </thead>
+                        <tbody id="table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Data rows will be generated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- No data state -->
+                <div id="no-data" class="hidden p-8 text-center text-gray-500">
+                    <p>ไม่พบข้อมูล</p>
+                </div>
             </div>
         </div>
+
         <footer class="text-center mt-8 text-gray-400 text-sm">
             <p>สร้างโดย Gemini</p>
         </footer>
@@ -80,13 +135,28 @@
     <script type="module">
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         document.addEventListener('DOMContentLoaded', () => {
             const sheetUrl = 'https://script.google.com/macros/s/AKfycbyW37lyYs-WKqsSyoG8PO2emr3bH1J0CnkNWKnZ409-y43qo-hbOy9UFO6L3dnSP8FlHg/exec';
 
             // DOM Elements
+            const authContainer = document.getElementById('auth-container');
+            const appContainer = document.getElementById('app-container');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const loginEmailInput = document.getElementById('login-email');
+            const loginPasswordInput = document.getElementById('login-password');
+            const registerEmailInput = document.getElementById('register-email');
+            const registerPasswordInput = document.getElementById('register-password');
+            const loginErrorEl = document.getElementById('login-error');
+            const registerErrorEl = document.getElementById('register-error');
+            const showRegisterBtn = document.getElementById('show-register-btn');
+            const showLoginBtn = document.getElementById('show-login-btn');
+            const userEmailEl = document.getElementById('user-email');
+            const logoutBtn = document.getElementById('logout-btn');
+
             const loadingEl = document.getElementById('loading');
             const errorEl = document.getElementById('error');
             const errorMessageEl = document.getElementById('error-message');
@@ -101,11 +171,11 @@
             
             // App State
             let allRecords = [];
-            let categories = []; // Will be an array of objects: {id, name}
+            let categories = []; 
             let itemColumnName = '';
             
             // Firebase State
-            let userId;
+            let userId = null;
             let categoriesCollectionRef;
             let unsubscribeCategories;
 
@@ -126,38 +196,87 @@
             const auth = getAuth(app);
             setLogLevel('debug');
 
-            // --- Firebase Authentication ---
-            async function initFirebase() {
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        categoriesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/categories`);
-                        
-                        if (unsubscribeCategories) unsubscribeCategories();
-                        loadAndDisplayCategories(); // Start listening for category changes
-                        if (allRecords.length === 0) fetchData(); // Fetch sheet data if not already fetched
-                        
-                    } else {
-                        // User is signed out. Attempt to sign in.
-                        try {
-                            // The custom token provided by the environment appears to be for a different
-                            // Firebase project, causing an auth/custom-token-mismatch error.
-                            // As a workaround, we will always use anonymous sign-in, which is sufficient
-                            // for this app's functionality.
-                            await signInAnonymously(auth);
-                        } catch (error) {
-                            console.error("Sign-in failed", error);
-                            showError("ไม่สามารถเชื่อมต่อเพื่อบันทึกข้อมูลหมวดหมู่ได้");
-                        }
-                    }
-                });
-            }
+            // --- Auth State Management ---
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    // User is logged in
+                    userId = user.uid;
+                    authContainer.classList.add('hidden');
+                    appContainer.classList.remove('hidden');
+                    userEmailEl.textContent = user.email;
+                    initializeCategoryListener(userId);
+                    if(allRecords.length === 0) fetchData(); // Fetch data only if not already fetched
+                } else {
+                    // User is logged out
+                    userId = null;
+                    authContainer.classList.remove('hidden');
+                    appContainer.classList.add('hidden');
+                    if (unsubscribeCategories) unsubscribeCategories();
+                    categories = [];
+                    displayCategories(); // Clear categories UI
+                }
+            });
 
-            // --- Category Functions (Firestore) ---
-            function loadAndDisplayCategories() {
-                if (!categoriesCollectionRef) return;
+            // --- Auth UI Toggling ---
+            showRegisterBtn.addEventListener('click', () => {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+            });
+            showLoginBtn.addEventListener('click', () => {
+                registerForm.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+            });
+
+            // --- Auth Event Handlers ---
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                loginErrorEl.textContent = '';
+                try {
+                    await signInWithEmailAndPassword(auth, loginEmailInput.value, loginPasswordInput.value);
+                    // onAuthStateChanged will handle the rest
+                } catch (error) {
+                    console.error("Login failed:", error.message);
+                    loginErrorEl.textContent = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+                }
+            });
+
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                registerErrorEl.textContent = '';
+                try {
+                    await createUserWithEmailAndPassword(auth, registerEmailInput.value, registerPasswordInput.value);
+                    // onAuthStateChanged will handle the rest
+                } catch (error) {
+                    console.error("Registration failed:", error.message);
+                    if (error.code === 'auth/weak-password') {
+                        registerErrorEl.textContent = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
+                    } else if (error.code === 'auth/email-already-in-use') {
+                        registerErrorEl.textContent = 'อีเมลนี้ถูกใช้งานแล้ว';
+                    } else if (error.code === 'auth/operation-not-allowed') {
+                        registerErrorEl.textContent = 'การสมัครด้วยอีเมลยังไม่ถูกเปิดใช้งานในระบบ';
+                    } else {
+                        registerErrorEl.textContent = 'เกิดข้อผิดพลาดในการสมัคร';
+                    }
+                }
+            });
+
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    await signOut(auth);
+                } catch (error) {
+                    console.error("Logout failed:", error);
+                }
+            });
+            
+            // --- Category Functions (Firestore with User ID) ---
+            function initializeCategoryListener(currentUserId) {
+                if (!currentUserId) return;
+                if (unsubscribeCategories) unsubscribeCategories();
+
+                categoriesCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/categories`);
+                
                 unsubscribeCategories = onSnapshot(categoriesCollectionRef, (snapshot) => {
-                    categories = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
+                    categories = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name })).sort((a, b) => a.name.localeCompare(b.name, 'th'));
                     displayCategories();
                 }, (error) => {
                     console.error("Error listening to categories:", error);
@@ -167,6 +286,9 @@
 
             function displayCategories() {
                 categoryList.innerHTML = '';
+                if (!userId) { // Don't display if logged out
+                    return;
+                }
                 if (categories.length === 0) {
                     categoryList.innerHTML = '<p class="text-gray-500 text-sm">ยังไม่มีหมวดหมู่ที่บันทึกไว้</p>';
                     return;
@@ -211,6 +333,7 @@
             }
 
             async function addCategory() {
+                if (!categoriesCollectionRef) return;
                 const newCategoryName = categoryInput.value.trim();
                 if (newCategoryName && !categories.some(c => c.name.toLowerCase() === newCategoryName.toLowerCase())) {
                     try {
@@ -220,16 +343,16 @@
                         console.error("Error adding category:", error);
                         showError("ไม่สามารถเพิ่มหมวดหมู่ได้");
                     }
-                } else {
-                    categoryInput.classList.add('border-red-500');
-                    setTimeout(() => categoryInput.classList.remove('border-red-500'), 2000);
+                } else if (newCategoryName) {
+                    alert('มีหมวดหมู่นี้อยู่แล้ว');
                 }
             }
 
             async function editCategory(id, oldName) {
+                if (!categoriesCollectionRef) return;
                 const newName = prompt('แก้ไขชื่อหมวดหมู่:', oldName);
                 if (newName && newName.trim() !== '' && newName.trim() !== oldName) {
-                    const categoryDocRef = doc(db, `artifacts/${appId}/users/${userId}/categories`, id);
+                    const categoryDocRef = doc(categoriesCollectionRef, id);
                     try {
                         await updateDoc(categoryDocRef, { name: newName.trim() });
                     } catch(error) {
@@ -240,10 +363,10 @@
             }
 
             async function deleteCategory(id) {
-                const categoryDocRef = doc(db, `artifacts/${appId}/users/${userId}/categories`, id);
+                if (!categoriesCollectionRef) return;
+                const categoryDocRef = doc(categoriesCollectionRef, id);
                 try {
                     await deleteDoc(categoryDocRef);
-                    // UI will update automatically via onSnapshot, but we reset the filter state
                     noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล';
                     displayData(allRecords); 
                     clearFilterBtn.classList.add('hidden');
@@ -334,11 +457,8 @@
                 noDataEl.classList.remove('hidden');
                 tableEl.classList.add('hidden');
             }
-
-            // --- Initial Load ---
-            initFirebase();
             
-            // Event Listeners
+            // Event Listeners for category management
             addCategoryBtn.addEventListener('click', addCategory);
             categoryInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') addCategory();
