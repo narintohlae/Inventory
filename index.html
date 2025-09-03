@@ -118,7 +118,17 @@
                     row.className = 'hover:bg-gray-50';
                     headers.forEach(header => {
                         const td = document.createElement('td');
-                        td.className = 'px-6 py-2 whitespace-nowrap text-sm text-gray-700';
+                        
+                        let tdClass = 'px-6 py-2 text-sm text-gray-700';
+                        if (header === 'Item') {
+                            // For the 'Item' column, allow text to wrap and break words to prevent overflow
+                            tdClass += ' whitespace-normal break-all'; 
+                        } else {
+                            // For other columns, keep the text on a single line
+                            tdClass += ' whitespace-nowrap';
+                        }
+                        td.className = tdClass;
+
                         td.textContent = record[header];
                         row.appendChild(td);
                     });
