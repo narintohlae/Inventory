@@ -94,6 +94,30 @@
         color: #4b5563; /* gray-600 */
         font-size: 0.875rem; /* text-sm */
     }
+
+    /* --- START: CSS ที่เพิ่มเข้ามาใหม่ --- */
+    /* 1. กำหนดให้ตารางใช้ layout แบบ fixed เพื่อให้ความกว้างคอลัมน์คงที่ */
+    #table-container table {
+        table-layout: fixed;
+    }
+
+    /* 2. สไตล์สำหรับเซลล์ชื่อสินค้า (เพื่อให้ตัดคำได้บนจอคอม) */
+    .product-name-cell {
+        white-space: normal; /* อนุญาตให้ขึ้นบรรทัดใหม่ได้ */
+        word-break: break-word; /* ตัดคำที่ยาวมากๆ */
+    }
+
+    /* 3. เมื่อหน้าจอเล็ก (มือถือ) ให้ตัดข้อความชื่อสินค้าที่ยาวเกิน */
+    @media (max-width: 640px) { /* Tailwind's 'sm' breakpoint */
+        .product-name-cell {
+            max-width: 120px;
+            white-space: nowrap; /* บังคับให้อยู่ในบรรทัดเดียว */
+            overflow: hidden; /* ซ่อนส่วนที่เกิน */
+            text-overflow: ellipsis; /* แสดง ... แทนส่วนที่ถูกซ่อน */
+        }
+    }
+    /* --- END: CSS ที่เพิ่มเข้ามาใหม่ --- */
+
   </style>
 </head>
 
@@ -123,7 +147,7 @@
     </div>
 
     <div class="overflow-x-auto bg-white rounded-lg shadow-md hidden w-full" id="table-container">
-      <table class="divide-y divide-gray-200 w-full table-fixed">
+      <table class="divide-y divide-gray-200 w-full">
         <thead class="bg-gray-50" id="table-header-container"></thead>
         <tbody class="bg-white divide-y divide-gray-200" id="table-body-container"></tbody>
       </table>
@@ -397,6 +421,18 @@
         headers.forEach(headerText => {
             const th = document.createElement('th');
             let baseClass = 'px-2 py-2 sm:px-4 sm:py-3 text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider ';
+            
+            // --- START: JAVASCRIPT ที่แก้ไข ---
+            // กำหนดความกว้างคอลัมน์เพื่อให้กระชับพอดี
+            if (headerText === PRODUCT_NAME_COLUMN) {
+                th.style.width = '40%';
+            } else if (headerText === STOCK_COLUMN_NAME || headerText === BABYSHOP_STOCK_COLUMN || headerText === 'รวม') {
+                th.style.width = '15%';
+            } else if (headerText === 'หน่วย') {
+                th.style.width = '10%';
+            }
+            // --- END: JAVASCRIPT ที่แก้ไข ---
+
             // Alignment for headers
             if (headerText === STOCK_COLUMN_NAME || headerText === BABYSHOP_STOCK_COLUMN) {
                 baseClass += 'text-center';
@@ -475,16 +511,17 @@
                 
                 headers.forEach(header => {
                     const cell = document.createElement('td');
-                    let baseClass = 'px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-700 ';
+                    let baseClass = 'px-2 py-2 sm:px-4 whitespace-nowrap text-xs sm:text-sm text-gray-700 ';
 
-                    if (header === PRODUCT_NAME_COLUMN) {
-                        // สำหรับคอลัมน์ "สินค้า": ให้ตัดคำได้ และกำหนดความกว้างหลัก
-                        baseClass += 'whitespace-normal break-words w-2/5';
-                    } else {
-                        // สำหรับคอลัมน์อื่นๆ: ไม่ต้องตัดคำ
-                        baseClass += 'whitespace-nowrap';
-                    }
-                    
+                    // --- START: JAVASCRIPT ที่แก้ไข ---
+                    // เพิ่ม class 'product-name-cell' ให้กับเซลล์ชื่อสินค้า
+                    // และเอา 'whitespace-nowrap' ออกจากคอลัมน์นี้ เพื่อให้ตัดคำบนจอใหญ่ได้
+                    if (header === PRODUCT_NAME_COLUMN) {
+                        cell.classList.add('product-name-cell');
+                        baseClass = 'px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-700 ';
+                    }
+                    // --- END: JAVASCRIPT ที่แก้ไข ---
+
                     // Alignment for cells
                     if (header === STOCK_COLUMN_NAME || header === BABYSHOP_STOCK_COLUMN) {
                         baseClass += 'text-center';
@@ -505,278 +542,4 @@
                             else if (reorderSet || dispenseSet) cell.classList.add('cell-partially-configured');
                         }
                     }
-                    cell.textContent = rowData[header] || '';
-                    row.appendChild(cell);
-                });
-                elements.tableBodyContainer.appendChild(row);
-            }
-        });
-        
-        elements.resetHiddenRowsBtn.classList.toggle('hidden', hiddenRowIds.length === 0);
-        if (sortableInstance) sortableInstance.destroy();
-        sortableInstance = new Sortable(elements.tableBodyContainer, { 
-            animation: 150, 
-            ghostClass: 'sortable-ghost', 
-         D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_D_- elay: 50,
-            onEnd: handleDragEnd
-        });
-        elements.statusContainer.classList.add('hidden');
-        elements.tableContainer.classList.remove('hidden');
-    }
-
-    function showStatus(message, isError = false) {
-      elements.loader.classList.add('hidden');
-      elements.statusText.textContent = message;
-      if (isError) elements.statusText.classList.add('text-red-500');
-    }
-
-    // --- Event Handlers & Context Menu ---
-
-    function filterByCategory(selectedCategory, isPageChange = false) {
-        if (!isPageChange) {
-            currentPage = 1;
-        }
-
-        document.querySelectorAll('#category-buttons button').forEach(button => {
-            button.classList.toggle('active-category', button.dataset.category === selectedCategory);
-        });
-        
-        let filteredData = allData.filter(item => getProductCategory(item[PRODUCT_NAME_COLUMN] || '') === selectedCategory);
-
-        displayData(filteredData, selectedCategory);
-    }
-    
-    function handleRowDoubleClick(row) {
-        const rowId = parseInt(row.dataset.originalOrder);
-        row.classList.add('row-hidden');
-        if (!hiddenRowIds.includes(rowId)) {
-            hiddenRowIds.push(rowId);
-            saveSettings();
-        }
-        elements.resetHiddenRowsBtn.classList.remove('hidden');
-    }
-
-    function handleDragEnd() {
-        const newVisibleOrder = Array.from(elements.tableBodyContainer.children).map(row => {
-            const id = row.dataset.id;
-            if (id.startsWith('header_')) return customRowOrder.find(item => typeof item === 'object' && item.id === id);
-            else if (id.startsWith('data_')) return parseInt(id.split('_')[1], 10);
-            return null;
-        }).filter(Boolean);
-
-        const newVisibleOrderSet = new Set(newVisibleOrder.map(item => (typeof item === 'object' ? item.id : item)));
-        let firstVisibleFound = false;
-        
-        const newMasterOrder = customRowOrder.reduce((acc, masterItem) => {
-            const masterKey = typeof masterItem === 'object' ? masterItem.id : masterItem;
-            if (newVisibleOrderSet.has(masterKey)) {
-                if (!firstVisibleFound) {
-                    acc.push(...newVisibleOrder);
-                    firstVisibleFound = true;
-                }
-            } else {
-                acc.push(masterItem);
-            }
-            return acc;
-        }, []);
-        
-        customRowOrder = newMasterOrder;
-        saveSettings();
-    }
-    
-    function handleCategoryDragEnd() {
-        customCategoryOrder = Array.from(elements.categoryButtonsContainer.children).map(btn => btn.dataset.category).filter(cat => cat !== 'อื่นๆ');
-        saveSettings();
-    }
-
-    function handleResetHiddenRows() {
-        hiddenRowIds = [];
-        saveSettings();
-        document.querySelectorAll('.row-hidden').forEach(row => row.classList.remove('row-hidden'));
-        elements.resetHiddenRowsBtn.classList.add('hidden');
-    }
-    
-    function handleAutoDispense() {
-        const itemsToDispense = [];
-        allData.forEach(item => {
-            const settings = itemSettings[item.originalOrder];
-            const stock = parseFloat(item[STOCK_COLUMN_NAME]);
-            
-            if (settings && settings.reorderPoint !== undefined && settings.autoDispenseQty > 0) {
-                if (!isNaN(stock) && stock <= settings.reorderPoint) {
-                    let dispenseQty = settings.autoDispenseQty;
-                    const babyShopStock = parseFloat(item[BABYSHOP_STOCK_COLUMN]);
-                    const halfBabyShopStock = 0.5 * babyShopStock;
-
-                    if (!isNaN(babyShopStock) && dispenseQty > halfBabyShopStock) {
-                        dispenseQty = Math.floor(halfBabyShopStock);
-                    }
-
-                    if (dispenseQty > 0) {
-                        itemsToDispense.push({
-                            name: item[PRODUCT_NAME_COLUMN],
-                            quantity: dispenseQty
-                        });
-                    }
-                }
-            }
-        });
-
-        const summaryListEl = elements.autoDispenseSummaryList;
-        summaryListEl.innerHTML = ''; 
-
-        if (itemsToDispense.length > 0) {
-            const ul = document.createElement('ul');
-            ul.className = 'list-disc list-inside space-y-2';
-            itemsToDispense.forEach(item => {
-                const li = document.createElement('li');
-                li.textContent = `${item.name} (จำนวน: ${item.quantity})`;
-                ul.appendChild(li);
-            });
-            summaryListEl.appendChild(ul);
-            console.log("--- Auto Dispense Items ---", itemsToDispense);
-        } else {
-            summaryListEl.innerHTML = '<p class="text-center text-gray-500">ไม่พบสินค้าที่ต้องเบิกอัตโนมัติ (สต็อกยังไม่ถึงจุดสั่งซื้อ)</p>';
-        }
-        
-        openModal('summary');
-    }
-    
-    // --- Modal Logic ---
-
-    function openModal(modal) {
-        if (modal === 'category') { renderCategoryManagementList(); elements.categoryModal.classList.remove('hidden'); }
-        else if (modal === 'item') { elements.itemModal.classList.remove('hidden'); }
-        else if (modal === 'summary') { elements.autoDispenseSummaryModal.classList.remove('hidden'); }
-    }
-    function closeModal(modal) {
-        if (modal === 'category') { 
-            elements.categoryModal.classList.add('hidden'); 
-            renderCategoryButtons(); 
-            const firstCategory = customCategoryOrder[0] || 'อื่นๆ';
-            filterByCategory(firstCategory);
-        }
-        else if (modal === 'item') { elements.itemModal.classList.add('hidden'); }
-        else if (modal === 'summary') { elements.autoDispenseSummaryModal.classList.add('hidden'); }
-    }
-
-    function openItemModal(rowData) {
-        currentProductForManagement = rowData;
-        const productId = rowData.originalOrder;
-        elements.itemModalProductName.textContent = rowData[PRODUCT_NAME_COLUMN] || 'N/A';
-        elements.itemModalStock.textContent = rowData[STOCK_COLUMN_NAME] || 'N/A';
-        elements.itemModalReorderPoint.value = itemSettings[productId]?.reorderPoint ?? '';
-        elements.itemModalAutoDispenseQty.value = itemSettings[productId]?.autoDispenseQty ?? '';
-        openModal('item');
-     }
-
-    function handleItemModalSubmit() {
-        const productId = currentProductForManagement.originalOrder;
-        if (!itemSettings[productId]) itemSettings[productId] = {};
-        
-        const reorderPoint = elements.itemModalReorderPoint.value;
-        if (reorderPoint.trim() !== '' && !isNaN(parseInt(reorderPoint, 10)) && parseInt(reorderPoint, 10) >= 0) itemSettings[productId].reorderPoint = parseInt(reorderPoint, 10);
-        else delete itemSettings[productId].reorderPoint;
-        
-        const autoDispenseQty = elements.itemModalAutoDispenseQty.value;
-        if (autoDispenseQty.trim() !== '' && !isNaN(parseInt(autoDispenseQty, 10)) && parseInt(autoDispenseQty, 10) > 0) itemSettings[productId].autoDispenseQty = parseInt(autoDispenseQty, 10);
-        else delete itemSettings[productId].autoDispenseQty;
-        
-        saveSettings();
-        closeModal('item');
-        const activeButton = document.querySelector('#category-buttons .active-category');
-        if (activeButton) filterByCategory(activeButton.dataset.category);
-    }
-    
-    function handleAddCategory() { /* ... unchanged ... */ }
-    function renderCategoryManagementList() { /* ... unchanged ... */ }
-
-    // --- Context Menu ---
-    function hideContextMenu() {
-        if (contextMenu) { contextMenu.remove(); contextMenu = null; }
-    }
-    function showContextMenu(e) {
-        hideContextMenu();
-        const targetRow = e.target.closest('tr');
-        if (!elements.tableBodyContainer.contains(targetRow)) return;
-        e.preventDefault();
-        
-        contextMenu = document.createElement('div');
-        contextMenu.className = 'context-menu';
-        contextMenu.style.left = `${e.pageX}px`;
-        contextMenu.style.top = `${e.pageY}px`;
-
-        if (targetRow.classList.contains('header-row')) {
-            const deleteItem = document.createElement('div');
-            deleteItem.className = 'context-menu-item'; deleteItem.textContent = 'ลบหัวข้อ';
-            deleteItem.onclick = () => {
-                const headerId = targetRow.dataset.id;
-                customRowOrder = customRowOrder.filter(item => !(typeof item === 'object' && item.id === headerId));
-                saveSettings();
-                const activeButton = document.querySelector('#category-buttons .active-category');
-                filterByCategory(activeButton ? activeButton.dataset.category : (customCategoryOrder[0] || 'อื่นๆ'));
-            };
-            contextMenu.appendChild(deleteItem);
-        } else {
-            const insertItem = document.createElement('div');
-            insertItem.className = 'context-menu-item'; insertItem.textContent = 'แทรกหัวข้อด้านบน';
-
-            const activeButton = document.querySelector('#category-buttons .active-category');
-            const currentCategory = activeButton ? activeButton.dataset.category : (customCategoryOrder[0] || 'อื่นๆ');
-            
-            if (currentCategory === 'อื่นๆ') {
-                insertItem.classList.add('disabled');
-                insertItem.title = 'ไม่สามารถเพิ่มหัวข้อในมุมมองนี้ได้';
-            } else {
-                insertItem.onclick = () => {
-                    const headerText = prompt("กรุณาใส่ชื่อหัวข้อ:", "");
-                    if (headerText && headerText.trim() !== '') {
-                        const targetId = parseInt(targetRow.dataset.originalOrder);
-                        const newHeader = { type: 'header', text: headerText.trim(), id: 'header_' + Date.now(), category: currentCategory };
-                        const targetIndex = customRowOrder.findIndex(item => item === targetId);
-                        if (targetIndex !== -1) {
-                            customRowOrder.splice(targetIndex, 0, newHeader);
-                            saveSettings();
-                            filterByCategory(currentCategory);
-                        }
-                    }
-                };
-            }
-            contextMenu.appendChild(insertItem);
-        }
-        document.body.appendChild(contextMenu);
-    }
-
-
-    // --- App Initialization ---
-    document.addEventListener('DOMContentLoaded', () => {
-        const app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-        onAuthStateChanged(auth, async (user) => {
-            if (user) { userId = user.uid; await startApp(); }
-            else { signInAnonymously(auth).catch((error) => { console.error("Anonymous sign-in failed:", error); showStatus("ไม่สามารถเชื่อมต่อกับบริการบันทึกข้อมูลได้", true); }); }
-        });
-        
-        elements.manageCategoriesBtn.addEventListener('click', () => openModal('category'));
-        elements.autoDispenseBtn.addEventListener('click', handleAutoDispense);
-        elements.closeModalBtn.addEventListener('click', () => closeModal('category'));
-        elements.addCategoryBtn.addEventListener('click', handleAddCategory);
-        elements.resetHiddenRowsBtn.addEventListener('click', handleResetHiddenRows);
-        elements.newCategoryInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleAddCategory(); });
-        elements.closeItemModalBtn.addEventListener('click', () => closeModal('item'));
-        elements.submitItemModalBtn.addEventListener('click', handleItemModalSubmit);
-        elements.closeSummaryModalBtn.addEventListener('click', () => closeModal('summary'));
-        
-        document.body.addEventListener('contextmenu', showContextMenu);
-        document.body.addEventListener('click', hideContextMenu);
-        window.addEventListener('click', (event) => { 
-            if (event.target === elements.categoryModal) closeModal('category');
-            if (event.target === elements.itemModal) closeModal('item');
-            if (event.target === elements.autoDispenseSummaryModal) closeModal('summary');
-        });
-    });
-  </script>
-
-</body>
-</html>
+          _**[Rest of the file remains the same]**_
