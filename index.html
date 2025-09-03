@@ -510,7 +510,8 @@
 
                 const orderedIdSet = new Set(itemOrder);
                 const combinedOrder = [...itemOrder];
-                for(const record of allRecords) {
+                // *** FIX: Iterate over the current 'records' not 'allRecords' to combine order correctly ***
+                for(const record of records) { 
                     const id = record[itemColumnName];
                     if(!orderedIdSet.has(id)) combinedOrder.push(id);
                 }
