@@ -172,11 +172,13 @@
                     </div>
                      <div class="overflow-x-auto">
                         <table class="w-full min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-gray-200">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สินค้า</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนเบิก</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
+                                    <th class="py-3 px-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-16">ลำดับ</th>
+                                    <th class="py-3 px-6 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">สินค้า</th>
+                                    <th class="py-3 px-6 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">จำนวนเบิก</th>
+                                    <th class="py-3 px-6 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">หน่วย</th>
+                                    <th class="py-3 px-6 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">จัดการ</th>
                                 </tr>
                             </thead>
                             <tbody id="requisition-list-body" class="bg-white divide-y divide-gray-200">
@@ -236,7 +238,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setLogLevel, getDocs, setDoc, getDoc, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setLogLevel, getDocs, setDoc, getDoc, Timestamp, writeBatch, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         document.addEventListener('DOMContentLoaded', () => {
             const sheetUrl = 'https://script.google.com/macros/s/AKfycbyW37lyYs-WKqsSyoG8PO2emr3bH1J0CnkNWKnZ409-y43qo-hbOy9UFO6L3dnSP8FlHg/exec';
@@ -298,6 +300,7 @@
             let itemColumnName = '';
             let triggerStockColumnName = 'รักษ์ยา';
             let calculationStockColumnName = 'เบบี้ช็อป';
+            let unitColumnName = 'หน่วย';
             let hiddenItemIds = new Set();
             let sortableInstance = null;
             let categorySortableInstance = null;
@@ -310,7 +313,7 @@
             
             // Firebase State
             let userId = null;
-            let categoriesCollectionRef, hiddenItemsCollectionRef, sortOrdersDocRef, customRowsCollectionRef, categoryOrderDocRef, itemSettingsCollectionRef, requisitionListCollectionRef, requisitionHistoryCollectionRef;
+            let categoriesCollectionRef, hiddenItemsCollectionRef, sortOrdersDocRef, customRowsCollectionRef, categoryOrderDocRef, itemSettingsCollectionRef, requisitionListCollectionRef, requisitionHistoryCollectionRef, countersDocRef;
             let unsubscribeCategories, unsubscribeHiddenItems, unsubscribeSortOrders, unsubscribeCustomRows, unsubscribeCategoryOrder, unsubscribeItemSettings, unsubscribeRequisitionList, unsubscribeHistory;
 
             // Firebase Config
@@ -343,9 +346,7 @@
                     userId = null;
                     authContainer.classList.remove('hidden');
                     appContainer.classList.add('hidden');
-                    // Unsubscribe from all listeners
                     [unsubscribeCategories, unsubscribeHiddenItems, unsubscribeSortOrders, unsubscribeCustomRows, unsubscribeCategoryOrder, unsubscribeItemSettings, unsubscribeRequisitionList, unsubscribeHistory].forEach(unsub => unsub && unsub());
-                    // Reset state
                     categories = []; hiddenItemIds.clear(); sortOrdersMap = {}; categoryOrder = []; customRows.clear(); itemSettings.clear(); requisitionList = []; historyList = [];
                     displayCategories(); 
                 }
@@ -353,14 +354,27 @@
             
             function initializeListeners(currentUserId) {
                  if (!currentUserId) return;
-                 initializeCategoryListener(currentUserId);
-                 initializeHiddenItemsListener(currentUserId);
-                 initializeSortOrdersListener(currentUserId);
-                 initializeCustomRowsListener(currentUserId);
-                 initializeCategoryOrderListener(currentUserId);
-                 initializeItemSettingsListener(currentUserId);
-                 initializeRequisitionListListener(currentUserId);
-                 initializeHistoryListener(currentUserId);
+                 const userPath = `artifacts/${appId}/users/${currentUserId}`;
+                 // Initialize doc/collection refs
+                 categoriesCollectionRef = collection(db, `${userPath}/categories`);
+                 hiddenItemsCollectionRef = collection(db, `${userPath}/hiddenItems`);
+                 sortOrdersDocRef = doc(db, `${userPath}/settings`, 'sortOrders');
+                 customRowsCollectionRef = collection(db, `${userPath}/customRows`);
+                 categoryOrderDocRef = doc(db, `${userPath}/settings`, 'categoryOrder');
+                 itemSettingsCollectionRef = collection(db, `${userPath}/itemSettings`);
+                 requisitionListCollectionRef = collection(db, `${userPath}/requisitionList`);
+                 requisitionHistoryCollectionRef = collection(db, `${userPath}/requisitionHistory`);
+                 countersDocRef = doc(db, `${userPath}/settings`, 'counters');
+
+                 // Start listeners
+                 initializeCategoryListener();
+                 initializeHiddenItemsListener();
+                 initializeSortOrdersListener();
+                 initializeCustomRowsListener();
+                 initializeCategoryOrderListener();
+                 initializeItemSettingsListener();
+                 initializeRequisitionListListener();
+                 initializeHistoryListener();
             }
 
             // --- Auth UI & Forms --- (Omitted for brevity, no changes)
@@ -371,46 +385,14 @@
             logoutBtn.addEventListener('click', async () => { try { await signOut(auth); } catch (error) { console.error("Logout failed:", error); } });
             
             // --- Firestore Listeners ---
-            function initializeCategoryListener(uid) {
-                if (unsubscribeCategories) unsubscribeCategories();
-                categoriesCollectionRef = collection(db, `artifacts/${appId}/users/${uid}/categories`);
-                unsubscribeCategories = onSnapshot(categoriesCollectionRef, (snap) => { categories = snap.docs.map(doc => ({ id: doc.id, name: doc.data().name })); displayCategories(); }, (err) => showError("โหลดหมวดหมู่ไม่สำเร็จ"));
-            }
-            function initializeHiddenItemsListener(uid) {
-                if (unsubscribeHiddenItems) unsubscribeHiddenItems();
-                hiddenItemsCollectionRef = collection(db, `artifacts/${appId}/users/${uid}/hiddenItems`);
-                unsubscribeHiddenItems = onSnapshot(hiddenItemsCollectionRef, (snap) => { hiddenItemIds = new Set(snap.docs.map(doc => doc.id)); if (allRecords.length > 0) displayData(currentRecords); updateShowHiddenButtonVisibility(); }, (err) => showError("โหลดรายการที่ซ่อนไม่สำเร็จ"));
-            }
-            function initializeSortOrdersListener(uid) {
-                if (unsubscribeSortOrders) unsubscribeSortOrders();
-                sortOrdersDocRef = doc(db, `artifacts/${appId}/users/${uid}/settings`, 'sortOrders');
-                unsubscribeSortOrders = onSnapshot(sortOrdersDocRef, (snap) => { sortOrdersMap = (snap.exists() && snap.data().orders) ? snap.data().orders : {}; if (allRecords.length > 0) displayData(currentRecords); }, (err) => showError("โหลดลำดับจัดเรียงไม่สำเร็จ"));
-            }
-            function initializeCategoryOrderListener(uid) {
-                if (unsubscribeCategoryOrder) unsubscribeCategoryOrder();
-                categoryOrderDocRef = doc(db, `artifacts/${appId}/users/${uid}/settings`, 'categoryOrder');
-                unsubscribeCategoryOrder = onSnapshot(categoryOrderDocRef, (snap) => { categoryOrder = (snap.exists() && snap.data().order) ? snap.data().order : []; if (categories.length > 0) displayCategories(); }, (err) => showError("โหลดลำดับหมวดหมู่ไม่สำเร็จ"));
-            }
-            function initializeCustomRowsListener(uid) {
-                if(unsubscribeCustomRows) unsubscribeCustomRows();
-                customRowsCollectionRef = collection(db, `artifacts/${appId}/users/${uid}/customRows`);
-                unsubscribeCustomRows = onSnapshot(customRowsCollectionRef, (snap) => { customRows.clear(); snap.docs.forEach(doc => customRows.set(doc.id, doc.data())); if (allRecords.length > 0) displayData(currentRecords); }, (err) => showError("โหลดหัวข้อไม่สำเร็จ"));
-            }
-            function initializeItemSettingsListener(uid) {
-                if(unsubscribeItemSettings) unsubscribeItemSettings();
-                itemSettingsCollectionRef = collection(db, `artifacts/${appId}/users/${uid}/itemSettings`);
-                unsubscribeItemSettings = onSnapshot(itemSettingsCollectionRef, (snap) => { itemSettings.clear(); snap.docs.forEach(doc => itemSettings.set(doc.id, doc.data())); }, (err) => showError("โหลดการตั้งค่าสินค้าไม่สำเร็จ"));
-            }
-             function initializeRequisitionListListener(uid) {
-                if(unsubscribeRequisitionList) unsubscribeRequisitionList();
-                requisitionListCollectionRef = collection(db, `artifacts/${appId}/users/${uid}/requisitionList`);
-                unsubscribeRequisitionList = onSnapshot(requisitionListCollectionRef, (snap) => { requisitionList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); displayRequisitionList(); }, (err) => showError("โหลดรายการเบิกของไม่สำเร็จ"));
-            }
-            function initializeHistoryListener(uid) {
-                if(unsubscribeHistory) unsubscribeHistory();
-                requisitionHistoryCollectionRef = collection(db, `artifacts/${appId}/users/${uid}/requisitionHistory`);
-                unsubscribeHistory = onSnapshot(requisitionHistoryCollectionRef, (snap) => { historyList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => b.timestamp.seconds - a.timestamp.seconds); displayHistory(); }, (err) => showError("โหลดประวัติไม่สำเร็จ"));
-            }
+            function initializeCategoryListener() { if (unsubscribeCategories) unsubscribeCategories(); unsubscribeCategories = onSnapshot(categoriesCollectionRef, (snap) => { categories = snap.docs.map(doc => ({ id: doc.id, name: doc.data().name })); displayCategories(); }, (err) => showError("โหลดหมวดหมู่ไม่สำเร็จ"));}
+            function initializeHiddenItemsListener() { if (unsubscribeHiddenItems) unsubscribeHiddenItems(); unsubscribeHiddenItems = onSnapshot(hiddenItemsCollectionRef, (snap) => { hiddenItemIds = new Set(snap.docs.map(doc => doc.id)); if (allRecords.length > 0) displayData(currentRecords); updateShowHiddenButtonVisibility(); }, (err) => showError("โหลดรายการที่ซ่อนไม่สำเร็จ"));}
+            function initializeSortOrdersListener() { if (unsubscribeSortOrders) unsubscribeSortOrders(); unsubscribeSortOrders = onSnapshot(sortOrdersDocRef, (snap) => { sortOrdersMap = (snap.exists() && snap.data().orders) ? snap.data().orders : {}; if (allRecords.length > 0) displayData(currentRecords); }, (err) => showError("โหลดลำดับจัดเรียงไม่สำเร็จ"));}
+            function initializeCategoryOrderListener() { if (unsubscribeCategoryOrder) unsubscribeCategoryOrder(); unsubscribeCategoryOrder = onSnapshot(categoryOrderDocRef, (snap) => { categoryOrder = (snap.exists() && snap.data().order) ? snap.data().order : []; if (categories.length > 0) displayCategories(); }, (err) => showError("โหลดลำดับหมวดหมู่ไม่สำเร็จ"));}
+            function initializeCustomRowsListener() { if(unsubscribeCustomRows) unsubscribeCustomRows(); unsubscribeCustomRows = onSnapshot(customRowsCollectionRef, (snap) => { customRows.clear(); snap.docs.forEach(doc => customRows.set(doc.id, doc.data())); if (allRecords.length > 0) displayData(currentRecords); }, (err) => showError("โหลดหัวข้อไม่สำเร็จ"));}
+            function initializeItemSettingsListener() { if(unsubscribeItemSettings) unsubscribeItemSettings(); unsubscribeItemSettings = onSnapshot(itemSettingsCollectionRef, (snap) => { itemSettings.clear(); snap.docs.forEach(doc => itemSettings.set(doc.id, doc.data())); }, (err) => showError("โหลดการตั้งค่าสินค้าไม่สำเร็จ"));}
+            function initializeRequisitionListListener() { if(unsubscribeRequisitionList) unsubscribeRequisitionList(); unsubscribeRequisitionList = onSnapshot(requisitionListCollectionRef, (snap) => { requisitionList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); displayRequisitionList(); }, (err) => showError("โหลดรายการเบิกของไม่สำเร็จ"));}
+            function initializeHistoryListener() { if(unsubscribeHistory) unsubscribeHistory(); unsubscribeHistory = onSnapshot(requisitionHistoryCollectionRef, (snap) => { historyList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => b.timestamp.seconds - a.timestamp.seconds); displayHistory(); }, (err) => showError("โหลดประวัติไม่สำเร็จ"));}
 
             // --- Firestore Write Functions ---
             async function saveCurrentSortOrder(newOrder) { if (!sortOrdersDocRef) return; const key = activeCategoryName || '__global__'; try { const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; currentOrders[key] = newOrder; await setDoc(sortOrdersDocRef, { orders: currentOrders }); } catch (error) { showError("บันทึกการจัดเรียงไม่สำเร็จ"); } }
@@ -425,116 +407,62 @@
             async function deleteHeaderRow(id) { if (!customRowsCollectionRef || !sortOrdersDocRef) return; try { const key = activeCategoryName || '__global__'; const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; const currentCategoryOrder = currentOrders[key] || []; currentOrders[key] = currentCategoryOrder.filter(itemId => itemId !== id); await setDoc(sortOrdersDocRef, { orders: currentOrders }); await deleteDoc(doc(customRowsCollectionRef, id)); } catch (error) { showError("ลบหัวข้อไม่สำเร็จ"); } }
 
             // --- Requisition Functions ---
-            async function saveItemSettings() {
-                if (!itemSettingsCollectionRef || !currentEditingItemId) return;
-                const point = parseInt(reorderPointInput.value, 10);
-                const quantity = parseInt(reorderQuantityInput.value, 10);
-                const settings = {
-                    reorderPoint: isNaN(point) ? null : point,
-                    reorderQuantity: isNaN(quantity) ? null : quantity
-                };
-                try {
-                    await setDoc(doc(itemSettingsCollectionRef, currentEditingItemId), settings);
-                    closeItemSettingsModal();
-                } catch(error) {
-                    showError("บันทึกการตั้งค่าไม่สำเร็จ");
-                }
-            }
-             async function generateRequisition() {
-                if (!itemSettingsCollectionRef || allRecords.length === 0) {
-                    alert('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า');
-                    return;
-                }
-                
-                if (allRecords.length > 0) {
-                    const firstRecordKeys = Object.keys(allRecords[0]);
-                    if (!firstRecordKeys.includes(triggerStockColumnName) || !firstRecordKeys.includes(calculationStockColumnName)) {
-                        alert(`ไม่พบคอลัมน์ที่ต้องการ: "${triggerStockColumnName}" หรือ "${calculationStockColumnName}" ใน Google Sheet`);
-                        return;
-                    }
-                }
-
+            async function saveItemSettings() { if (!itemSettingsCollectionRef || !currentEditingItemId) return; const point = parseInt(reorderPointInput.value, 10); const quantity = parseInt(reorderQuantityInput.value, 10); const settings = { reorderPoint: isNaN(point) ? null : point, reorderQuantity: isNaN(quantity) ? null : quantity }; try { await setDoc(doc(itemSettingsCollectionRef, currentEditingItemId), settings); closeItemSettingsModal(); } catch(error) { showError("บันทึกการตั้งค่าไม่สำเร็จ"); } }
+            async function generateRequisition() {
+                if (!itemSettingsCollectionRef || allRecords.length === 0) { alert('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า'); return; }
+                if (allRecords.length > 0) { const firstRecordKeys = Object.keys(allRecords[0]); if (!firstRecordKeys.includes(triggerStockColumnName) || !firstRecordKeys.includes(calculationStockColumnName)) { alert(`ไม่พบคอลัมน์: "${triggerStockColumnName}" หรือ "${calculationStockColumnName}"`); return; } }
                 const itemsToRequisition = [];
                 allRecords.forEach(record => {
                     const itemId = record[itemColumnName];
                     const settings = itemSettings.get(itemId);
-
                     if (settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number') {
                         const triggerStock = parseInt(record[triggerStockColumnName], 10);
-
                         if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) {
                             const calculationStock = parseInt(record[calculationStockColumnName], 10);
                             let finalQuantity = settings.reorderQuantity;
-
                             if (!isNaN(calculationStock) && calculationStock > 0) {
                                 const halfCalcStock = 0.5 * calculationStock;
-
                                 if (settings.reorderQuantity > halfCalcStock) {
                                     const halfAutoQty = 0.5 * settings.reorderQuantity;
-                                    if (halfAutoQty > halfCalcStock) {
-                                        finalQuantity = halfCalcStock;
-                                    } else {
-                                        finalQuantity = halfAutoQty;
-                                    }
+                                    finalQuantity = (halfAutoQty > halfCalcStock) ? halfCalcStock : halfAutoQty;
                                 }
                             }
-                            
                             const roundedQuantity = Math.floor(finalQuantity);
-                            if (roundedQuantity > 0) {
-                                itemsToRequisition.push({
-                                    id: itemId,
-                                    name: record[itemColumnName],
-                                    quantity: roundedQuantity,
-                                });
-                            }
+                            if (roundedQuantity > 0) { itemsToRequisition.push({ id: itemId, name: record[itemColumnName], quantity: roundedQuantity, unit: record[unitColumnName] || 'ชิ้น' }); }
                         }
                     }
                 });
-
-                if (itemsToRequisition.length === 0) {
-                    alert('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข');
-                    return;
-                }
-
-                try {
-                    const batch = writeBatch(db);
-                    itemsToRequisition.forEach(item => {
-                        const docRef = doc(requisitionListCollectionRef, item.id);
-                        batch.set(docRef, { name: item.name, quantity: item.quantity });
-                    });
-                    await batch.commit();
-                    alert(`สร้างรายการเบิก ${itemsToRequisition.length} รายการสำเร็จ!`);
-                    switchView('requisition');
-                } catch (error) {
-                    showError("สร้างรายการเบิกไม่สำเร็จ");
-                }
+                if (itemsToRequisition.length === 0) { alert('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข'); return; }
+                try { const batch = writeBatch(db); itemsToRequisition.forEach(item => { const docRef = doc(requisitionListCollectionRef, item.id); batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit }); }); await batch.commit(); alert(`สร้างรายการเบิก ${itemsToRequisition.length} รายการสำเร็จ!`); switchView('requisition'); } catch (error) { showError("สร้างรายการเบิกไม่สำเร็จ"); }
             }
-            async function deleteRequisitionItem(id) {
-                if(!requisitionListCollectionRef) return;
-                try {
-                    await deleteDoc(doc(requisitionListCollectionRef, id));
-                } catch (error) {
-                    showError("ลบรายการเบิกไม่สำเร็จ");
-                }
-            }
+            async function deleteRequisitionItem(id) { if(!requisitionListCollectionRef) return; try { await deleteDoc(doc(requisitionListCollectionRef, id)); } catch (error) { showError("ลบรายการเบิกไม่สำเร็จ"); } }
             async function confirmRequisition() {
-                if (!requisitionListCollectionRef || !requisitionHistoryCollectionRef || requisitionList.length === 0) return;
+                if (!requisitionListCollectionRef || requisitionList.length === 0) return;
                 try {
-                    const batch = writeBatch(db);
-                    
-                    const historyDocRef = doc(requisitionHistoryCollectionRef);
-                    batch.set(historyDocRef, {
-                        timestamp: Timestamp.now(),
-                        items: requisitionList.map(({id, ...rest}) => rest)
-                    });
+                    await runTransaction(db, async (transaction) => {
+                        const counterSnap = await transaction.get(countersDocRef);
+                        const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0;
+                        const newCounter = currentCounter + 1;
+                        
+                        const now = new Date();
+                        const reqNumber = `REQ-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}-${newCounter.toString().padStart(4, '0')}`;
 
-                    requisitionList.forEach(item => {
-                        batch.delete(doc(requisitionListCollectionRef, item.id));
-                    });
+                        const historyDocRef = doc(requisitionHistoryCollectionRef);
+                        transaction.set(historyDocRef, {
+                            requisitionNumber: reqNumber,
+                            timestamp: Timestamp.now(),
+                            items: requisitionList.map(({id, ...rest}) => rest)
+                        });
 
-                    await batch.commit();
+                        requisitionList.forEach(item => {
+                            transaction.delete(doc(requisitionListCollectionRef, item.id));
+                        });
+
+                        transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true });
+                    });
                     alert('ยืนยันการเบิกของเรียบร้อย');
                 } catch (error) {
+                    console.error("Transaction failed: ", error);
                     showError("ยืนยันการเบิกของไม่สำเร็จ");
                 }
             }
@@ -544,8 +472,28 @@
             function displayCategories() { if (categorySortableInstance) categorySortableInstance.destroy(); categoryList.innerHTML = ''; if (!userId) return; if (categories.length === 0) { categoryList.innerHTML = '<p class="text-gray-500 text-sm">ยังไม่มีหมวดหมู่</p>'; return; } const sortedCategories = [...categories].sort((a, b) => { const indexA = categoryOrder.indexOf(a.id); const indexB = categoryOrder.indexOf(b.id); if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name, 'th'); if (indexA === -1) return 1; if (indexB === -1) return -1; return indexA - indexB; }); sortedCategories.forEach((category) => { const categoryEl = document.createElement('div'); categoryEl.dataset.id = category.id; categoryEl.className = 'flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 transition-shadow duration-200'; const nameBtn = document.createElement('button'); nameBtn.textContent = category.name; nameBtn.className = 'focus:outline-none'; nameBtn.title = `กรองด้วย "${category.name}"`; nameBtn.onclick = () => { if (!itemColumnName) return; const filtered = allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase())); noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`; activeCategoryName = category.name; displayData(filtered); clearFilterBtn.classList.remove('hidden'); document.querySelectorAll('#category-list > div').forEach(el => el.classList.remove('ring-2', 'ring-blue-500')); categoryEl.classList.add('ring-2', 'ring-blue-500'); }; const editBtn = document.createElement('button'); editBtn.innerHTML = `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" /></svg>`; editBtn.className = 'ml-2 text-gray-500 hover:text-blue-600'; editBtn.onclick = () => editCategory(category.id, category.name); const deleteBtn = document.createElement('button'); deleteBtn.innerHTML = `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`; deleteBtn.className = 'ml-1 text-gray-500 hover:text-red-600'; deleteBtn.onclick = () => deleteCategory(category.id); categoryEl.append(nameBtn, editBtn, deleteBtn); categoryList.appendChild(categoryEl); }); categorySortableInstance = new Sortable(categoryList, { animation: 150, ghostClass: 'sortable-ghost', delay: 200, delayOnTouchOnly: true, touchStartThreshold: 5, onEnd: (evt) => { const newOrder = Array.from(categoryList.querySelectorAll('div')).map(el => el.dataset.id); saveCategoryOrder(newOrder); } }); }
             async function fetchData() { try { loadingEl.classList.remove('hidden'); const response = await fetch(sheetUrl); if (!response.ok) throw new Error(`Network: ${response.statusText}`); const data = await response.json(); if (!Array.isArray(data.data) || data.data.length === 0) { showNoData(); return; } allRecords = data.data; itemColumnName = Object.keys(allRecords[0])[0] || ''; if (!itemColumnName) { showError("ข้อมูลไม่มีคอลัมน์"); return; } displayData(allRecords); } catch (error) { showError(error.message); } finally { loadingEl.classList.add('hidden'); } }
             function displayData(records) { currentRecords = records; tableHead.innerHTML = ''; tableBody.innerHTML = ''; if (sortableInstance) sortableInstance.destroy(); const allRecordsMap = new Map(allRecords.map(r => [r[itemColumnName], r])); const currentRecordIds = new Set(records.map(r => r[itemColumnName])); const sortKey = activeCategoryName || '__global__'; const currentItemOrder = sortOrdersMap[sortKey] || []; const orderedIdSet = new Set(currentItemOrder); const combinedOrder = [...currentItemOrder]; for(const record of records) { const id = record[itemColumnName]; if(!orderedIdSet.has(id)) combinedOrder.push(id); } const displayOrder = combinedOrder.filter(id => customRows.has(id) || currentRecordIds.has(id)); const visibleIds = new Set(displayOrder.filter(id => !hiddenItemIds.has(id))); if (visibleIds.size === 0) { tableEl.classList.add('hidden'); noDataEl.classList.remove('hidden'); return; } noDataEl.classList.add('hidden'); tableEl.classList.remove('hidden'); const headers = allRecords.length > 0 ? Object.keys(allRecords[0]) : []; const headerRow = document.createElement('tr'); headers.forEach(header => { const th = document.createElement('th'); th.scope = 'col'; th.className = `px-2 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${header === itemColumnName ? 'w-2/5' : 'w-auto'}`; th.textContent = header.replace(/_/g, ' '); headerRow.appendChild(th); }); tableHead.appendChild(headerRow); displayOrder.forEach(id => { if (!visibleIds.has(id)) return; if(customRows.has(id)){ const rowData = customRows.get(id); if (rowData.categoryName === activeCategoryName) { const row = document.createElement('tr'); row.dataset.id = id; row.className = 'bg-gray-200 font-bold'; const cell = document.createElement('td'); cell.colSpan = headers.length; cell.className = 'px-4 py-2 text-gray-800'; const contentWrapper = document.createElement('div'); contentWrapper.className = 'flex justify-between items-center'; const textSpan = document.createElement('span'); textSpan.textContent = rowData.text; const buttonsWrapper = document.createElement('div'); const editBtn = document.createElement('button'); editBtn.innerHTML = `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" /></svg>`; editBtn.className = 'ml-2 text-gray-500 hover:text-blue-600'; editBtn.onclick = (e) => { e.stopPropagation(); editHeaderRow(id, rowData.text); }; const deleteBtn = document.createElement('button'); deleteBtn.innerHTML = `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`; deleteBtn.className = 'ml-1 text-gray-500 hover:text-red-600'; deleteBtn.onclick = (e) => { e.stopPropagation(); deleteHeaderRow(id); }; buttonsWrapper.append(editBtn, deleteBtn); contentWrapper.append(textSpan, buttonsWrapper); cell.appendChild(contentWrapper); row.appendChild(cell); tableBody.appendChild(row); } } else if (allRecordsMap.has(id)) { const record = allRecordsMap.get(id); const row = document.createElement('tr'); row.dataset.id = id; row.className = 'hover:bg-gray-50'; let clickTimeout = null; row.addEventListener('click', () => { if (clickTimeout) { clearTimeout(clickTimeout); clickTimeout = null; hideItem(id); } else { clickTimeout = setTimeout(() => { openItemSettingsModal(record); clickTimeout = null; }, 300); } }); headers.forEach(header => { const td = document.createElement('td'); td.className = `px-2 sm:px-6 py-2 text-sm text-gray-700 whitespace-normal break-all ${header === itemColumnName ? 'w-2/5' : 'w-auto'}`; td.textContent = record[header]; row.appendChild(td); }); tableBody.appendChild(row); } }); sortableInstance = new Sortable(tableBody, { animation: 150, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen', delay: 200, delayOnTouchOnly: true, touchStartThreshold: 5, onEnd: (evt) => { const newOrder = Array.from(tableBody.querySelectorAll('tr')).map(row => row.dataset.id); saveCurrentSortOrder(newOrder); } }); updateShowHiddenButtonVisibility(); }
-            function displayRequisitionList() { requisitionListBody.innerHTML = ''; if (requisitionList.length === 0) { requisitionListBody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-gray-500">ไม่มีรายการที่ต้องเบิก</td></tr>'; confirmRequisitionBtn.disabled = true; return; } confirmRequisitionBtn.disabled = false; requisitionList.forEach(item => { const row = document.createElement('tr'); row.innerHTML = `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${item.name}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${item.quantity}</td><td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button class="delete-req-btn text-red-600 hover:text-red-900" data-id="${item.id}">ลบ</button></td>`; requisitionListBody.appendChild(row); }); }
-            function displayHistory() { historyListContainer.innerHTML = ''; if (historyList.length === 0) { historyListContainer.innerHTML = '<p class="text-center py-4 text-gray-500">ยังไม่มีประวัติการเบิก</p>'; return; } historyList.forEach(historyItem => { const date = historyItem.timestamp.toDate(); const formattedDate = `${date.toLocaleDateString('th-TH')} ${date.toLocaleTimeString('th-TH')}`; const card = document.createElement('div'); card.className = 'bg-gray-50 rounded-lg p-4'; card.innerHTML = `<h3 class="font-semibold text-gray-800">${formattedDate}</h3><ul class="mt-2 list-disc list-inside text-sm text-gray-600">${historyItem.items.map(item => `<li>${item.name}: ${item.quantity}</li>`).join('')}</ul>`; historyListContainer.appendChild(card); });}
+            function displayRequisitionList() {
+                requisitionListBody.innerHTML = '';
+                if (requisitionList.length === 0) {
+                    requisitionListBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">ไม่มีรายการที่ต้องเบิก</td></tr>';
+                    confirmRequisitionBtn.disabled = true;
+                    return;
+                }
+                confirmRequisitionBtn.disabled = false;
+                requisitionList.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">${index + 1}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">${item.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${item.quantity}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${item.unit}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button class="delete-req-btn text-red-600 hover:text-red-900" data-id="${item.id}">ลบ</button>
+                        </td>`;
+                    requisitionListBody.appendChild(row);
+                });
+            }
+            function displayHistory() { historyListContainer.innerHTML = ''; if (historyList.length === 0) { historyListContainer.innerHTML = '<p class="text-center py-4 text-gray-500">ยังไม่มีประวัติการเบิก</p>'; return; } historyList.forEach(historyItem => { const date = historyItem.timestamp.toDate(); const formattedDate = `${date.toLocaleDateString('th-TH')} ${date.toLocaleTimeString('th-TH')}`; const card = document.createElement('div'); card.className = 'bg-gray-50 rounded-lg p-4 shadow'; const tableRows = historyItem.items.map((item, index) => `<tr><td class="py-2 px-4 text-sm text-gray-600">${index + 1}</td><td class="py-2 px-4 text-sm text-gray-800">${item.name}</td><td class="py-2 px-4 text-sm text-gray-800">${item.quantity}</td><td class="py-2 px-4 text-sm text-gray-600">${item.unit}</td></tr>`).join(''); card.innerHTML = `<div class="flex justify-between items-center mb-3"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="overflow-x-auto"><table class="w-full"><thead><tr><th class="py-2 px-4 bg-gray-200 text-xs text-gray-600 font-medium text-left">ลำดับ</th><th class="py-2 px-4 bg-gray-200 text-xs text-gray-600 font-medium text-left">สินค้า</th><th class="py-2 px-4 bg-gray-200 text-xs text-gray-600 font-medium text-left">จำนวน</th><th class="py-2 px-4 bg-gray-200 text-xs text-gray-600 font-medium text-left">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`; historyListContainer.appendChild(card); });}
             function openItemSettingsModal(record) { currentEditingItemId = record[itemColumnName]; const settings = itemSettings.get(currentEditingItemId) || {}; modalItemName.textContent = `ตั้งค่า: ${currentEditingItemId}`; reorderPointInput.value = settings.reorderPoint || ''; reorderQuantityInput.value = settings.reorderQuantity || ''; itemSettingsModal.classList.remove('hidden'); }
             function closeItemSettingsModal() { itemSettingsModal.classList.add('hidden'); currentEditingItemId = null; }
             function switchView(viewName) { const views = { products: productListView, requisition: requisitionView, history: historyView }; const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn }; Object.values(views).forEach(v => v.classList.add('hidden')); Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); views[viewName].classList.remove('hidden'); navs[viewName].classList.add('text-blue-600', 'border-blue-600'); navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');}
