@@ -296,7 +296,8 @@
             let customRows = new Map();
             let itemSettings = new Map();
             let itemColumnName = '';
-            let stockColumnName = 'คงเหลือ'; // IMPORTANT: Assumes stock column is named this
+            let triggerStockColumnName = 'รักษ์ยา';
+            let calculationStockColumnName = 'เบบี้ช็อป';
             let hiddenItemIds = new Set();
             let sortableInstance = null;
             let categorySortableInstance = null;
@@ -444,24 +445,54 @@
                     alert('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า');
                     return;
                 }
+                
+                if (allRecords.length > 0) {
+                    const firstRecordKeys = Object.keys(allRecords[0]);
+                    if (!firstRecordKeys.includes(triggerStockColumnName) || !firstRecordKeys.includes(calculationStockColumnName)) {
+                        alert(`ไม่พบคอลัมน์ที่ต้องการ: "${triggerStockColumnName}" หรือ "${calculationStockColumnName}" ใน Google Sheet`);
+                        return;
+                    }
+                }
+
                 const itemsToRequisition = [];
                 allRecords.forEach(record => {
                     const itemId = record[itemColumnName];
-                    const stock = parseInt(record[stockColumnName], 10);
                     const settings = itemSettings.get(itemId);
+
                     if (settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number') {
-                        if (!isNaN(stock) && stock <= settings.reorderPoint) {
-                            itemsToRequisition.push({
-                                id: itemId,
-                                name: record[itemColumnName],
-                                quantity: settings.reorderQuantity,
-                            });
+                        const triggerStock = parseInt(record[triggerStockColumnName], 10);
+
+                        if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) {
+                            const calculationStock = parseInt(record[calculationStockColumnName], 10);
+                            let finalQuantity = settings.reorderQuantity;
+
+                            if (!isNaN(calculationStock) && calculationStock > 0) {
+                                const halfCalcStock = 0.5 * calculationStock;
+
+                                if (settings.reorderQuantity > halfCalcStock) {
+                                    const halfAutoQty = 0.5 * settings.reorderQuantity;
+                                    if (halfAutoQty > halfCalcStock) {
+                                        finalQuantity = halfCalcStock;
+                                    } else {
+                                        finalQuantity = halfAutoQty;
+                                    }
+                                }
+                            }
+                            
+                            const roundedQuantity = Math.floor(finalQuantity);
+                            if (roundedQuantity > 0) {
+                                itemsToRequisition.push({
+                                    id: itemId,
+                                    name: record[itemColumnName],
+                                    quantity: roundedQuantity,
+                                });
+                            }
                         }
                     }
                 });
 
                 if (itemsToRequisition.length === 0) {
-                    alert('ไม่พบสินค้าที่ถึงจุดเบิกของ');
+                    alert('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข');
                     return;
                 }
 
@@ -491,14 +522,12 @@
                 try {
                     const batch = writeBatch(db);
                     
-                    // Add to history
                     const historyDocRef = doc(requisitionHistoryCollectionRef);
                     batch.set(historyDocRef, {
                         timestamp: Timestamp.now(),
-                        items: requisitionList.map(({id, ...rest}) => rest) // remove id
+                        items: requisitionList.map(({id, ...rest}) => rest)
                     });
 
-                    // Delete from current list
                     requisitionList.forEach(item => {
                         batch.delete(doc(requisitionListCollectionRef, item.id));
                     });
