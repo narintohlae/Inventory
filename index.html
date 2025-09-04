@@ -25,11 +25,26 @@
         #item-settings-modal.hidden {
             display: none;
         }
+        /* Custom scrollbar for category list */
+        .scrollbar-thin::-webkit-scrollbar {
+            height: 4px;
+            width: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 2px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <div class="container mx-auto px-2 py-4 sm:p-6 md:p-8 lg:w-1/2">
+    <div class="container mx-auto px-2 pt-4 pb-48 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:w-1/2">
         <header class="text-center mb-8">
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-700">ตารางแสดงข้อมูล</h1>
             <p class="text-gray-500 mt-2">ข้อมูลล่าสุดจาก Google Sheet</p>
@@ -90,17 +105,28 @@
 
              <!-- Navigation Tabs -->
             <div class="mb-8 border-b border-gray-200">
-                <nav class="flex -mb-px space-x-6" aria-label="Tabs">
-                    <button id="nav-products" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-blue-600 border-blue-600">
-                        รายการสินค้า
-                    </button>
-                    <button id="nav-requisition" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
-                        รายการเบิกของ
-                    </button>
-                    <button id="nav-history" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
-                        ประวัติ
-                    </button>
-                </nav>
+                <div class="flex justify-between items-center">
+                    <nav class="flex -mb-px space-x-6" aria-label="Tabs">
+                        <button id="nav-products" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-blue-600 border-blue-600">
+                            รายการสินค้า
+                        </button>
+                        <button id="nav-requisition" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
+                            รายการเบิกของ
+                        </button>
+                        <button id="nav-history" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
+                            ประวัติ
+                        </button>
+                    </nav>
+                     <!-- Action Buttons for Product View -->
+                    <div id="product-view-actions" class="flex items-center gap-2">
+                        <button id="clear-filter-btn" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 text-sm">
+                            แสดงทั้งหมด
+                        </button>
+                        <button id="show-hidden-btn" class="hidden bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 text-sm">
+                            แสดงแถวที่ซ่อน
+                        </button>
+                    </div>
+                </div>
             </div>
             
             <!-- Product List View -->
@@ -121,21 +147,6 @@
                         <button id="auto-requisition-btn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
                             เบิกของอัตโนมัติ
                         </button>
-                    </div>
-                    <div id="category-list-container" class="mt-6">
-                        <h3 class="text-lg font-semibold text-gray-600 mb-2">หมวดหมู่ของฉัน:</h3>
-                        <p class="text-sm text-gray-500 mb-2">คลิกที่ชื่อหมวดหมู่เพื่อกรองข้อมูล</p>
-                        <div id="category-list" class="flex flex-wrap gap-2 items-center">
-                            <!-- Categories will be injected here by JavaScript -->
-                        </div>
-                        <div class="mt-4 flex flex-wrap gap-2">
-                            <button id="clear-filter-btn" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                                แสดงทั้งหมด
-                            </button>
-                            <button id="show-hidden-btn" class="hidden bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                                แสดงแถวที่ซ่อน
-                            </button>
-                        </div>
                     </div>
                 </div>
 
@@ -195,6 +206,15 @@
                     <h2 class="text-2xl font-bold text-gray-700 mb-4">ประวัติการเบิกของ</h2>
                     <div id="history-list-container" class="space-y-6">
                         <!-- History items will be injected here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Fixed Category Bar -->
+            <div id="fixed-category-bar" class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 z-10">
+                <div class="container mx-auto px-4 py-3">
+                    <div id="category-list" class="flex flex-wrap gap-2 h-16 overflow-y-auto scrollbar-thin justify-center">
+                        <!-- Categories will be injected here by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -277,6 +297,7 @@
             const navProductsBtn = document.getElementById('nav-products');
             const navRequisitionBtn = document.getElementById('nav-requisition');
             const navHistoryBtn = document.getElementById('nav-history');
+            const productViewActions = document.getElementById('product-view-actions');
             const productListView = document.getElementById('product-list-view');
             const requisitionView = document.getElementById('requisition-view');
             const historyView = document.getElementById('history-view');
@@ -290,6 +311,7 @@
             const reorderQuantityInput = document.getElementById('reorder-quantity');
             const modalOkBtn = document.getElementById('modal-ok-btn');
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
+            const fixedCategoryBar = document.getElementById('fixed-category-bar');
             
             // App State
             let allRecords = [];
@@ -496,7 +518,7 @@
             function displayHistory() { historyListContainer.innerHTML = ''; if (historyList.length === 0) { historyListContainer.innerHTML = '<p class="text-center py-4 text-gray-500">ยังไม่มีประวัติการเบิก</p>'; return; } historyList.forEach(historyItem => { const date = historyItem.timestamp.toDate(); const formattedDate = `${date.toLocaleDateString('th-TH')} ${date.toLocaleTimeString('th-TH')}`; const card = document.createElement('div'); card.className = 'bg-gray-50 rounded-lg p-4 shadow'; const tableRows = historyItem.items.map((item, index) => `<tr><td class="py-2 px-4 text-sm text-gray-600">${index + 1}</td><td class="py-2 px-4 text-sm text-gray-800">${item.name}</td><td class="py-2 px-4 text-sm text-gray-800">${item.quantity}</td><td class="py-2 px-4 text-sm text-gray-600">${item.unit}</td></tr>`).join(''); card.innerHTML = `<div class="flex justify-between items-center mb-3"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="overflow-x-auto"><table class="w-full"><thead><tr><th class="py-2 px-4 bg-gray-200 text-xs text-gray-600 font-medium text-left">ลำดับ</th><th class="py-2 px-4 bg-gray-200 text-xs text-gray-600 font-medium text-left">สินค้า</th><th class="py-2 px-4 bg-gray-200 text-xs text-gray-600 font-medium text-left">จำนวน</th><th class="py-2 px-4 bg-gray-200 text-xs text-gray-600 font-medium text-left">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`; historyListContainer.appendChild(card); });}
             function openItemSettingsModal(record) { currentEditingItemId = record[itemColumnName]; const settings = itemSettings.get(currentEditingItemId) || {}; modalItemName.textContent = `ตั้งค่า: ${currentEditingItemId}`; reorderPointInput.value = settings.reorderPoint || ''; reorderQuantityInput.value = settings.reorderQuantity || ''; itemSettingsModal.classList.remove('hidden'); }
             function closeItemSettingsModal() { itemSettingsModal.classList.add('hidden'); currentEditingItemId = null; }
-            function switchView(viewName) { const views = { products: productListView, requisition: requisitionView, history: historyView }; const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn }; Object.values(views).forEach(v => v.classList.add('hidden')); Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); views[viewName].classList.remove('hidden'); navs[viewName].classList.add('text-blue-600', 'border-blue-600'); navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');}
+            function switchView(viewName) { const views = { products: productListView, requisition: requisitionView, history: historyView }; const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn }; Object.values(views).forEach(v => v.classList.add('hidden')); Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); views[viewName].classList.remove('hidden'); navs[viewName].classList.add('text-blue-600', 'border-blue-600'); navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); fixedCategoryBar.classList.toggle('hidden', viewName !== 'products'); productViewActions.classList.toggle('hidden', viewName !== 'products'); }
             function showError(message) { errorMessageEl.textContent = `เกิดข้อผิดพลาด: ${message}`; errorEl.classList.remove('hidden'); }
             function showNoData() { noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล'; noDataEl.classList.remove('hidden'); tableEl.classList.add('hidden'); }
             function updateShowHiddenButtonVisibility() { showHiddenBtn.classList.toggle('hidden', hiddenItemIds.size === 0); }
