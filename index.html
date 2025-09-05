@@ -43,6 +43,21 @@
             opacity: 1;
             transform: translateY(0);
         }
+        /* For horizontal scrollbar styling */
+        #category-list::-webkit-scrollbar {
+            height: 4px;
+        }
+        #category-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        #category-list::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 2px;
+        }
+        #category-list::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -114,20 +129,22 @@
             </nav>
         </div>
         
+        <!-- Category Navigation -->
+        <div id="category-nav-view" class="mb-8 bg-white rounded-lg shadow-md">
+            <div class="border-b border-gray-200">
+                <nav id="category-list" class="flex -mb-px space-x-6 px-6 overflow-x-auto" aria-label="Category Tabs">
+                    <!-- Categories for filtering will be injected here as buttons -->
+                </nav>
+            </div>
+            <div class="p-4 flex flex-wrap gap-2">
+                <button id="show-hidden-btn" class="hidden bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                    แสดงแถวที่ซ่อน
+                </button>
+            </div>
+        </div>
+
         <!-- Product List View -->
         <div id="product-list-view">
-             <!-- Category Filter Section -->
-            <div class="mb-8 bg-white rounded-lg shadow-md p-6">
-                 <div id="category-list" class="flex flex-wrap gap-2 items-center">
-                    <!-- Categories for filtering will be injected here -->
-                 </div>
-                 <div class="mt-4 flex flex-wrap gap-2">
-                    <button id="show-hidden-btn" class="hidden bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                        แสดงแถวที่ซ่อน
-                    </button>
-                 </div>
-            </div>
-
             <!-- Container for the table and loading/error states -->
             <div id="data-container" class="bg-white rounded-lg shadow-md overflow-hidden">
                 <div id="loading" class="p-8 text-center">
@@ -438,6 +455,7 @@
         const historyView = document.getElementById('history-view');
         const manageView = document.getElementById('manage-view');
         const accountView = document.getElementById('account-view');
+        const categoryNavView = document.getElementById('category-nav-view'); // New element
         const autoRequisitionBtn = document.getElementById('auto-requisition-btn');
         const requisitionListBody = document.getElementById('requisition-list-body');
         const confirmRequisitionBtn = document.getElementById('confirm-requisition-btn');
@@ -732,59 +750,73 @@
                  return;
             }
 
+            // Create elements for the filter bar
             sortedCategories.forEach((category) => {
-                const createCategoryElement = () => {
-                    const categoryEl = document.createElement('div');
-                    categoryEl.dataset.id = category.id;
-                    categoryEl.className = 'flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 transition-shadow duration-200 cursor-pointer select-none';
-                    categoryEl.clickCount = 0;
-                    categoryEl.clickTimer = null;
-                    
-                    const nameBtn = document.createElement('button');
-                    nameBtn.textContent = category.name;
-                    nameBtn.className = 'focus:outline-none';
+                const categoryBtn = document.createElement('button');
+                categoryBtn.dataset.id = category.id;
+                categoryBtn.className = 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none';
 
-                    categoryEl.addEventListener('click', (e) => {
-                        categoryEl.clickCount++;
-                        if (categoryEl.clickCount === 1) {
-                            categoryEl.clickTimer = setTimeout(() => {
-                                categoryEl.clickCount = 0; // Reset
-                                // SINGLE CLICK ACTION (Filter)
-                                if (!itemColumnName) return;
-                                switchView('products');
-                                
-                                let filteredRecords;
-                                if (category.name === 'อื่นๆ') {
-                                    const otherCategoryNames = categories.filter(c => c.name !== 'อื่นๆ').map(c => c.name.toLowerCase());
-                                    filteredRecords = allRecords.filter(record => {
-                                        const itemNameLower = record[itemColumnName]?.toLowerCase() || '';
-                                        return !otherCategoryNames.some(catName => itemNameLower.includes(catName));
-                                    });
-                                } else {
-                                    filteredRecords = allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase()));
-                                }
-                                noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`;
-                                activeCategoryName = category.name;
-                                displayData(filteredRecords);
-                                document.querySelectorAll('#category-list > div, #manage-category-list > div').forEach(el => el.classList.remove('ring-2', 'ring-blue-500'));
-                                const visibleCatEl = categoryList.querySelector(`[data-id="${category.id}"]`);
-                                if (visibleCatEl) visibleCatEl.classList.add('ring-2', 'ring-blue-500');
+                if (activeCategoryName === category.name) {
+                    categoryBtn.classList.add('text-blue-600', 'border-blue-600');
+                } else {
+                    categoryBtn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+                }
+                
+                categoryBtn.textContent = category.name;
+                
+                categoryBtn.addEventListener('click', () => {
+                    let filteredRecords;
+                    if (category.name === 'อื่นๆ') {
+                        const otherCategoryNames = categories.filter(c => c.name !== 'อื่นๆ').map(c => c.name.toLowerCase());
+                        filteredRecords = allRecords.filter(record => {
+                            const itemNameLower = record[itemColumnName]?.toLowerCase() || '';
+                            return !otherCategoryNames.some(catName => itemNameLower.includes(catName));
+                        });
+                    } else {
+                        filteredRecords = allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase()));
+                    }
+                    noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`;
+                    activeCategoryName = category.name;
+                    displayData(filteredRecords);
 
-                            }, 250);
-                        } else if (categoryEl.clickCount === 2) {
-                            clearTimeout(categoryEl.clickTimer);
-                            categoryEl.clickCount = 0; // Reset
-                            // DOUBLE CLICK ACTION (Manage)
-                            openCategoryActionsModal(category);
-                        }
+                    document.querySelectorAll('#category-list button').forEach(btn => {
+                        btn.classList.remove('text-blue-600', 'border-blue-600');
+                        btn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
                     });
+                    categoryBtn.classList.add('text-blue-600', 'border-blue-600');
+                    categoryBtn.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+                });
+                categoryList.appendChild(categoryBtn);
+            });
 
-                    categoryEl.appendChild(nameBtn);
-                    return categoryEl;
-                };
 
-                categoryList.appendChild(createCategoryElement());
-                manageCategoryList.appendChild(createCategoryElement());
+            // Create elements for the management page
+            sortedCategories.forEach((category) => {
+                const categoryEl = document.createElement('div');
+                categoryEl.dataset.id = category.id;
+                categoryEl.className = 'flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 transition-shadow duration-200 cursor-pointer select-none';
+                categoryEl.clickCount = 0;
+                categoryEl.clickTimer = null;
+                
+                const nameBtn = document.createElement('button');
+                nameBtn.textContent = category.name;
+                nameBtn.className = 'focus:outline-none';
+
+                categoryEl.addEventListener('click', (e) => {
+                    categoryEl.clickCount++;
+                    if (categoryEl.clickCount === 1) {
+                        categoryEl.clickTimer = setTimeout(() => {
+                            categoryEl.clickCount = 0;
+                        }, 250);
+                    } else if (categoryEl.clickCount === 2) {
+                        clearTimeout(categoryEl.clickTimer);
+                        categoryEl.clickCount = 0;
+                        openCategoryActionsModal(category);
+                    }
+                });
+
+                categoryEl.appendChild(nameBtn);
+                manageCategoryList.appendChild(categoryEl);
             });
 
             categorySortableInstance = new Sortable(manageCategoryList, {
@@ -966,7 +998,26 @@
         function closeAppSettingsModal() { appSettingsModal.classList.add('hidden'); }
         function updateAppSettingsModalInputs() { settingTriggerColInput.value = appSettings.triggerStockColumnName; settingCalcColInput.value = appSettings.calculationStockColumnName; settingUnitColInput.value = appSettings.unitColumnName; }
         function showNotification(message, isError = true) { if (notificationTimeout) clearTimeout(notificationTimeout); notificationMessage.textContent = message; notificationToast.className = `fixed top-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`; notificationToast.classList.remove('hidden', 'opacity-0'); notificationToast.classList.add('show'); notificationTimeout = setTimeout(() => { notificationToast.classList.remove('show'); notificationToast.classList.add('opacity-0'); setTimeout(() => notificationToast.classList.add('hidden'), 300); }, 4000); }
-        function switchView(viewName) { const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView }; const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; Object.values(views).forEach(v => v.classList.add('hidden')); Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); views[viewName].classList.remove('hidden'); navs[viewName].classList.add('text-blue-600', 'border-blue-600'); navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');}
+        function switchView(viewName) { 
+            const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView }; 
+            const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; 
+            
+            Object.values(views).forEach(v => v.classList.add('hidden')); 
+            categoryNavView.classList.add('hidden');
+
+            Object.values(navs).forEach(n => { 
+                n.classList.remove('text-blue-600', 'border-blue-600'); 
+                n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); 
+            }); 
+            
+            views[viewName].classList.remove('hidden'); 
+            navs[viewName].classList.add('text-blue-600', 'border-blue-600'); 
+            navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+            
+            if (viewName === 'products') {
+                categoryNavView.classList.remove('hidden');
+            }
+        }
         function showError(message) { errorMessageEl.textContent = `เกิดข้อผิดพลาด: ${message}`; errorEl.classList.remove('hidden'); }
         function showNoData() { noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล'; noDataEl.classList.remove('hidden'); tableEl.classList.add('hidden'); }
         function updateShowHiddenButtonVisibility() { showHiddenBtn.classList.toggle('hidden', hiddenItemIds.size === 0); }
