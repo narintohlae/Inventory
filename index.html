@@ -62,7 +62,7 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-<div class="container mx-auto px-2 py-4 sm:p-6 md:p-8 lg:w-1/2">
+<div class="container mx-auto px-2 py-4 sm:p-6 md:p-8 lg:w-1/2 pb-24">
     
     <!-- Auth Container -->
     <div id="auth-container" class="mb-8">
@@ -127,15 +127,6 @@
                     บัญชี
                 </button>
             </nav>
-        </div>
-        
-        <!-- Category Navigation -->
-        <div id="category-nav-view" class="mb-8 bg-white rounded-lg shadow-md">
-            <div class="border-b border-gray-200">
-                <nav id="category-list" class="flex -mb-px space-x-6 px-6 overflow-x-auto" aria-label="Category Tabs">
-                    <!-- Categories for filtering will be injected here as buttons -->
-                </nav>
-            </div>
         </div>
 
         <!-- Product List View -->
@@ -253,13 +244,22 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <footer class="text-center mt-8 text-gray-400 text-sm">
         <p>สร้างโดย Gemini</p>
     </footer>
 </div>
+
+<!-- Category Navigation -->
+<div id="category-nav-view" class="hidden fixed bottom-0 left-0 right-0 z-20 bg-white shadow-[0_-2px_10px_-3px_rgba(0,0,0,0.1)] border-t border-gray-200">
+    <div class="container mx-auto lg:w-1/2">
+        <nav id="category-list" class="flex space-x-6 px-6 overflow-x-auto" aria-label="Category Tabs">
+            <!-- Categories for filtering will be injected here as buttons -->
+        </nav>
+    </div>
+</div>
+
 
 <!-- Item Settings Modal -->
 <div id="item-settings-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-30">
@@ -517,6 +517,10 @@
             calculationStockColumnName: 'เบบี้ช็อป',
             unitColumnName: 'หน่วย'
         };
+        let resolveCategoriesLoaded;
+        const categoriesLoadedPromise = new Promise(resolve => { resolveCategoriesLoaded = resolve; });
+        let categoriesFirstLoad = true;
+
 
         // --- Firebase State ---
         let userId = null;
@@ -549,6 +553,7 @@
                 appContainer.classList.remove('hidden');
                 document.querySelectorAll('#user-email').forEach(el => el.textContent = user.email);
                 initializeListeners(userId);
+                switchView('products');
                 if(allRecords.length === 0) fetchData(); 
             } else {
                 userId = null;
@@ -587,6 +592,10 @@
                 } else {
                     categories = fetchedCategories;
                     displayCategories();
+                    if (categoriesFirstLoad && resolveCategoriesLoaded) {
+                        categoriesFirstLoad = false;
+                        resolveCategoriesLoaded();
+                    }
                 }
              }, (err) => showError("โหลดหมวดหมู่ไม่สำเร็จ")));
 
@@ -748,12 +757,12 @@
             sortedCategories.forEach((category) => {
                 const categoryBtn = document.createElement('button');
                 categoryBtn.dataset.id = category.id;
-                categoryBtn.className = 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none';
+                categoryBtn.className = 'whitespace-nowrap py-3 px-1 font-medium text-sm focus:outline-none';
 
                 if (activeCategoryName === category.name) {
-                    categoryBtn.classList.add('text-blue-600', 'border-blue-600');
+                    categoryBtn.classList.add('text-blue-600');
                 } else {
-                    categoryBtn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+                    categoryBtn.classList.add('text-gray-500', 'hover:text-gray-700');
                 }
                 
                 categoryBtn.textContent = category.name;
@@ -774,11 +783,11 @@
                     displayData(filteredRecords);
 
                     document.querySelectorAll('#category-list button').forEach(btn => {
-                        btn.classList.remove('text-blue-600', 'border-blue-600');
-                        btn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+                        btn.classList.remove('text-blue-600');
+                        btn.classList.add('text-gray-500', 'hover:text-gray-700');
                     });
-                    categoryBtn.classList.add('text-blue-600', 'border-blue-600');
-                    categoryBtn.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+                    categoryBtn.classList.add('text-blue-600');
+                    categoryBtn.classList.remove('text-gray-500', 'hover:text-gray-700');
                 });
                 categoryList.appendChild(categoryBtn);
             });
@@ -827,7 +836,43 @@
         }
 
 
-        async function fetchData() { try { loadingEl.classList.remove('hidden'); const response = await fetch(sheetUrl); if (!response.ok) throw new Error(`Network: ${response.statusText}`); const data = await response.json(); if (!Array.isArray(data.data) || data.data.length === 0) { showNoData(); return; } allRecords = data.data; itemColumnName = Object.keys(allRecords[0])[0] || ''; if (!itemColumnName) { showError("ข้อมูลไม่มีคอลัมน์"); return; } displayData(allRecords); } catch (error) { showError(error.message); } finally { loadingEl.classList.add('hidden'); } }
+        async function fetchData() { 
+            try { 
+                loadingEl.classList.remove('hidden'); 
+                const response = await fetch(sheetUrl); 
+                if (!response.ok) throw new Error(`Network: ${response.statusText}`); 
+                const data = await response.json(); 
+                if (!Array.isArray(data.data) || data.data.length === 0) { 
+                    showNoData(); 
+                    return; 
+                } 
+                allRecords = data.data; 
+                itemColumnName = Object.keys(allRecords[0])[0] || ''; 
+                if (!itemColumnName) { 
+                    showError("ข้อมูลไม่มีคอลัมน์"); 
+                    return; 
+                } 
+                
+                await categoriesLoadedPromise;
+
+                const carnationCategory = categories.find(c => c.name === 'Carnation');
+                if (carnationCategory) {
+                    const carnationButton = Array.from(categoryList.querySelectorAll('button')).find(btn => btn.textContent === 'Carnation');
+                    if (carnationButton) {
+                        carnationButton.click();
+                    } else {
+                        displayData(allRecords);
+                    }
+                } else {
+                    displayData(allRecords);
+                }
+
+            } catch (error) { 
+                showError(error.message); 
+            } finally { 
+                loadingEl.classList.add('hidden'); 
+            } 
+        }
         
         function displayData(records) { 
             currentRecords = records; 
