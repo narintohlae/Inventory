@@ -866,16 +866,22 @@
                 const th = document.createElement('th'); 
                 th.scope = 'col'; 
                 th.className = `px-2 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${header === itemColumnName ? 'w-full' : ''}`; 
-                th.textContent = header.replace(/_/g, ' '); 
+                
+                const headerContentWrapper = document.createElement('div');
+                headerContentWrapper.className = 'flex items-center gap-x-2';
+                
+                const headerText = document.createElement('span');
+                headerText.textContent = header.replace(/_/g, ' ');
+                headerContentWrapper.appendChild(headerText);
+                
+                if (header === itemColumnName) {
+                    th.id = 'product-header-cell';
+                }
+                
+                th.appendChild(headerContentWrapper);
                 headerRow.appendChild(th); 
             }); 
-
-            const actionTh = document.createElement('th');
-            actionTh.scope = 'col';
-            actionTh.className = 'px-2 sm:px-6 py-2';
-            actionTh.id = 'hidden-items-header-cell';
-            headerRow.appendChild(actionTh);
-
+            
             tableHead.appendChild(headerRow); 
             
             displayOrder.forEach(id => { 
@@ -888,7 +894,7 @@
                         row.dataset.id = id; 
                         row.className = 'bg-gray-200 font-bold'; 
                         const cell = document.createElement('td'); 
-                        cell.colSpan = headers.length + 1; 
+                        cell.colSpan = headers.length;
                         cell.className = 'px-4 py-2 text-gray-800'; 
                         const contentWrapper = document.createElement('div'); 
                         contentWrapper.className = 'flex justify-between items-center'; 
@@ -946,7 +952,6 @@
                         td.textContent = record[header]; 
                         row.appendChild(td); 
                     }); 
-                    row.appendChild(document.createElement('td'));
                     tableBody.appendChild(row); 
                 } 
             }); 
@@ -969,21 +974,24 @@
             const hasHiddenItemsInView = potentialItems.some(item => hiddenItemIds.has(item[itemColumnName]));
             
             if (hasHiddenItemsInView) {
-                const headerCell = document.getElementById('hidden-items-header-cell');
+                const headerCell = document.getElementById('product-header-cell');
                 if (headerCell) {
-                    const showHiddenBtnIcon = document.createElement('button');
-                    showHiddenBtnIcon.title = 'แสดงแถวที่ซ่อน';
-                    showHiddenBtnIcon.className = 'text-gray-400 hover:text-yellow-600 focus:outline-none';
-                    showHiddenBtnIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C3.732 4.943 9.523 3 15 3c5.478 0 11.268 1.943 14.542 7-3.274 5.057-9.064 7-14.542 7-5.477 0-11.268-1.943-14.542-7zM15 11a5 5 0 100-2 5 5 0 000 2z" clip-rule="evenodd" /></svg>`;
-                    showHiddenBtnIcon.onclick = () => {
-                        const itemsToUnhide = potentialItems
-                            .map(record => record[itemColumnName])
-                            .filter(id => hiddenItemIds.has(id));
-                        if (itemsToUnhide.length > 0) {
-                            unhideItems(itemsToUnhide);
-                        }
-                    };
-                    headerCell.appendChild(showHiddenBtnIcon);
+                    const headerContentWrapper = headerCell.querySelector('div');
+                    if (headerContentWrapper) {
+                        const showHiddenBtnIcon = document.createElement('button');
+                        showHiddenBtnIcon.title = 'แสดงแถวที่ซ่อน';
+                        showHiddenBtnIcon.className = 'text-gray-400 hover:text-yellow-600 focus:outline-none';
+                        showHiddenBtnIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C3.732 4.943 9.523 3 15 3c5.478 0 11.268 1.943 14.542 7-3.274 5.057-9.064 7-14.542 7-5.477 0-11.268-1.943-14.542-7zM15 11a5 5 0 100-2 5 5 0 000 2z" clip-rule="evenodd" /></svg>`;
+                        showHiddenBtnIcon.onclick = () => {
+                            const itemsToUnhide = potentialItems
+                                .map(record => record[itemColumnName])
+                                .filter(id => hiddenItemIds.has(id));
+                            if (itemsToUnhide.length > 0) {
+                                unhideItems(itemsToUnhide);
+                            }
+                        };
+                        headerContentWrapper.appendChild(showHiddenBtnIcon);
+                    }
                 }
             }
 
