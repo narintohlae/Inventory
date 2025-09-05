@@ -757,7 +757,7 @@
             sortedCategories.forEach((category) => {
                 const categoryBtn = document.createElement('button');
                 categoryBtn.dataset.id = category.id;
-                categoryBtn.className = 'whitespace-nowrap py-4 px-2 font-medium text-[13px] focus:outline-none';
+                categoryBtn.className = 'whitespace-nowrap py-4 px-3 font-bold text-sm focus:outline-none';
 
                 if (activeCategoryName === category.name) {
                     categoryBtn.classList.add('text-blue-600');
@@ -910,7 +910,7 @@
             headers.forEach(header => { 
                 const th = document.createElement('th'); 
                 th.scope = 'col'; 
-                th.className = `px-2 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${header === itemColumnName ? 'w-full' : ''}`; 
+                th.className = `px-2 sm:px-6 py-1 text-left text-sm font-medium text-gray-500 uppercase tracking-wider ${header === itemColumnName ? 'w-full' : ''}`; 
                 
                 const headerContentWrapper = document.createElement('div');
                 headerContentWrapper.className = 'flex items-center gap-x-2';
@@ -940,7 +940,7 @@
                         row.className = 'bg-gray-200 font-bold'; 
                         const cell = document.createElement('td'); 
                         cell.colSpan = headers.length;
-                        cell.className = 'px-4 py-2 text-gray-800 text-[13px]'; 
+                        cell.className = 'px-4 py-1 text-gray-800 text-sm'; 
                         const contentWrapper = document.createElement('div'); 
                         contentWrapper.className = 'flex justify-between items-center'; 
                         const textSpan = document.createElement('span'); 
@@ -993,7 +993,7 @@
                     
                     headers.forEach(header => { 
                         const td = document.createElement('td'); 
-                        td.className = `px-2 sm:px-6 py-2 text-[13px] text-gray-700 break-words ${header === itemColumnName ? 'w-full' : ''}`; 
+                        td.className = `px-2 sm:px-6 py-1 text-sm text-gray-700 break-words ${header === itemColumnName ? 'w-full' : ''}`; 
                         td.textContent = record[header]; 
                         row.appendChild(td); 
                     }); 
