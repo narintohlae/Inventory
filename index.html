@@ -19,7 +19,7 @@
         .sortable-chosen {
             cursor: grabbing;
         }
-        #table-body tr, #category-list > div {
+        #table-body tr, #category-list > div, #manage-category-list > div {
             cursor: grab;
         }
         .long-press-progress {
@@ -48,11 +48,7 @@
 <body class="bg-gray-100 text-gray-800">
 
 <div class="container mx-auto px-2 py-4 sm:p-6 md:p-8 lg:w-1/2">
-    <header class="text-center mb-8">
-        <h1 class="text-3xl sm:text-4xl font-bold text-gray-700">ตารางแสดงข้อมูล</h1>
-        <p class="text-gray-500 mt-2">ข้อมูลล่าสุดจาก Google Sheet</p>
-    </header>
-
+    
     <!-- Auth Container -->
     <div id="auth-container" class="mb-8">
         <div class="bg-white rounded-lg shadow-md p-6">
@@ -106,7 +102,7 @@
             <div class="flex items-center gap-2">
                  <button id="app-settings-btn" title="ตั้งค่า" class="p-2 rounded-md hover:bg-gray-100 text-gray-600 hover:text-blue-600 transition-colors">
                      <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0 3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                 </button>
@@ -126,41 +122,30 @@
                 <button id="nav-history" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
                     ประวัติ
                 </button>
+                 <button id="nav-manage" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
+                    จัดการ
+                </button>
             </nav>
         </div>
         
         <!-- Product List View -->
         <div id="product-list-view">
-            <!-- Category Management Section -->
+             <!-- Category Filter Section -->
             <div class="mb-8 bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-bold text-gray-700 mb-4">จัดการหมวดหมู่และหัวข้อ</h2>
-                <div class="flex flex-col sm:flex-row gap-4 mb-4">
-                    <input type="text" id="category-input" placeholder="ใส่ชื่อหมวดหมู่ที่นี่..." class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                    <button id="add-category-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                        เพิ่มหมวดหมู่
+                 <h3 class="text-lg font-semibold text-gray-600 mb-2">กรองข้อมูลสินค้า</h3>
+                 <p class="text-sm text-gray-500 mb-2">คลิกที่ชื่อหมวดหมู่เพื่อกรองข้อมูล</p>
+                 <div id="category-list" class="flex flex-wrap gap-2 items-center">
+                    <!-- Categories for filtering will be injected here -->
+                 </div>
+                 <div class="mt-4 flex flex-wrap gap-2">
+                    <button id="clear-filter-btn" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                        แสดงทั้งหมด
                     </button>
-                </div>
-                 <div class="mt-4">
-                    <button id="auto-requisition-btn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                        เบิกของอัตโนมัติ
+                    <button id="show-hidden-btn" class="hidden bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                        แสดงแถวที่ซ่อน
                     </button>
-                </div>
-                <div id="category-list-container" class="mt-6">
-                    <h3 class="text-lg font-semibold text-gray-600 mb-2">หมวดหมู่ของฉัน:</h3>
-                    <p class="text-sm text-gray-500 mb-1">คลิกที่ชื่อหมวดหมู่เพื่อกรองข้อมูล | กดค้างเพื่อจัดการหมวดหมู่</p>
-                    <p class="text-sm text-green-600 font-medium mb-2">คลิกที่แถวสินค้า 3 ครั้งเพื่อเพิ่มหัวข้อด้านบน</p>
-                    <div id="category-list" class="flex flex-wrap gap-2 items-center">
-                        <!-- Categories will be injected here by JavaScript -->
-                    </div>
-                    <div class="mt-4 flex flex-wrap gap-2">
-                        <button id="clear-filter-btn" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                            แสดงทั้งหมด
-                        </button>
-                        <button id="show-hidden-btn" class="hidden bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                            แสดงแถวที่ซ่อน
-                        </button>
-                    </div>
-                </div>
+                 </div>
+                 <p class="text-sm text-green-600 font-medium mt-4">คำแนะนำ: คลิกที่แถวสินค้า 3 ครั้งเพื่อเพิ่มหัวข้อด้านบน</p>
             </div>
 
             <!-- Container for the table and loading/error states -->
@@ -219,6 +204,39 @@
                 <h2 class="text-2xl font-bold text-gray-700 mb-4">ประวัติการเบิกของ</h2>
                 <div id="history-list-container" class="space-y-6">
                     <!-- History items will be injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Management View -->
+        <div id="manage-view" class="hidden">
+            <div class="bg-white rounded-lg shadow-md p-6 space-y-8">
+                <!-- Add Category Section -->
+                <div>
+                    <h2 class="text-xl font-bold text-gray-700 mb-4">เพิ่มหมวดหมู่ใหม่</h2>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <input type="text" id="category-input" placeholder="ใส่ชื่อหมวดหมู่ที่นี่..." class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        <button id="add-category-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                            เพิ่มหมวดหมู่
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Manage Categories Section -->
+                <div>
+                    <h2 class="text-xl font-bold text-gray-700 mb-4">จัดการหมวดหมู่ที่มีอยู่</h2>
+                    <p class="text-sm text-gray-500 mb-2">กดค้างที่ชื่อหมวดหมู่เพื่อแก้ไขหรือลบ</p>
+                    <div id="manage-category-list" class="flex flex-wrap gap-2 items-center">
+                        <!-- Categories for management will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Auto Requisition Section -->
+                <div>
+                     <h2 class="text-xl font-bold text-gray-700 mb-4">เครื่องมือ</h2>
+                    <button id="auto-requisition-btn" class="w-full sm:w-auto bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                        เบิกของอัตโนมัติ
+                    </button>
                 </div>
             </div>
         </div>
@@ -405,6 +423,7 @@
         const categoryInput = document.getElementById('category-input');
         const addCategoryBtn = document.getElementById('add-category-btn');
         const categoryList = document.getElementById('category-list');
+        const manageCategoryList = document.getElementById('manage-category-list');
         const clearFilterBtn = document.getElementById('clear-filter-btn');
         const showHiddenBtn = document.getElementById('show-hidden-btn');
 
@@ -412,9 +431,11 @@
         const navProductsBtn = document.getElementById('nav-products');
         const navRequisitionBtn = document.getElementById('nav-requisition');
         const navHistoryBtn = document.getElementById('nav-history');
+        const navManageBtn = document.getElementById('nav-manage');
         const productListView = document.getElementById('product-list-view');
         const requisitionView = document.getElementById('requisition-view');
         const historyView = document.getElementById('history-view');
+        const manageView = document.getElementById('manage-view');
         const autoRequisitionBtn = document.getElementById('auto-requisition-btn');
         const requisitionListBody = document.getElementById('requisition-list-body');
         const confirmRequisitionBtn = document.getElementById('confirm-requisition-btn');
@@ -699,69 +720,85 @@
         }
 
         // --- UI Display & Helper Functions ---
-        function displayCategories() { 
-            if (categorySortableInstance) categorySortableInstance.destroy(); 
-            categoryList.innerHTML = ''; 
-            if (!userId) return; 
-            if (categories.length === 0) { 
-                categoryList.innerHTML = '<p class="text-gray-500 text-sm">ยังไม่มีหมวดหมู่</p>'; 
-                return; 
-            } 
-            const sortedCategories = [...categories].sort((a, b) => { 
-                const indexA = categoryOrder.indexOf(a.id); 
-                const indexB = categoryOrder.indexOf(b.id); 
-                if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name, 'th'); 
-                if (indexA === -1) return 1; 
-                if (indexB === -1) return -1; 
-                return indexA - indexB; 
-            }); 
-            sortedCategories.forEach((category) => { 
-                const categoryEl = document.createElement('div'); 
-                categoryEl.dataset.id = category.id; 
-                categoryEl.className = 'flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 transition-shadow duration-200 cursor-pointer select-none'; 
-                const nameBtn = document.createElement('button'); 
-                nameBtn.textContent = category.name; 
-                nameBtn.className = 'focus:outline-none'; 
-                nameBtn.title = `กรองด้วย "${category.name}"`; 
-                
-                const categoryLongPress = createLongPressHandler(() => { openCategoryActionsModal(category); }, 500);
+        function displayCategories() {
+            if (categorySortableInstance) categorySortableInstance.destroy();
+            categoryList.innerHTML = '';
+            manageCategoryList.innerHTML = '';
 
-                categoryEl.addEventListener('mousedown', categoryLongPress.start);
-                categoryEl.addEventListener('mouseup', categoryLongPress.end);
-                categoryEl.addEventListener('mouseleave', categoryLongPress.end);
-                categoryEl.addEventListener('touchstart', categoryLongPress.start);
-                categoryEl.addEventListener('touchend', categoryLongPress.end);
-                categoryEl.addEventListener('touchcancel', categoryLongPress.end);
+            if (!userId) return;
 
-                categoryEl.addEventListener('click', (e) => {
-                    if (categoryLongPress.isLongPress()) {
-                        e.stopPropagation(); e.preventDefault(); return;
-                    }
-                    if (!itemColumnName) return; 
-                    const filtered = allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase())); 
-                    noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`; 
-                    activeCategoryName = category.name; 
-                    displayData(filtered); 
-                    clearFilterBtn.classList.remove('hidden'); 
-                    document.querySelectorAll('#category-list > div').forEach(el => el.classList.remove('ring-2', 'ring-blue-500')); 
-                    categoryEl.classList.add('ring-2', 'ring-blue-500'); 
-                });
-                
-                categoryEl.appendChild(nameBtn); 
-                categoryList.appendChild(categoryEl); 
-            }); 
-            categorySortableInstance = new Sortable(categoryList, { 
-                animation: 150, 
-                ghostClass: 'sortable-ghost', 
-                delay: 200, 
-                delayOnTouchOnly: true, 
-                touchStartThreshold: 5, 
-                onEnd: (evt) => { 
-                    const newOrder = Array.from(categoryList.querySelectorAll('div')).map(el => el.dataset.id); 
-                    saveCategoryOrder(newOrder); 
-                } 
-            }); 
+            const sortedCategories = [...categories].sort((a, b) => {
+                const indexA = categoryOrder.indexOf(a.id);
+                const indexB = categoryOrder.indexOf(b.id);
+                if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name, 'th');
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+            });
+
+            if (categories.length === 0) {
+                 manageCategoryList.innerHTML = '<p class="text-gray-500 text-sm">ยังไม่มีหมวดหมู่</p>';
+                 categoryList.innerHTML = '<p class="text-gray-500 text-sm">ไปที่แท็บ "จัดการ" เพื่อเพิ่มหมวดหมู่</p>';
+                 return;
+            }
+
+            sortedCategories.forEach((category) => {
+                const createCategoryElement = (isForManagement) => {
+                    const categoryEl = document.createElement('div');
+                    categoryEl.dataset.id = category.id;
+                    categoryEl.className = 'flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 transition-shadow duration-200 cursor-pointer select-none';
+                    
+                    const nameBtn = document.createElement('button');
+                    nameBtn.textContent = category.name;
+                    nameBtn.className = 'focus:outline-none';
+                    
+                    const longPressHandler = createLongPressHandler(() => { openCategoryActionsModal(category); }, 500);
+
+                    categoryEl.addEventListener('mousedown', longPressHandler.start);
+                    categoryEl.addEventListener('mouseup', longPressHandler.end);
+                    categoryEl.addEventListener('mouseleave', longPressHandler.end);
+                    categoryEl.addEventListener('touchstart', longPressHandler.start);
+                    categoryEl.addEventListener('touchend', longPressHandler.end);
+                    categoryEl.addEventListener('touchcancel', longPressHandler.end);
+
+                    categoryEl.addEventListener('click', (e) => {
+                        if (longPressHandler.isLongPress()) {
+                            e.stopPropagation(); e.preventDefault(); return;
+                        }
+                        if (!itemColumnName) return;
+                        switchView('products');
+                        const filtered = allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase()));
+                        noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`;
+                        activeCategoryName = category.name;
+                        displayData(filtered);
+                        clearFilterBtn.classList.remove('hidden');
+                        document.querySelectorAll('#category-list > div, #manage-category-list > div').forEach(el => el.classList.remove('ring-2', 'ring-blue-500'));
+                        
+                        const visibleCatEl = categoryList.querySelector(`[data-id="${category.id}"]`);
+                        if (visibleCatEl) visibleCatEl.classList.add('ring-2', 'ring-blue-500');
+                    });
+
+                    categoryEl.appendChild(nameBtn);
+                    return categoryEl;
+                };
+
+                categoryList.appendChild(createCategoryElement(false));
+                manageCategoryList.appendChild(createCategoryElement(true));
+            });
+
+            categorySortableInstance = new Sortable(manageCategoryList, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                delay: 200,
+                delayOnTouchOnly: true,
+                touchStartThreshold: 5,
+                onEnd: (evt) => {
+                    const newOrder = Array.from(manageCategoryList.querySelectorAll('div')).map(el => el.dataset.id);
+                    saveCategoryOrder(newOrder);
+                }
+            });
         }
+
 
         async function fetchData() { try { loadingEl.classList.remove('hidden'); const response = await fetch(sheetUrl); if (!response.ok) throw new Error(`Network: ${response.statusText}`); const data = await response.json(); if (!Array.isArray(data.data) || data.data.length === 0) { showNoData(); return; } allRecords = data.data; itemColumnName = Object.keys(allRecords[0])[0] || ''; if (!itemColumnName) { showError("ข้อมูลไม่มีคอลัมน์"); return; } displayData(allRecords); } catch (error) { showError(error.message); } finally { loadingEl.classList.add('hidden'); } }
         
@@ -928,7 +965,7 @@
         function closeAppSettingsModal() { appSettingsModal.classList.add('hidden'); }
         function updateAppSettingsModalInputs() { settingTriggerColInput.value = appSettings.triggerStockColumnName; settingCalcColInput.value = appSettings.calculationStockColumnName; settingUnitColInput.value = appSettings.unitColumnName; }
         function showNotification(message, isError = true) { if (notificationTimeout) clearTimeout(notificationTimeout); notificationMessage.textContent = message; notificationToast.className = `fixed top-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`; notificationToast.classList.remove('hidden', 'opacity-0'); notificationToast.classList.add('show'); notificationTimeout = setTimeout(() => { notificationToast.classList.remove('show'); notificationToast.classList.add('opacity-0'); setTimeout(() => notificationToast.classList.add('hidden'), 300); }, 4000); }
-        function switchView(viewName) { const views = { products: productListView, requisition: requisitionView, history: historyView }; const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn }; Object.values(views).forEach(v => v.classList.add('hidden')); Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); views[viewName].classList.remove('hidden'); navs[viewName].classList.add('text-blue-600', 'border-blue-600'); navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');}
+        function switchView(viewName) { const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView }; const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn }; Object.values(views).forEach(v => v.classList.add('hidden')); Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); views[viewName].classList.remove('hidden'); navs[viewName].classList.add('text-blue-600', 'border-blue-600'); navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');}
         function showError(message) { errorMessageEl.textContent = `เกิดข้อผิดพลาด: ${message}`; errorEl.classList.remove('hidden'); }
         function showNoData() { noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล'; noDataEl.classList.remove('hidden'); tableEl.classList.add('hidden'); }
         function updateShowHiddenButtonVisibility() { showHiddenBtn.classList.toggle('hidden', hiddenItemIds.size === 0); }
@@ -936,13 +973,14 @@
         // --- Event Listeners ---
         addCategoryBtn.addEventListener('click', addCategory); 
         categoryInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addCategory(); });
-        clearFilterBtn.addEventListener('click', () => { noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล'; activeCategoryName = null; displayData(allRecords); clearFilterBtn.classList.add('hidden'); document.querySelectorAll('#category-list > div').forEach(el => el.classList.remove('ring-2', 'ring-blue-500')); });
+        clearFilterBtn.addEventListener('click', () => { noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล'; activeCategoryName = null; displayData(allRecords); clearFilterBtn.classList.add('hidden'); document.querySelectorAll('#category-list > div, #manage-category-list > div').forEach(el => el.classList.remove('ring-2', 'ring-blue-500')); });
         showHiddenBtn.addEventListener('click', () => { const itemsToUnhide = (activeCategoryName ? currentRecords : allRecords).map(record => record[itemColumnName]).filter(id => hiddenItemIds.has(id)); if (itemsToUnhide.length > 0) unhideItems(itemsToUnhide); });
         
         // Navigation
         navProductsBtn.addEventListener('click', () => switchView('products'));
         navRequisitionBtn.addEventListener('click', () => switchView('requisition'));
         navHistoryBtn.addEventListener('click', () => switchView('history'));
+        navManageBtn.addEventListener('click', () => switchView('manage'));
         
         // Modals
         modalOkBtn.addEventListener('click', saveItemSettings);
