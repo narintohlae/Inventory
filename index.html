@@ -1166,6 +1166,14 @@
         function showNoData() { noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล'; noDataEl.classList.remove('hidden'); tableEl.classList.add('hidden'); }
         
         // --- Event Listeners ---
+        const categoryNavForScroll = document.getElementById('category-list');
+        categoryNavForScroll.addEventListener('wheel', (event) => {
+            if (window.matchMedia('(pointer: fine)').matches) {
+                event.preventDefault();
+                categoryNavForScroll.scrollLeft += event.deltaY;
+            }
+        }, { passive: false });
+
         addCategoryBtn.addEventListener('click', addCategory); 
         categoryInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addCategory(); });
         
