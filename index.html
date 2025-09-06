@@ -336,6 +336,31 @@
     </div>
 </div>
 
+<!-- Header Actions Modal -->
+<div id="header-actions-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-30">
+    <div class="relative mx-auto p-5 border w-11/12 max-w-sm shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="header-modal-name">จัดการหัวข้อ</h3>
+            <div class="mt-6 space-y-3">
+                <button id="edit-header-btn" class="w-full px-4 py-3 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 flex items-center justify-center">
+                    <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" /></svg>
+                    แก้ไขหัวข้อ
+                </button>
+                <button id="delete-header-btn" class="w-full px-4 py-3 bg-red-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 flex items-center justify-center">
+                    <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    ลบหัวข้อ
+                </button>
+            </div>
+            <div class="mt-6">
+                <button id="header-actions-cancel-btn" class="w-full px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                    ยกเลิก
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <!-- App Settings Modal -->
 <div id="app-settings-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-40">
     <div class="relative mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
@@ -473,6 +498,12 @@
         const headerInput = document.getElementById('header-input');
         const headerModalOkBtn = document.getElementById('header-modal-ok-btn');
         const headerModalCancelBtn = document.getElementById('header-modal-cancel-btn');
+
+        const headerActionsModal = document.getElementById('header-actions-modal');
+        const headerModalName = document.getElementById('header-modal-name');
+        const editHeaderBtn = document.getElementById('edit-header-btn');
+        const deleteHeaderBtn = document.getElementById('delete-header-btn');
+        const headerActionsCancelBtn = document.getElementById('header-actions-cancel-btn');
         
         // New Modals and Toast
         const confirmModal = document.getElementById('confirm-modal');
@@ -509,6 +540,8 @@
         let historyList = [];
         let currentEditingItemId = null;
         let currentEditingCategory = null;
+        let currentEditingHeaderId = null;
+        let currentEditingHeaderText = null;
         let confirmCallback = null;
         let notificationTimeout = null;
         let insertHeaderAboveId = null;
@@ -940,23 +973,22 @@
                         row.className = 'bg-gray-200 font-bold'; 
                         const cell = document.createElement('td'); 
                         cell.colSpan = headers.length;
-                        cell.className = 'px-4 py-1 text-gray-800 text-sm'; 
-                        const contentWrapper = document.createElement('div'); 
-                        contentWrapper.className = 'flex justify-between items-center'; 
-                        const textSpan = document.createElement('span'); 
-                        textSpan.textContent = rowData.text; 
-                        const buttonsWrapper = document.createElement('div'); 
-                        const editBtn = document.createElement('button'); 
-                        editBtn.innerHTML = `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" /></svg>`; 
-                        editBtn.className = 'ml-2 text-gray-500 hover:text-blue-600'; 
-                        editBtn.onclick = (e) => { e.stopPropagation(); editHeaderRow(id, rowData.text); }; 
-                        const deleteBtn = document.createElement('button'); 
-                        deleteBtn.innerHTML = `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`; 
-                        deleteBtn.className = 'ml-1 text-gray-500 hover:text-red-600'; 
-                        deleteBtn.onclick = (e) => { e.stopPropagation(); deleteHeaderRow(id); }; 
-                        buttonsWrapper.append(editBtn, deleteBtn); 
-                        contentWrapper.append(textSpan, buttonsWrapper); 
-                        cell.appendChild(contentWrapper); 
+                        cell.className = 'px-4 py-1 text-gray-800 text-sm text-center';
+                        cell.textContent = rowData.text; 
+
+                        row.clickCount = 0;
+                        row.clickTimer = null;
+                        row.addEventListener('click', () => {
+                            row.clickCount++;
+                            if(row.clickTimer) clearTimeout(row.clickTimer);
+                            if(row.clickCount === 3) {
+                                openHeaderActionsModal(id, rowData.text);
+                                row.clickCount = 0;
+                            } else {
+                                row.clickTimer = setTimeout(() => { row.clickCount = 0; }, 400);
+                            }
+                        });
+
                         row.appendChild(cell); 
                         tableBody.appendChild(row); 
                     } 
@@ -1083,6 +1115,8 @@
         function closeCategoryActionsModal() { categoryActionsModal.classList.add('hidden'); currentEditingCategory = null; }
         function openAddHeaderModal(referenceId = null) { insertHeaderAboveId = referenceId; headerInput.value = ''; addHeaderModal.classList.remove('hidden'); setTimeout(() => headerInput.focus(), 100); }
         function closeAddHeaderModal() { addHeaderModal.classList.add('hidden'); insertHeaderAboveId = null; }
+        function openHeaderActionsModal(id, text) { currentEditingHeaderId = id; currentEditingHeaderText = text; headerModalName.textContent = `จัดการหัวข้อ: "${text}"`; headerActionsModal.classList.remove('hidden'); }
+        function closeHeaderActionsModal() { headerActionsModal.classList.add('hidden'); currentEditingHeaderId = null; currentEditingHeaderText = null; }
         function showConfirmModal(title, body, onConfirm) { confirmModalTitle.textContent = title; confirmModalBody.textContent = body; confirmCallback = onConfirm; confirmModal.classList.remove('hidden'); }
         function closeConfirmModal() { confirmModal.classList.add('hidden'); confirmCallback = null; }
         function openAppSettingsModal() { updateAppSettingsModalInputs(); appSettingsModal.classList.remove('hidden'); }
@@ -1137,6 +1171,11 @@
         headerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const headerText = headerInput.value.trim(); if (headerText) { addHeaderRow(headerText); closeAddHeaderModal(); } } });
         addHeaderModal.addEventListener('click', (e) => { if (e.target === addHeaderModal) { closeAddHeaderModal(); } });
         
+        editHeaderBtn.addEventListener('click', () => { if(currentEditingHeaderId) { editHeaderRow(currentEditingHeaderId, currentEditingHeaderText); closeHeaderActionsModal(); } });
+        deleteHeaderBtn.addEventListener('click', () => { if(currentEditingHeaderId) { showConfirmModal('ยืนยันการลบ', `ต้องการลบหัวข้อ "${currentEditingHeaderText}" หรือไม่?`, () => { deleteHeaderRow(currentEditingHeaderId); closeHeaderActionsModal(); }); } });
+        headerActionsCancelBtn.addEventListener('click', closeHeaderActionsModal);
+        headerActionsModal.addEventListener('click', (e) => { if (e.target === headerActionsModal) { closeHeaderActionsModal(); }});
+
         confirmModalOkBtn.addEventListener('click', () => { if (typeof confirmCallback === 'function') { confirmCallback(); } closeConfirmModal(); });
         confirmModalCancelBtn.addEventListener('click', closeConfirmModal);
 
