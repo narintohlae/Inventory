@@ -943,10 +943,20 @@
             headers.forEach(header => { 
                 const th = document.createElement('th'); 
                 th.scope = 'col'; 
-                th.className = `px-2 sm:px-6 py-1 text-left text-sm font-medium text-gray-500 uppercase tracking-wider ${header === itemColumnName ? 'w-full' : ''}`; 
+                
+                const narrowColumns = ['รวม', 'หน่วย', 'รักษ์ยา', 'เบบี้ช็อป'];
+                let alignment = 'text-left';
+                let padding = 'px-2 sm:px-6';
+
+                if(narrowColumns.includes(header)){
+                    alignment = 'text-center';
+                    padding = 'px-1';
+                }
+
+                th.className = `${padding} py-1 ${alignment} text-sm font-medium text-gray-500 uppercase tracking-wider ${header === itemColumnName ? 'w-full' : ''}`; 
                 
                 const headerContentWrapper = document.createElement('div');
-                headerContentWrapper.className = 'flex items-center gap-x-2';
+                headerContentWrapper.className = `flex items-center gap-x-2 ${narrowColumns.includes(header) ? 'justify-center' : ''}`;
                 
                 const headerText = document.createElement('span');
                 headerText.textContent = header.replace(/_/g, ' ');
@@ -973,7 +983,7 @@
                         row.className = 'bg-gray-200 font-bold'; 
                         const cell = document.createElement('td'); 
                         cell.colSpan = headers.length;
-                        cell.className = 'px-4 py-1 text-gray-800 text-sm text-center';
+                        cell.className = 'px-4 py-1 text-gray-800 text-sm text-center'; 
                         cell.textContent = rowData.text; 
 
                         row.clickCount = 0;
@@ -1025,7 +1035,16 @@
                     
                     headers.forEach(header => { 
                         const td = document.createElement('td'); 
-                        td.className = `px-2 sm:px-6 py-1 text-sm text-gray-700 break-words ${header === itemColumnName ? 'w-full' : ''}`; 
+                        const narrowColumns = ['รวม', 'หน่วย', 'รักษ์ยา', 'เบบี้ช็อป'];
+                        let alignment = 'text-left';
+                        let padding = 'px-2 sm:px-6';
+
+                        if(narrowColumns.includes(header)){
+                            alignment = 'text-center';
+                            padding = 'px-1';
+                        }
+                        
+                        td.className = `${padding} py-1 ${alignment} text-sm text-gray-700 break-words ${header === itemColumnName ? 'w-full' : ''}`; 
                         td.textContent = record[header]; 
                         row.appendChild(td); 
                     }); 
