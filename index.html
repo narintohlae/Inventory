@@ -414,7 +414,7 @@
     // Firebase Imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setLogLevel, getDocs, setDoc, getDoc, Timestamp, writeBatch, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setLogLevel, getDocs, setDoc, getDoc, Timestamp, writeBatch, runTransaction, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     document.addEventListener('DOMContentLoaded', () => {
         const sheetUrl = 'https://script.google.com/macros/s/AKfycbyW37lyYs-WKqsSyoG8PO2emr3bH1J0CnkNWKnZ409-y43qo-hbOy9UFO6L3dnSP8FlHg/exec';
@@ -514,7 +514,7 @@
         let customRows = new Map();
         let itemSettings = new Map();
         let itemColumnName = '';
-        let hiddenItemIds = new Set();
+        let hiddenItemsMap = {}; // MODIFIED: Changed from Set to Object/Map
         let sortableInstance = null;
         let categorySortableInstance = null;
         let sortOrdersMap = {};
@@ -541,7 +541,7 @@
 
         // --- Firebase State ---
         let userId = null;
-        let categoriesCollectionRef, hiddenItemsCollectionRef, sortOrdersDocRef, customRowsCollectionRef, categoryOrderDocRef, itemSettingsCollectionRef, requisitionListCollectionRef, requisitionHistoryCollectionRef, countersDocRef, appSettingsDocRef;
+        let categoriesCollectionRef, hiddenItemsDocRef, sortOrdersDocRef, customRowsCollectionRef, categoryOrderDocRef, itemSettingsCollectionRef, requisitionListCollectionRef, requisitionHistoryCollectionRef, countersDocRef, appSettingsDocRef;
         let unsubscribes = [];
 
         // --- Firebase Config & Initialization ---
@@ -578,7 +578,7 @@
                 appContainer.classList.add('hidden');
                 unsubscribes.forEach(unsub => unsub && unsub());
                 unsubscribes = [];
-                categories = []; hiddenItemIds.clear(); sortOrdersMap = {}; categoryOrder = []; customRows.clear(); itemSettings.clear(); requisitionList = []; historyList = [];
+                categories = []; hiddenItemsMap = {}; sortOrdersMap = {}; categoryOrder = []; customRows.clear(); itemSettings.clear(); requisitionList = []; historyList = [];
                 displayCategories(); 
             }
         });
@@ -591,7 +591,8 @@
              const userPath = `artifacts/${appId}/users/${currentUserId}`;
              
              categoriesCollectionRef = collection(db, `${userPath}/categories`);
-             hiddenItemsCollectionRef = collection(db, `${userPath}/hiddenItems`);
+             // MODIFIED: Changed from a collection to a single document for hidden items
+             hiddenItemsDocRef = doc(db, `${userPath}/settings`, 'hiddenItemsByCategory');
              sortOrdersDocRef = doc(db, `${userPath}/settings`, 'sortOrders');
              customRowsCollectionRef = collection(db, `${userPath}/customRows`);
              categoryOrderDocRef = doc(db, `${userPath}/settings`, 'categoryOrder');
@@ -616,7 +617,20 @@
                  }
              }, (err) => showError("โหลดหมวดหมู่ไม่สำเร็จ")));
 
-             unsubscribes.push(onSnapshot(hiddenItemsCollectionRef, (snap) => { hiddenItemIds = new Set(snap.docs.map(doc => doc.id)); if (allRecords.length > 0) displayData(currentRecords); }, (err) => showError("โหลดรายการที่ซ่อนไม่สำเร็จ")));
+            // MODIFIED: New listener for the hidden items document
+            unsubscribes.push(onSnapshot(hiddenItemsDocRef, (docSnap) => {
+                const data = docSnap.exists() ? docSnap.data() : {};
+                hiddenItemsMap = {}; // Reset the map
+                for (const categoryName in data) {
+                    if (Array.isArray(data[categoryName])) {
+                        hiddenItemsMap[categoryName] = new Set(data[categoryName]);
+                    }
+                }
+                if (allRecords.length > 0) {
+                    displayData(currentRecords);
+                }
+            }, (err) => showError("โหลดรายการที่ซ่อนไม่สำเร็จ")));
+
              unsubscribes.push(onSnapshot(sortOrdersDocRef, (snap) => { sortOrdersMap = (snap.exists() && snap.data().orders) ? snap.data().orders : {}; if (allRecords.length > 0) displayData(currentRecords); }, (err) => showError("โหลดลำดับจัดเรียงไม่สำเร็จ")));
              unsubscribes.push(onSnapshot(categoryOrderDocRef, (snap) => { categoryOrder = (snap.exists() && snap.data().order) ? snap.data().order : []; if (categories.length > 0) displayCategories(); }, (err) => showError("โหลดลำดับหมวดหมู่ไม่สำเร็จ")));
              unsubscribes.push(onSnapshot(customRowsCollectionRef, (snap) => { customRows.clear(); snap.docs.forEach(doc => customRows.set(doc.id, doc.data())); if (allRecords.length > 0) displayData(currentRecords); }, (err) => showError("โหลดหัวข้อไม่สำเร็จ")));
@@ -636,8 +650,45 @@
         // --- Firestore Write Functions ---
         async function saveCurrentSortOrder(newOrder) { if (!sortOrdersDocRef) return; const key = activeCategoryName || '__global__'; try { const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; currentOrders[key] = newOrder; await setDoc(sortOrdersDocRef, { orders: currentOrders }); } catch (error) { showError("บันทึกการจัดเรียงไม่สำเร็จ"); } }
         async function saveCategoryOrder(newOrder) { if (!categoryOrderDocRef) return; try { await setDoc(categoryOrderDocRef, { order: newOrder }); } catch (error) { showError("บันทึกการจัดเรียงหมวดหมู่ไม่สำเร็จ"); } }
-        async function hideItem(itemId) { if (!hiddenItemsCollectionRef || !itemId) return; try { await setDoc(doc(hiddenItemsCollectionRef, itemId), { hidden: true }); } catch (error) { showError("ซ่อนรายการไม่สำเร็จ"); } }
-        async function unhideItems(ids) { if (!hiddenItemsCollectionRef || !ids || ids.length === 0) return; try { const batch = writeBatch(db); ids.forEach(id => batch.delete(doc(hiddenItemsCollectionRef, id))); await batch.commit(); } catch (error) { showError("แสดงรายการที่ซ่อนไม่สำเร็จ"); } }
+        
+        // MODIFIED: hideItem now works by category
+        async function hideItem(itemId) {
+            if (!hiddenItemsDocRef || !itemId) return;
+            const categoryKey = activeCategoryName || '__global__';
+            try {
+                // Use updateDoc and arrayUnion to add the item to the category's hidden list.
+                // This is idempotent, so adding an existing item does nothing.
+                await updateDoc(hiddenItemsDocRef, {
+                    [categoryKey]: arrayUnion(itemId)
+                });
+            } catch (e) {
+                // If updateDoc fails because the document doesn't exist, create it.
+                if (e.code === 'not-found') {
+                    try {
+                        await setDoc(hiddenItemsDocRef, { [categoryKey]: [itemId] });
+                    } catch (setErr) {
+                         showError("ซ่อนรายการไม่สำเร็จ");
+                    }
+                } else {
+                     showError("ซ่อนรายการไม่สำเร็จ");
+                }
+            }
+        }
+
+        // MODIFIED: unhideItems now works by category
+        async function unhideItems(idsToUnhide) {
+            if (!hiddenItemsDocRef || !idsToUnhide || idsToUnhide.length === 0) return;
+            const categoryKey = activeCategoryName || '__global__';
+            try {
+                // Use updateDoc and arrayRemove to remove items from the category's hidden list.
+                await updateDoc(hiddenItemsDocRef, {
+                    [categoryKey]: arrayRemove(...idsToUnhide)
+                });
+            } catch (error) {
+                showError("แสดงรายการที่ซ่อนไม่สำเร็จ");
+            }
+        }
+
         async function addCategory() { if (!categoriesCollectionRef) return; const name = categoryInput.value.trim(); if (name && !categories.some(c => c.name.toLowerCase() === name.toLowerCase())) { try { await addDoc(categoriesCollectionRef, { name }); categoryInput.value = ''; showNotification('เพิ่มหมวดหมู่สำเร็จ', false); } catch(error) { showError("เพิ่มหมวดหมู่ไม่สำเร็จ"); } } else if (name) showNotification('มีหมวดหมู่นี้อยู่แล้ว'); }
         async function editCategory(id, oldName) { if (!categoriesCollectionRef) return; const newName = prompt('แก้ไขชื่อหมวดหมู่:', oldName); if (newName && newName.trim() && newName.trim() !== oldName) { try { await updateDoc(doc(categoriesCollectionRef, id), { name: newName.trim() }); } catch(error) { showError("แก้ไขหมวดหมู่ไม่สำเร็จ"); } } }
         async function deleteCategory(id) { if (!categoriesCollectionRef) return; try { await deleteDoc(doc(categoriesCollectionRef, id)); displayData(allRecords); } catch(error) { showError("ลบหมวดหมู่ไม่สำเร็จ"); } }
@@ -901,6 +952,10 @@
             const allRecordsMap = new Map(allRecords.map(r => [r[itemColumnName], r])); 
             const currentRecordIds = new Set(records.map(r => r[itemColumnName])); 
             const sortKey = activeCategoryName || '__global__'; 
+            
+            // MODIFIED: Use the new hiddenItemsMap
+            const hiddenIdsForCurrentCategory = hiddenItemsMap[sortKey] || new Set();
+
             const currentItemOrder = sortOrdersMap[sortKey] || []; 
             const orderedIdSet = new Set(currentItemOrder); 
             const combinedOrder = [...currentItemOrder]; 
@@ -911,7 +966,9 @@
             } 
             
             const displayOrder = combinedOrder.filter(id => customRows.has(id) || currentRecordIds.has(id)); 
-            const visibleIds = new Set(displayOrder.filter(id => !hiddenItemIds.has(id))); 
+
+            // MODIFIED: Filter based on the category-specific hidden items
+            const visibleIds = new Set(displayOrder.filter(id => !hiddenIdsForCurrentCategory.has(id))); 
             
             if (visibleIds.size === 0) { 
                 tableEl.classList.add('hidden'); 
@@ -1011,7 +1068,7 @@
                                 if (row.clickCount === 1) {
                                     openItemSettingsModal(record);
                                 } else if (row.clickCount === 2) {
-                                    hideItem(id);
+                                    hideItem(id); // This now hides per-category
                                 }
                                 row.clickCount = 0;
                             }, 300);
@@ -1052,7 +1109,8 @@
             };
 
             const potentialItems = getItemsForCurrentFilter();
-            const hasHiddenItemsInView = potentialItems.some(item => hiddenItemIds.has(item[itemColumnName]));
+            // MODIFIED: Check for hidden items in the current category
+            const hasHiddenItemsInView = potentialItems.some(item => hiddenIdsForCurrentCategory.has(item[itemColumnName]));
             
             if (hasHiddenItemsInView) {
                 const headerCell = document.getElementById('product-header-cell');
@@ -1063,10 +1121,12 @@
                         showHiddenBtnIcon.title = 'แสดงแถวที่ซ่อน';
                         showHiddenBtnIcon.className = 'text-gray-400 hover:text-yellow-600 focus:outline-none';
                         showHiddenBtnIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C3.732 4.943 9.523 3 15 3c5.478 0 11.268 1.943 14.542 7-3.274 5.057-9.064 7-14.542 7-5.477 0-11.268-1.943-14.542-7zM15 11a5 5 0 100-2 5 5 0 000 2z" clip-rule="evenodd" /></svg>`;
+                        
+                        // MODIFIED: The unhide button now works per-category
                         showHiddenBtnIcon.onclick = () => {
                             const itemsToUnhide = potentialItems
                                 .map(record => record[itemColumnName])
-                                .filter(id => hiddenItemIds.has(id));
+                                .filter(id => hiddenIdsForCurrentCategory.has(id));
                             if (itemsToUnhide.length > 0) {
                                 unhideItems(itemsToUnhide);
                             }
