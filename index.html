@@ -160,9 +160,14 @@
                      <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
                         <div class="flex justify-between items-center mb-4">
                             <h2 class="text-2xl font-bold text-gray-700">รายการเบิกของ</h2>
-                            <button id="confirm-requisition-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:bg-gray-400">
-                                ยืนยัน
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button id="auto-requisition-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                                    เบิกของอัตโนมัติ
+                                </button>
+                                <button id="confirm-requisition-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:bg-gray-400">
+                                    ยืนยัน
+                                </button>
+                            </div>
                         </div>
                          <div class="overflow-x-auto">
                             <table class="w-full min-w-full divide-y divide-gray-200">
@@ -179,7 +184,7 @@
                                     </tbody>
                             </table>
                         </div>
-                     </div>
+                   </div>
         </div>
 
          <div id="history-view" class="hidden">
@@ -207,13 +212,6 @@
                     <p class="text-sm text-gray-500 mb-2">ดับเบิ้ลคลิกที่ชื่อหมวดหมู่เพื่อแก้ไขหรือลบ</p>
                     <div id="manage-category-list" class="flex flex-wrap gap-2 items-center">
                         </div>
-                </div>
-
-                <div>
-                     <h2 class="text-xl font-bold text-gray-700 mb-4">เครื่องมือ</h2>
-                    <button id="auto-requisition-btn" class="w-full sm:w-auto bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                        เบิกของอัตโนมัติ
-                    </button>
                 </div>
             </div>
         </div>
@@ -667,7 +665,7 @@
                     try {
                         await setDoc(hiddenItemsDocRef, { [categoryKey]: [itemId] });
                     } catch (setErr) {
-                         showError("ซ่อนรายการไม่สำเร็จ");
+                          showError("ซ่อนรายการไม่สำเร็จ");
                     }
                 } else {
                      showError("ซ่อนรายการไม่สำเร็จ");
