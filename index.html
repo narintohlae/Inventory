@@ -168,11 +168,11 @@
                         <table class="w-full min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-200">
                                 <tr>
-                                    <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-10">ลำดับ</th>
+                                    <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-8">ลำดับ</th>
                                     <th class="py-3 px-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-auto">สินค้า</th>
-                                    <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-20">จำนวนเบิก</th>
-                                    <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-20">หน่วย</th>
-                                    <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-16">จัดการ</th>
+                                    <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-14">จำนวนเบิก</th>
+                                    <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-14">หน่วย</th>
+                                    <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-12">จัดการ</th>
                                 </tr>
                             </thead>
                             <tbody id="requisition-list-body" class="bg-white divide-y divide-gray-200">
@@ -1123,7 +1123,7 @@
                 const card = document.createElement('div'); 
                 card.className = 'bg-gray-50 rounded-lg p-4 shadow'; 
                 const tableRows = historyItem.items.map((item, index) => `<tr><td class="py-2 px-2 text-sm text-gray-600 text-center">${index + 1}</td><td class="py-2 px-2 text-sm text-gray-800 break-words">${item.name}</td><td class="py-2 px-2 text-sm text-gray-800 text-center">${item.quantity}</td><td class="py-2 px-2 text-sm text-gray-600 text-center">${item.unit}</td></tr>`).join(''); 
-                card.innerHTML = `<div class="flex justify-between items-center mb-3"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="overflow-x-auto"><table class="w-full table-fixed"><thead><tr><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-12">ลำดับ</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-left w-auto">สินค้า</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-16">จำนวน</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-16">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`; 
+                card.innerHTML = `<div class="flex justify-between items-center mb-3"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="overflow-x-auto"><table class="w-full table-fixed"><thead><tr><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-10">ลำดับ</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-left w-auto">สินค้า</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-14">จำนวน</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-14">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`; 
                 historyListContainer.appendChild(card); 
             });
         }
