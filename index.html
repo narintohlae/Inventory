@@ -56,6 +56,13 @@
         #category-list::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+        /* Style for focused table rows */
+        #table-body tr[tabindex="0"]:focus {
+            outline: 2px solid #3b82f6; /* blue-500 */
+            outline-offset: -2px;
+            background-color: #eff6ff; /* blue-50 */
+        }
+
 
     </style>
 </head>
@@ -1057,7 +1064,10 @@ async function generateRequisition() {
                     const record = allRecordsMap.get(id); 
                     const row = document.createElement('tr'); 
                     row.dataset.id = id; 
-                    row.className = 'hover:bg-gray-50'; 
+                    row.className = 'hover:bg-gray-50';
+                    
+                    // MODIFICATION: Make row focusable for keyboard navigation
+                    row.tabIndex = 0;
                     
                     // --- START: MODIFIED ROW INTERACTION LOGIC ---
                     const isDesktop = window.matchMedia('(pointer: fine)').matches;
@@ -1345,6 +1355,33 @@ async function generateRequisition() {
         autoRequisitionBtn.addEventListener('click', generateRequisition);
         requisitionListBody.addEventListener('click', (e) => { if(e.target.classList.contains('delete-req-btn')) { deleteRequisitionItem(e.target.dataset.id); }});
         confirmRequisitionBtn.addEventListener('click', confirmRequisition);
+
+        // --- [NEW] Keyboard Navigation for Table ---
+        tableBody.addEventListener('keydown', (e) => {
+            const focusableRows = Array.from(tableBody.querySelectorAll('tr[tabindex="0"]'));
+            if (focusableRows.length === 0) return;
+
+            const currentFocusedElement = document.activeElement;
+            if (!currentFocusedElement || currentFocusedElement.tagName !== 'TR' || !tableBody.contains(currentFocusedElement)) {
+                return;
+            }
+
+            const currentIndex = focusableRows.indexOf(currentFocusedElement);
+            let nextIndex = -1;
+
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                nextIndex = (currentIndex + 1) % focusableRows.length;
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                nextIndex = (currentIndex - 1 + focusableRows.length) % focusableRows.length;
+            }
+
+            if (nextIndex !== -1) {
+                focusableRows[nextIndex].focus();
+            }
+        });
+
 
         // --- [UPDATED] Collapsible Nav Logic ---
         const navWrapper = document.getElementById('nav-toggle-wrapper');
