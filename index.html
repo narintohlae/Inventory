@@ -21,19 +21,7 @@
         #table-body tr, #category-list > div, #manage-category-list > div {
             cursor: grab;
         }
-        .long-press-progress {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 4px;
-            background-color: #10b981;
-            transition: width 0.1s ease;
-            z-index: 10;
-        }
-        .long-pressing {
-            position: relative;
-            background-color: #f0f9ff !important;
-        }
+        /* Removed long-press styles as they are no longer needed */
         #notification-toast {
             transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
             transform: translateY(-20px);
@@ -176,7 +164,7 @@
                                  </button>
                              </div>
                          </div>
-                          <div class="overflow-x-auto">
+                         <div class="overflow-x-auto">
                              <table class="w-full min-w-full divide-y divide-gray-200">
                                  <thead class="bg-gray-200">
                                      <tr>
@@ -188,17 +176,17 @@
                                      </tr>
                                  </thead>
                                  <tbody id="requisition-list-body" class="bg-white divide-y divide-gray-200">
-                                     </tbody>
+                                 </tbody>
                              </table>
                          </div>
-                    </div>
+                     </div>
         </div>
 
          <div id="history-view" class="hidden">
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
                 <h2 class="text-2xl font-bold text-gray-700 mb-4">ประวัติการเบิกของ</h2>
                 <div id="history-list-container" class="space-y-6">
-                    </div>
+                </div>
             </div>
         </div>
 
@@ -218,7 +206,7 @@
                     <h2 class="text-xl font-bold text-gray-700 mb-4">จัดการหมวดหมู่ที่มีอยู่</h2>
                     <p class="text-sm text-gray-500 mb-2">ดับเบิ้ลคลิกที่ชื่อหมวดหมู่เพื่อแก้ไขหรือลบ</p>
                     <div id="manage-category-list" class="flex flex-wrap gap-2 items-center">
-                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -252,7 +240,7 @@
 <div id="category-nav-view" class="hidden fixed bottom-0 left-0 right-0 z-20 bg-white shadow-[0_-2px_10px_-3px_rgba(0,0,0,0.1)] border-t border-gray-200">
     <div class="container mx-auto lg:w-1/2">
         <nav id="category-list" class="flex gap-x-2 px-2 overflow-x-auto" aria-label="Category Tabs">
-            </nav>
+        </nav>
     </div>
 </div>
 
@@ -672,7 +660,7 @@
                     try {
                         await setDoc(hiddenItemsDocRef, { [categoryKey]: [itemId] });
                     } catch (setErr) {
-                          showError("ซ่อนรายการไม่สำเร็จ");
+                         showError("ซ่อนรายการไม่สำเร็จ");
                     }
                 } else {
                      showError("ซ่อนรายการไม่สำเร็จ");
@@ -765,7 +753,7 @@ async function generateRequisition() {
                             const halfCalcStock = 0.5 * calculationStock;
                             if (settings.reorderQuantity > halfCalcStock) {
                                 const halfAutoQty = 0.5 * settings.reorderQuantity;
-                                finalQuantity = (halfAutoQty > halfCalcStock) ? halfCalcStock : halfAutoQty;
+                                finalQuantity = Math.min(halfAutoQty, halfCalcStock); // Refined logic
                             }
                             
                             const roundedQuantity = Math.floor(finalQuantity);
@@ -1076,64 +1064,30 @@ async function generateRequisition() {
                     row.clickTimer = null;
 
                     if (isDesktop) {
-                        // --- Desktop logic with long press ---
-                        let longPressTimeout = null;
-                        let progressInterval = null;
-                        let longPressTriggered = false;
-                        const longPressDuration = 500; // 500ms
-
-                        const cleanupPress = () => {
-                            clearTimeout(longPressTimeout);
-                            clearInterval(progressInterval);
-                            row.classList.remove('long-pressing');
-                            const progressBar = row.querySelector('.long-press-progress');
-                            if (progressBar) progressBar.remove();
-                            if (row.cells[0]) row.cells[0].style.position = '';
-                        };
-
-                        row.addEventListener('mousedown', (e) => {
-                            if (e.button !== 0) return; // Only for left click
-                            longPressTriggered = false;
-                            const pressStartTime = Date.now();
-                            row.classList.add('long-pressing');
-                            const progressBar = document.createElement('div');
-                            progressBar.className = 'long-press-progress';
-                            if (row.cells[0]) {
-                                row.cells[0].style.position = 'relative';
-                                row.cells[0].appendChild(progressBar);
-                            }
-                            progressInterval = setInterval(() => {
-                                const elapsedTime = Date.now() - pressStartTime;
-                                const progress = Math.min(elapsedTime / longPressDuration, 1);
-                                progressBar.style.width = `${progress * 100}%`;
-                            }, 50);
-
-                            longPressTimeout = setTimeout(() => {
-                                longPressTriggered = true;
-                                cleanupPress();
-                                openItemSettingsModal(record);
-                            }, longPressDuration);
+                        // --- [NEW] Desktop logic with right-click for settings ---
+                        row.addEventListener('contextmenu', (e) => {
+                            e.preventDefault(); // Prevent the default browser context menu
+                            openItemSettingsModal(record);
                         });
 
-                        row.addEventListener('mouseup', cleanupPress);
-                        row.addEventListener('mouseleave', cleanupPress);
-
+                        // --- Logic for left-click (hide, add header) ---
                         row.addEventListener('click', (e) => {
-                            if (longPressTriggered) return;
                             row.clickCount++;
                             if (row.clickTimer) clearTimeout(row.clickTimer);
-                            if (row.clickCount === 3) {
+                            
+                            if (row.clickCount === 3) { // Triple-click to add header
                                 openAddHeaderModal(id);
                                 row.clickCount = 0;
                             } else {
                                 row.clickTimer = setTimeout(() => {
-                                    if (row.clickCount === 2) {
+                                    if (row.clickCount === 2) { // Double-click to hide
                                         hideItem(id);
                                     }
                                     row.clickCount = 0;
-                                }, 300);
+                                }, 300); // 300ms window for double/triple click
                             }
                         });
+
                     } else {
                         // --- Mobile/Tablet logic (original) ---
                         row.addEventListener('click', (e) => {
