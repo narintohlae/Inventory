@@ -737,35 +737,44 @@
                 showError("บันทึกการตั้งค่าไม่สำเร็จ");
             }
         }
-        async function generateRequisition() {
-            if (!itemSettingsCollectionRef || allRecords.length === 0) { showNotification('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า'); return; }
-            if (allRecords.length > 0) { const firstRecordKeys = Object.keys(allRecords[0]); if (!firstRecordKeys.includes(appSettings.triggerStockColumnName) || !firstRecordKeys.includes(appSettings.calculationStockColumnName)) { showError(`ไม่พบคอลัมน์: "${appSettings.triggerStockColumnName}" หรือ "${appSettings.calculationStockColumnName}" ใน Google Sheet กรุณาตรวจสอบการตั้งค่า`); return; } }
-            const itemsToRequisition = [];
-            allRecords.forEach(record => {
-                const itemId = record[itemColumnName];
-                const settings = itemSettings.get(itemId);
-                if (settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number') {
-                    // --- บรรทัดที่แก้ไข ---
-                    const triggerStock = parseInt(record[appSettings.triggerStockColumnName] || 0, 10); 
-                    // ---------------------
-                    if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) {
-                        const calculationStock = parseInt(record[appSettings.calculationStockColumnName], 10);
-                        let finalQuantity = settings.reorderQuantity;
+async function generateRequisition() {
+            if (!itemSettingsCollectionRef || allRecords.length === 0) { showNotification('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า'); return; }
+            if (allRecords.length > 0) { const firstRecordKeys = Object.keys(allRecords[0]); if (!firstRecordKeys.includes(appSettings.triggerStockColumnName) || !firstRecordKeys.includes(appSettings.calculationStockColumnName)) { showError(`ไม่พบคอลัมน์: "${appSettings.triggerStockColumnName}" หรือ "${appSettings.calculationStockColumnName}" ใน Google Sheet กรุณาตรวจสอบการตั้งค่า`); return; } }
+            const itemsToRequisition = [];
+            allRecords.forEach(record => {
+                const itemId = record[itemColumnName];
+                const settings = itemSettings.get(itemId);
+                if (settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number') {
+                    const triggerStock = parseInt(record[appSettings.triggerStockColumnName] || 0, 10);
+                    if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) {
+                        
+                        // ===== START: MODIFIED LOGIC =====
+                        const calculationStock = parseInt(record[appSettings.calculationStockColumnName], 10);
+
+                        // FIX: Only proceed if 'เบบี้ช็อป' has a valid, positive value.
                         if (!isNaN(calculationStock) && calculationStock > 0) {
-                            const halfCalcStock = 0.5 * calculationStock;
-                            if (settings.reorderQuantity > halfCalcStock) {
-                                const halfAutoQty = 0.5 * settings.reorderQuantity;
-                                finalQuantity = (halfAutoQty > halfCalcStock) ? halfCalcStock : halfAutoQty;
+                            let finalQuantity = settings.reorderQuantity;
+                            
+                            const halfCalcStock = 0.5 * calculationStock;
+                            if (settings.reorderQuantity > halfCalcStock) {
+                                const halfAutoQty = 0.5 * settings.reorderQuantity;
+                                finalQuantity = (halfAutoQty > halfCalcStock) ? halfCalcStock : halfAutoQty;
+                            }
+                            
+                            const roundedQuantity = Math.floor(finalQuantity);
+                            if (roundedQuantity > 0) { 
+                                itemsToRequisition.push({ id: itemId, name: record[itemColumnName], quantity: roundedQuantity, unit: record[appSettings.unitColumnName] || 'ชิ้น' }); 
                             }
                         }
-                        const roundedQuantity = Math.floor(finalQuantity);
-                        if (roundedQuantity > 0) { itemsToRequisition.push({ id: itemId, name: record[itemColumnName], quantity: roundedQuantity, unit: record[appSettings.unitColumnName] || 'ชิ้น' }); }
-                    }
-                }
-            });
-            if (itemsToRequisition.length === 0) { showNotification('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข'); return; }
-            try { const batch = writeBatch(db); itemsToRequisition.forEach(item => { const docRef = doc(requisitionListCollectionRef, item.id); batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit }); }); await batch.commit(); showNotification(`สร้างรายการเบิก ${itemsToRequisition.length} รายการสำเร็จ!`, false); switchView('requisition'); } catch (error) { showError("สร้างรายการเบิกไม่สำเร็จ"); }
-        }
+                        // If 'เบบี้ช็อป' is empty or 0, the code will not enter the block above,
+                        // thus preventing the item from being added to the requisition list.
+                        // ===== END: MODIFIED LOGIC =====
+                    }
+                }
+            });
+            if (itemsToRequisition.length === 0) { showNotification('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข'); return; }
+            try { const batch = writeBatch(db); itemsToRequisition.forEach(item => { const docRef = doc(requisitionListCollectionRef, item.id); batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit }); }); await batch.commit(); showNotification(`สร้างรายการเบิก ${itemsToRequisition.length} รายการสำเร็จ!`, false); switchView('requisition'); } catch (error) { showError("สร้างรายการเบิกไม่สำเร็จ"); }
+        }
         async function deleteRequisitionItem(id) { if(!requisitionListCollectionRef) return; try { await deleteDoc(doc(requisitionListCollectionRef, id)); } catch (error) { showError("ลบรายการเบิกไม่สำเร็จ"); } }
         async function confirmRequisition() {
             if (!requisitionListCollectionRef || requisitionList.length === 0) return;
