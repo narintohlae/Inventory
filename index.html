@@ -158,33 +158,33 @@
 
         <div id="requisition-view" class="hidden">
                      <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-2xl font-bold text-gray-700">รายการเบิกของ</h2>
-                            <div class="flex items-center gap-2">
-                                <button id="auto-requisition-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                                    เบิกของอัตโนมัติ
-                                </button>
-                                <button id="confirm-requisition-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:bg-gray-400">
-                                    ยืนยัน
-                                </button>
-                            </div>
-                        </div>
-                         <div class="overflow-x-auto">
-                            <table class="w-full min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-200">
-                                    <tr>
-                                        <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-8">ลำดับ</th>
-                                        <th class="py-3 px-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-auto">สินค้า</th>
-                                        <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-14">จำนวนเบิก</th>
-                                        <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-14">หน่วย</th>
-                                        <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-12">จัดการ</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="requisition-list-body" class="bg-white divide-y divide-gray-200">
-                                    </tbody>
-                            </table>
-                        </div>
-                   </div>
+                         <div class="flex justify-between items-center mb-4">
+                             <h2 class="text-2xl font-bold text-gray-700">รายการเบิกของ</h2>
+                             <div class="flex items-center gap-2">
+                                 <button id="auto-requisition-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                                     เบิกของอัตโนมัติ
+                                 </button>
+                                 <button id="confirm-requisition-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:bg-gray-400">
+                                     ยืนยัน
+                                 </button>
+                             </div>
+                         </div>
+                          <div class="overflow-x-auto">
+                             <table class="w-full min-w-full divide-y divide-gray-200">
+                                 <thead class="bg-gray-200">
+                                     <tr>
+                                         <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-8">ลำดับ</th>
+                                         <th class="py-3 px-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-auto">สินค้า</th>
+                                         <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-14">จำนวนเบิก</th>
+                                         <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-14">หน่วย</th>
+                                         <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-12">จัดการ</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody id="requisition-list-body" class="bg-white divide-y divide-gray-200">
+                                     </tbody>
+                             </table>
+                         </div>
+                    </div>
         </div>
 
          <div id="history-view" class="hidden">
@@ -738,43 +738,43 @@
             }
         }
 async function generateRequisition() {
-            if (!itemSettingsCollectionRef || allRecords.length === 0) { showNotification('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า'); return; }
-            if (allRecords.length > 0) { const firstRecordKeys = Object.keys(allRecords[0]); if (!firstRecordKeys.includes(appSettings.triggerStockColumnName) || !firstRecordKeys.includes(appSettings.calculationStockColumnName)) { showError(`ไม่พบคอลัมน์: "${appSettings.triggerStockColumnName}" หรือ "${appSettings.calculationStockColumnName}" ใน Google Sheet กรุณาตรวจสอบการตั้งค่า`); return; } }
-            const itemsToRequisition = [];
-            allRecords.forEach(record => {
-                const itemId = record[itemColumnName];
-                const settings = itemSettings.get(itemId);
-                if (settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number') {
-                    const triggerStock = parseInt(record[appSettings.triggerStockColumnName] || 0, 10);
-                    if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) {
+            if (!itemSettingsCollectionRef || allRecords.length === 0) { showNotification('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า'); return; }
+            if (allRecords.length > 0) { const firstRecordKeys = Object.keys(allRecords[0]); if (!firstRecordKeys.includes(appSettings.triggerStockColumnName) || !firstRecordKeys.includes(appSettings.calculationStockColumnName)) { showError(`ไม่พบคอลัมน์: "${appSettings.triggerStockColumnName}" หรือ "${appSettings.calculationStockColumnName}" ใน Google Sheet กรุณาตรวจสอบการตั้งค่า`); return; } }
+            const itemsToRequisition = [];
+            allRecords.forEach(record => {
+                const itemId = record[itemColumnName];
+                const settings = itemSettings.get(itemId);
+                if (settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number') {
+                    const triggerStock = parseInt(record[appSettings.triggerStockColumnName] || 0, 10);
+                    if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) {
                         
                         // ===== START: MODIFIED LOGIC =====
-                        const calculationStock = parseInt(record[appSettings.calculationStockColumnName], 10);
+                        const calculationStock = parseInt(record[appSettings.calculationStockColumnName], 10);
 
                         // FIX: Only proceed if 'เบบี้ช็อป' has a valid, positive value.
                         if (!isNaN(calculationStock) && calculationStock > 0) {
-                            let finalQuantity = settings.reorderQuantity;
-                            
-                            const halfCalcStock = 0.5 * calculationStock;
-                            if (settings.reorderQuantity > halfCalcStock) {
-                                const halfAutoQty = 0.5 * settings.reorderQuantity;
-                                finalQuantity = (halfAutoQty > halfCalcStock) ? halfCalcStock : halfAutoQty;
-                            }
-                            
-                            const roundedQuantity = Math.floor(finalQuantity);
-                            if (roundedQuantity > 0) { 
+                            let finalQuantity = settings.reorderQuantity;
+                            
+                            const halfCalcStock = 0.5 * calculationStock;
+                            if (settings.reorderQuantity > halfCalcStock) {
+                                const halfAutoQty = 0.5 * settings.reorderQuantity;
+                                finalQuantity = (halfAutoQty > halfCalcStock) ? halfCalcStock : halfAutoQty;
+                            }
+                            
+                            const roundedQuantity = Math.floor(finalQuantity);
+                            if (roundedQuantity > 0) { 
                                 itemsToRequisition.push({ id: itemId, name: record[itemColumnName], quantity: roundedQuantity, unit: record[appSettings.unitColumnName] || 'ชิ้น' }); 
                             }
                         }
                         // If 'เบบี้ช็อป' is empty or 0, the code will not enter the block above,
                         // thus preventing the item from being added to the requisition list.
                         // ===== END: MODIFIED LOGIC =====
-                    }
-                }
-            });
-            if (itemsToRequisition.length === 0) { showNotification('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข'); return; }
-            try { const batch = writeBatch(db); itemsToRequisition.forEach(item => { const docRef = doc(requisitionListCollectionRef, item.id); batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit }); }); await batch.commit(); showNotification(`สร้างรายการเบิก ${itemsToRequisition.length} รายการสำเร็จ!`, false); switchView('requisition'); } catch (error) { showError("สร้างรายการเบิกไม่สำเร็จ"); }
-        }
+                    }
+                }
+            });
+            if (itemsToRequisition.length === 0) { showNotification('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข'); return; }
+            try { const batch = writeBatch(db); itemsToRequisition.forEach(item => { const docRef = doc(requisitionListCollectionRef, item.id); batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit }); }); await batch.commit(); showNotification(`สร้างรายการเบิก ${itemsToRequisition.length} รายการสำเร็จ!`, false); switchView('requisition'); } catch (error) { showError("สร้างรายการเบิกไม่สำเร็จ"); }
+        }
         async function deleteRequisitionItem(id) { if(!requisitionListCollectionRef) return; try { await deleteDoc(doc(requisitionListCollectionRef, id)); } catch (error) { showError("ลบรายการเบิกไม่สำเร็จ"); } }
         async function confirmRequisition() {
             if (!requisitionListCollectionRef || requisitionList.length === 0) return;
@@ -1059,30 +1059,92 @@ async function generateRequisition() {
                     row.dataset.id = id; 
                     row.className = 'hover:bg-gray-50'; 
                     
+                    // --- START: MODIFIED ROW INTERACTION LOGIC ---
+                    const isDesktop = window.matchMedia('(pointer: fine)').matches;
+
                     row.clickCount = 0;
                     row.clickTimer = null;
-                    
-                    row.addEventListener('click', (e) => {
-                        row.clickCount++;
 
-                        if (row.clickTimer) {
-                            clearTimeout(row.clickTimer);
-                        }
-                        
-                        if (row.clickCount === 3) {
-                            openAddHeaderModal(id);
-                            row.clickCount = 0;
-                        } else {
-                            row.clickTimer = setTimeout(() => {
-                                if (row.clickCount === 1) {
-                                    openItemSettingsModal(record);
-                                } else if (row.clickCount === 2) {
-                                    hideItem(id); // This now hides per-category
-                                }
+                    if (isDesktop) {
+                        // --- Desktop logic with long press ---
+                        let longPressTimeout = null;
+                        let progressInterval = null;
+                        let longPressTriggered = false;
+                        const longPressDuration = 500; // 500ms
+
+                        const cleanupPress = () => {
+                            clearTimeout(longPressTimeout);
+                            clearInterval(progressInterval);
+                            row.classList.remove('long-pressing');
+                            const progressBar = row.querySelector('.long-press-progress');
+                            if (progressBar) progressBar.remove();
+                            if (row.cells[0]) row.cells[0].style.position = '';
+                        };
+
+                        row.addEventListener('mousedown', (e) => {
+                            if (e.button !== 0) return; // Only for left click
+                            longPressTriggered = false;
+                            const pressStartTime = Date.now();
+                            row.classList.add('long-pressing');
+                            const progressBar = document.createElement('div');
+                            progressBar.className = 'long-press-progress';
+                            if (row.cells[0]) {
+                                row.cells[0].style.position = 'relative';
+                                row.cells[0].appendChild(progressBar);
+                            }
+                            progressInterval = setInterval(() => {
+                                const elapsedTime = Date.now() - pressStartTime;
+                                const progress = Math.min(elapsedTime / longPressDuration, 1);
+                                progressBar.style.width = `${progress * 100}%`;
+                            }, 50);
+
+                            longPressTimeout = setTimeout(() => {
+                                longPressTriggered = true;
+                                cleanupPress();
+                                openItemSettingsModal(record);
+                            }, longPressDuration);
+                        });
+
+                        row.addEventListener('mouseup', cleanupPress);
+                        row.addEventListener('mouseleave', cleanupPress);
+
+                        row.addEventListener('click', (e) => {
+                            if (longPressTriggered) return;
+                            row.clickCount++;
+                            if (row.clickTimer) clearTimeout(row.clickTimer);
+                            if (row.clickCount === 3) {
+                                openAddHeaderModal(id);
                                 row.clickCount = 0;
-                            }, 300);
-                        }
-                    });
+                            } else {
+                                row.clickTimer = setTimeout(() => {
+                                    if (row.clickCount === 2) {
+                                        hideItem(id);
+                                    }
+                                    row.clickCount = 0;
+                                }, 300);
+                            }
+                        });
+                    } else {
+                        // --- Mobile/Tablet logic (original) ---
+                        row.addEventListener('click', (e) => {
+                            row.clickCount++;
+                            if (row.clickTimer) clearTimeout(row.clickTimer);
+                            if (row.clickCount === 3) {
+                                openAddHeaderModal(id);
+                                row.clickCount = 0;
+                            } else {
+                                row.clickTimer = setTimeout(() => {
+                                    if (row.clickCount === 1) {
+                                        openItemSettingsModal(record);
+                                    } else if (row.clickCount === 2) {
+                                        hideItem(id);
+                                    }
+                                    row.clickCount = 0;
+                                }, 300);
+                            }
+                        });
+                    }
+                    // --- END: MODIFIED ROW INTERACTION LOGIC ---
                     
                     headers.forEach(header => { 
                         const td = document.createElement('td'); 
