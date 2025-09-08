@@ -1059,93 +1059,30 @@ async function generateRequisition() {
                     row.dataset.id = id; 
                     row.className = 'hover:bg-gray-50'; 
                     
-                                   // --- START: MODIFIED ROW INTERACTION LOGIC ---
-                    const isDesktop = window.matchMedia('(pointer: fine)').matches;
+                    row.clickCount = 0;
+                    row.clickTimer = null;
+                    
+                    row.addEventListener('click', (e) => {
+                        row.clickCount++;
 
-                    row.clickCount = 0;
-                    row.clickTimer = null;
-
-                    if (isDesktop) {
-                        // --- Desktop logic with long press ---
-                        let longPressTimeout = null;
-                        let progressInterval = null;
-                        let longPressTriggered = false;
-                        const longPressDuration = 500; // 500ms
-
-                        const cleanupPress = () => {
-                            clearTimeout(longPressTimeout);
-                            clearInterval(progressInterval);
-                            row.classList.remove('long-pressing');
-                            const progressBar = row.querySelector('.long-press-progress');
-                            if (progressBar) progressBar.remove();
-                            if (row.cells[0]) row.cells[0].style.position = '';
-                        };
-
-                        row.addEventListener('mousedown', (e) => {
-                            if (e.button !== 0) return; // Only for left click
-                            longPressTriggered = false;
-                            const pressStartTime = Date.now();
-                            row.classList.add('long-pressing');
-                            const progressBar = document.createElement('div');
-                            progressBar.className = 'long-press-progress';
-                            if (row.cells[0]) {
-                                row.cells[0].style.position = 'relative';
-                                row.cells[0].appendChild(progressBar);
-                            }
-                            progressInterval = setInterval(() => {
-                                const elapsedTime = Date.now() - pressStartTime;
-                                const progress = Math.min(elapsedTime / longPressDuration, 1);
-                                progressBar.style.width = `${progress * 100}%`;
-                            }, 50);
-
-                            longPressTimeout = setTimeout(() => {
-                                longPressTriggered = true;
-                                cleanupPress();
-                                openItemSettingsModal(record);
-                            }, longPressDuration);
-                        });
-
-                        row.addEventListener('mouseup', cleanupPress);
-                        row.addEventListener('mouseleave', cleanupPress);
-
-                        row.addEventListener('click', (e) => {
-                            if (longPressTriggered) return;
-                            row.clickCount++;
-                            if (row.clickTimer) clearTimeout(row.clickTimer);
-                            if (row.clickCount === 3) {
-                                openAddHeaderModal(id);
-                                row.clickCount = 0;
-                            } else {
-                                row.clickTimer = setTimeout(() => {
-                                    if (row.clickCount === 2) {
-                                        hideItem(id);
-                                    }
-                                    row.clickCount = 0;
-                                }, 300);
-                            }
-                        });
-                    } else {
-                        // --- Mobile/Tablet logic (original) ---
-                        row.addEventListener('click', (e) => {
-                            row.clickCount++;
-                            if (row.clickTimer) clearTimeout(row.clickTimer);
-                            if (row.clickCount === 3) {
-                                openAddHeaderModal(id);
-                                row.clickCount = 0;
-          _B_                  } else {
-                                row.clickTimer = setTimeout(() => {
-                                    if (row.clickCount === 1) {
-                                        openItemSettingsModal(record);
-                                    } else if (row.clickCount === 2) {
-                    _A_                 hideItem(id);
-                                    }
-                                    row.clickCount = 0;
-                                }, 300);
-                            }
-                        });
-                    }
-                    // --- END: MODIFIED ROW INTERACTION LOGIC ---
-
+                        if (row.clickTimer) {
+                            clearTimeout(row.clickTimer);
+                        }
+                        
+                        if (row.clickCount === 3) {
+                            openAddHeaderModal(id);
+                            row.clickCount = 0;
+                        } else {
+                            row.clickTimer = setTimeout(() => {
+                                if (row.clickCount === 1) {
+                                    openItemSettingsModal(record);
+                                } else if (row.clickCount === 2) {
+                                    hideItem(id); // This now hides per-category
+                                }
+                                row.clickCount = 0;
+                            }, 300);
+                        }
+                    });
                     
                     headers.forEach(header => { 
                         const td = document.createElement('td'); 
