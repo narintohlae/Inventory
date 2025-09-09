@@ -155,34 +155,34 @@
         </div>
 
         <div id="requisition-view" class="hidden">
-             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
-                 <div class="flex justify-between items-center mb-4">
-                     <h2 class="text-2xl font-bold text-gray-700">รายการเบิกของ</h2>
-                     <div class="flex items-center gap-2">
-                         <button id="auto-requisition-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                             เบิกของอัตโนมัติ
-                         </button>
-                         <button id="confirm-requisition-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:bg-gray-400">
-                             ยืนยัน
-                         </button>
+                 <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                     <div class="flex justify-between items-center mb-4">
+                         <h2 class="text-2xl font-bold text-gray-700">รายการเบิกของ</h2>
+                         <div class="flex items-center gap-2">
+                             <button id="auto-requisition-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                                 เบิกของอัตโนมัติ
+                             </button>
+                             <button id="confirm-requisition-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:bg-gray-400">
+                                 ยืนยัน
+                             </button>
+                         </div>
+                     </div>
+                     <div class="overflow-x-auto">
+                         <table class="w-full min-w-full divide-y divide-gray-200 show-grid">
+                             <thead class="bg-gray-200">
+                                 <tr>
+                                     <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-8">ลำดับ</th>
+                                     <th class="py-3 px-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-auto">สินค้า</th>
+                                     <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-14">จำนวนเบิก</th>
+                                     <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-14">หน่วย</th>
+                                     <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-12">จัดการ</th>
+                                 </tr>
+                             </thead>
+                             <tbody id="requisition-list-body" class="bg-white divide-y divide-gray-200">
+                             </tbody>
+                         </table>
                      </div>
                  </div>
-                 <div class="overflow-x-auto">
-                     <table class="w-full min-w-full divide-y divide-gray-200 show-grid">
-                         <thead class="bg-gray-200">
-                             <tr>
-                                 <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-8">ลำดับ</th>
-                                 <th class="py-3 px-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-auto">สินค้า</th>
-                                 <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-14">จำนวนเบิก</th>
-                                 <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-14">หน่วย</th>
-                                 <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-12">จัดการ</th>
-                             </tr>
-                         </thead>
-                         <tbody id="requisition-list-body" class="bg-white divide-y divide-gray-200">
-                         </tbody>
-                     </table>
-                 </div>
-             </div>
         </div>
 
          <div id="history-view" class="hidden">
@@ -258,7 +258,7 @@
                 </div>
                 <div>
                     <label for="reorder-quantity" class="block text-sm font-medium text-gray-700">จำนวนเบิกอัตโนมัติ</label>
-                     <input type="number" id="reorder-quantity" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น 50">
+                    <input type="number" id="reorder-quantity" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="เช่น 50">
                 </div>
             </div>
             <div class="items-center px-4 py-3">
@@ -365,11 +365,11 @@
             </div>
             <div class="items-center px-4 py-3 sm:flex">
                  <button id="app-settings-save-btn" class="w-full sm:w-auto px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
-                    บันทึก
-                </button>
-                <button id="app-settings-cancel-btn" class="mt-3 sm:mt-0 sm:ml-3 w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300">
-                    ยกเลิก
-                </button>
+                     บันทึก
+                 </button>
+                 <button id="app-settings-cancel-btn" class="mt-3 sm:mt-0 sm:ml-3 w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                     ยกเลิก
+                 </button>
             </div>
         </div>
     </div>
@@ -401,6 +401,24 @@
 
 <div id="notification-toast" class="hidden opacity-0 fixed top-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg z-50">
     <p id="notification-message"></p>
+</div>
+
+<div id="item-context-menu" class="hidden fixed z-40 bg-white shadow-lg rounded-md ring-1 ring-black ring-opacity-5 focus:outline-none w-48">
+    <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+        <button id="context-menu-settings" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex items-center gap-3" role="menuitem">
+            <svg class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            <span>ตั้งค่าสินค้า</span>
+        </button>
+        <button id="context-menu-hide" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex items-center gap-3" role="menuitem">
+            <svg class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a9.97 9.97 0 01-1.563 3.029m0 0l-2.14 2.14" /></svg>
+            <span>ซ่อนแถวสินค้า</span>
+        </button>
+        <div class="border-t border-gray-100 my-1"></div>
+        <button id="context-menu-add-header" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex items-center gap-3" role="menuitem">
+            <svg class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2z"></path></svg>
+            <span>เพิ่มหัวข้อใหม่</span>
+        </button>
+    </div>
 </div>
 
 <script type="module">
@@ -487,10 +505,15 @@
         const settingUnitColInput = document.getElementById('setting-unit-col');
         const notificationToast = document.getElementById('notification-toast');
         const notificationMessage = document.getElementById('notification-message');
+        const itemContextMenu = document.getElementById('item-context-menu');
+        const contextMenuSettingsBtn = document.getElementById('context-menu-settings');
+        const contextMenuHideBtn = document.getElementById('context-menu-hide');
+        const contextMenuAddHeaderBtn = document.getElementById('context-menu-add-header'); // [NEW]
         
         let allRecords = [], currentRecords = [], categories = [], sortOrdersMap = {}, categoryOrder = [], requisitionList = [], historyList = [];
         let customRows = new Map(), itemSettings = new Map(), hiddenItemsMap = {};
         let itemColumnName = '', activeCategoryName = null, currentEditingItemId = null, currentEditingCategory = null, currentEditingHeaderId = null, currentEditingHeaderText = null, confirmCallback = null, notificationTimeout = null, insertHeaderAboveId = null;
+        let contextMenuItemRecord = null;
         let sortableInstance = null, categorySortableInstance = null;
         let appSettings = { triggerStockColumnName: 'รักษ์ยา', calculationStockColumnName: 'เบบี้ช็อป', unitColumnName: 'หน่วย' };
         let resolveCategoriesLoaded, categoriesFirstLoad = true;
@@ -527,43 +550,43 @@
         });
         
         function initializeListeners(currentUserId) {
-             if (!currentUserId) return;
-             unsubscribes.forEach(unsub => unsub && unsub());
-             unsubscribes = [];
-             const userPath = `artifacts/${appId}/users/${currentUserId}`;
-             categoriesCollectionRef = collection(db, `${userPath}/categories`);
-             hiddenItemsDocRef = doc(db, `${userPath}/settings`, 'hiddenItemsByCategory');
-             sortOrdersDocRef = doc(db, `${userPath}/settings`, 'sortOrders');
-             customRowsCollectionRef = collection(db, `${userPath}/customRows`);
-             categoryOrderDocRef = doc(db, `${userPath}/settings`, 'categoryOrder');
-             itemSettingsCollectionRef = collection(db, `${userPath}/itemSettings`);
-             requisitionListCollectionRef = collection(db, `${userPath}/requisitionList`);
-             requisitionHistoryCollectionRef = collection(db, `${userPath}/requisitionHistory`);
-             countersDocRef = doc(db, `${userPath}/settings`, 'counters');
-             appSettingsDocRef = doc(db, `${userPath}/settings`, 'appSettings');
-             unsubscribes.push(onSnapshot(categoriesCollectionRef, (snap) => {
-                 const fetchedCategories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                 if (userId && !fetchedCategories.some(c => c.name === 'อื่นๆ') && !snap.metadata.hasPendingWrites) {
-                     addDoc(categoriesCollectionRef, { name: 'อื่นๆ' }).catch(err => console.error("Could not create 'อื่นๆ' category", err));
-                 } else {
-                     categories = fetchedCategories;
-                     displayCategories();
-                     if (categoriesFirstLoad && resolveCategoriesLoaded) { categoriesFirstLoad = false; resolveCategoriesLoaded(); }
-                 }
-             }, (err) => showError("โหลดหมวดหมู่ไม่สำเร็จ")));
-             unsubscribes.push(onSnapshot(hiddenItemsDocRef, (docSnap) => {
-                 const data = docSnap.exists() ? docSnap.data() : {};
-                 hiddenItemsMap = {}; 
-                 for (const categoryName in data) { if (Array.isArray(data[categoryName])) { hiddenItemsMap[categoryName] = new Set(data[categoryName]); } }
-                 if (allRecords.length > 0) { displayData(currentRecords); }
-             }, (err) => showError("โหลดรายการที่ซ่อนไม่สำเร็จ")));
-             unsubscribes.push(onSnapshot(sortOrdersDocRef, (snap) => { sortOrdersMap = (snap.exists() && snap.data().orders) ? snap.data().orders : {}; if (allRecords.length > 0) displayData(currentRecords); }, (err) => showError("โหลดลำดับจัดเรียงไม่สำเร็จ")));
-             unsubscribes.push(onSnapshot(categoryOrderDocRef, (snap) => { categoryOrder = (snap.exists() && snap.data().order) ? snap.data().order : []; if (categories.length > 0) displayCategories(); }, (err) => showError("โหลดลำดับหมวดหมู่ไม่สำเร็จ")));
-             unsubscribes.push(onSnapshot(customRowsCollectionRef, (snap) => { customRows.clear(); snap.docs.forEach(doc => customRows.set(doc.id, doc.data())); if (allRecords.length > 0) displayData(currentRecords); }, (err) => showError("โหลดหัวข้อไม่สำเร็จ")));
-             unsubscribes.push(onSnapshot(itemSettingsCollectionRef, (snap) => { itemSettings.clear(); snap.docs.forEach(doc => itemSettings.set(doc.id, doc.data())); }, (err) => showError("โหลดการตั้งค่าสินค้าไม่สำเร็จ")));
-             unsubscribes.push(onSnapshot(requisitionListCollectionRef, (snap) => { requisitionList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); displayRequisitionList(); }, (err) => showError("โหลดรายการเบิกของไม่สำเร็จ")));
-             unsubscribes.push(onSnapshot(requisitionHistoryCollectionRef, (snap) => { historyList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => b.timestamp.seconds - a.timestamp.seconds); displayHistory(); }, (err) => showError("โหลดประวัติไม่สำเร็จ")));
-             unsubscribes.push(onSnapshot(appSettingsDocRef, (snap) => { if (snap.exists()) { appSettings = { ...appSettings, ...snap.data() }; } updateAppSettingsModalInputs(); }, (err) => showError("โหลดการตั้งค่าแอปไม่สำเร็จ")));
+                 if (!currentUserId) return;
+                 unsubscribes.forEach(unsub => unsub && unsub());
+                 unsubscribes = [];
+                 const userPath = `artifacts/${appId}/users/${currentUserId}`;
+                 categoriesCollectionRef = collection(db, `${userPath}/categories`);
+                 hiddenItemsDocRef = doc(db, `${userPath}/settings`, 'hiddenItemsByCategory');
+                 sortOrdersDocRef = doc(db, `${userPath}/settings`, 'sortOrders');
+                 customRowsCollectionRef = collection(db, `${userPath}/customRows`);
+                 categoryOrderDocRef = doc(db, `${userPath}/settings`, 'categoryOrder');
+                 itemSettingsCollectionRef = collection(db, `${userPath}/itemSettings`);
+                 requisitionListCollectionRef = collection(db, `${userPath}/requisitionList`);
+                 requisitionHistoryCollectionRef = collection(db, `${userPath}/requisitionHistory`);
+                 countersDocRef = doc(db, `${userPath}/settings`, 'counters');
+                 appSettingsDocRef = doc(db, `${userPath}/settings`, 'appSettings');
+                 unsubscribes.push(onSnapshot(categoriesCollectionRef, (snap) => {
+                     const fetchedCategories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                     if (userId && !fetchedCategories.some(c => c.name === 'อื่นๆ') && !snap.metadata.hasPendingWrites) {
+                         addDoc(categoriesCollectionRef, { name: 'อื่นๆ' }).catch(err => console.error("Could not create 'อื่นๆ' category", err));
+                     } else {
+                         categories = fetchedCategories;
+                         displayCategories();
+                         if (categoriesFirstLoad && resolveCategoriesLoaded) { categoriesFirstLoad = false; resolveCategoriesLoaded(); }
+                     }
+                 }, (err) => showError("โหลดหมวดหมู่ไม่สำเร็จ")));
+                 unsubscribes.push(onSnapshot(hiddenItemsDocRef, (docSnap) => {
+                     const data = docSnap.exists() ? docSnap.data() : {};
+                     hiddenItemsMap = {}; 
+                     for (const categoryName in data) { if (Array.isArray(data[categoryName])) { hiddenItemsMap[categoryName] = new Set(data[categoryName]); } }
+                     if (allRecords.length > 0) { displayData(currentRecords); }
+                 }, (err) => showError("โหลดรายการที่ซ่อนไม่สำเร็จ")));
+                 unsubscribes.push(onSnapshot(sortOrdersDocRef, (snap) => { sortOrdersMap = (snap.exists() && snap.data().orders) ? snap.data().orders : {}; if (allRecords.length > 0) displayData(currentRecords); }, (err) => showError("โหลดลำดับจัดเรียงไม่สำเร็จ")));
+                 unsubscribes.push(onSnapshot(categoryOrderDocRef, (snap) => { categoryOrder = (snap.exists() && snap.data().order) ? snap.data().order : []; if (categories.length > 0) displayCategories(); }, (err) => showError("โหลดลำดับหมวดหมู่ไม่สำเร็จ")));
+                 unsubscribes.push(onSnapshot(customRowsCollectionRef, (snap) => { customRows.clear(); snap.docs.forEach(doc => customRows.set(doc.id, doc.data())); if (allRecords.length > 0) displayData(currentRecords); }, (err) => showError("โหลดหัวข้อไม่สำเร็จ")));
+                 unsubscribes.push(onSnapshot(itemSettingsCollectionRef, (snap) => { itemSettings.clear(); snap.docs.forEach(doc => itemSettings.set(doc.id, doc.data())); }, (err) => showError("โหลดการตั้งค่าสินค้าไม่สำเร็จ")));
+                 unsubscribes.push(onSnapshot(requisitionListCollectionRef, (snap) => { requisitionList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); displayRequisitionList(); }, (err) => showError("โหลดรายการเบิกของไม่สำเร็จ")));
+                 unsubscribes.push(onSnapshot(requisitionHistoryCollectionRef, (snap) => { historyList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => b.timestamp.seconds - a.timestamp.seconds); displayHistory(); }, (err) => showError("โหลดประวัติไม่สำเร็จ")));
+                 unsubscribes.push(onSnapshot(appSettingsDocRef, (snap) => { if (snap.exists()) { appSettings = { ...appSettings, ...snap.data() }; } updateAppSettingsModalInputs(); }, (err) => showError("โหลดการตั้งค่าแอปไม่สำเร็จ")));
         }
 
         showRegisterBtn.addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
@@ -714,15 +737,14 @@
             
             displayOrder.forEach(id => { 
                 if (!visibleIds.has(id)) return; 
-                const isDesktop = window.matchMedia('(pointer: fine)').matches;
-
+                
                 if(customRows.has(id)){ 
                     const rowData = customRows.get(id); 
                     if (rowData.categoryName === activeCategoryName) { 
                         const row = document.createElement('tr'); row.dataset.id = id; row.className = 'bg-gray-200 font-bold'; 
                         const cell = document.createElement('td'); cell.colSpan = headers.length; cell.className = 'px-4 py-0.5 text-gray-800 text-sm text-left'; cell.textContent = rowData.text; 
 
-                        // --- [NEW] HEADER ROW INTERACTION LOGIC ---
+                        const isDesktop = window.matchMedia('(pointer: fine)').matches;
                         if (isDesktop) {
                             row.addEventListener('contextmenu', (e) => {
                                 e.preventDefault();
@@ -737,8 +759,6 @@
                                 else { row.clickTimer = setTimeout(() => { row.clickCount = 0; }, 400); }
                             });
                         }
-                        // --- END HEADER ROW INTERACTION LOGIC ---
-
                         row.appendChild(cell); tableBody.appendChild(row); 
                     } 
                 } else if (allRecordsMap.has(id)) { 
@@ -747,22 +767,57 @@
                     row.tabIndex = 0;
                     row.clickCount = 0; row.clickTimer = null;
 
-                    if (isDesktop) {
-                        row.addEventListener('contextmenu', (e) => { e.preventDefault(); openItemSettingsModal(record); });
-                        row.addEventListener('click', (e) => {
-                            row.clickCount++;
-                            if (row.clickTimer) clearTimeout(row.clickTimer);
-                            if (row.clickCount === 3) { openAddHeaderModal(id); row.clickCount = 0; } 
-                            else { row.clickTimer = setTimeout(() => { if (row.clickCount === 2) { hideItem(id); } row.clickCount = 0; }, 300); }
-                        });
-                    } else {
-                        row.addEventListener('click', (e) => {
-                            row.clickCount++;
-                            if (row.clickTimer) clearTimeout(row.clickTimer);
-                            if (row.clickCount === 3) { openAddHeaderModal(id); row.clickCount = 0; } 
-                            else { row.clickTimer = setTimeout(() => { if (row.clickCount === 1) { openItemSettingsModal(record); } else if (row.clickCount === 2) { hideItem(id); } row.clickCount = 0; }, 300); }
-                        });
-                    }
+                    // --- [MODIFIED] ROW INTERACTION LOGIC ---
+                    const isDesktop = window.matchMedia('(pointer: fine)').matches;
+
+                    row.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        openContextMenu(e, record);
+                    });
+                    
+                    let longPressTimer = null;
+                    let startX, startY;
+                    row.addEventListener('touchstart', e => {
+                        if (isDesktop) return;
+                        const touch = e.touches[0];
+                        startX = touch.clientX;
+                        startY = touch.clientY;
+                        longPressTimer = setTimeout(() => {
+                            openContextMenu(touch, record);
+                            longPressTimer = null;
+                        }, 500);
+                    }, { passive: true });
+
+                    row.addEventListener('touchmove', e => {
+                        if (!longPressTimer) return;
+                        const touch = e.touches[0];
+                        if (Math.abs(touch.clientX - startX) > 10 || Math.abs(touch.clientY - startY) > 10) {
+                            clearTimeout(longPressTimer);
+                        }
+                    });
+
+                    row.addEventListener('touchend', e => {
+                        if (longPressTimer) {
+                             clearTimeout(longPressTimer);
+                        }
+                    });
+
+                    row.addEventListener('click', (e) => {
+                        if (!isDesktop && longPressTimer === null) {
+                            return;
+                        }
+
+                        row.clickCount++;
+                        if (row.clickTimer) clearTimeout(row.clickTimer);
+                        
+                        row.clickTimer = setTimeout(() => {
+                            if (!isDesktop && row.clickCount === 1) {
+                                openItemSettingsModal(record);
+                            }
+                            row.clickCount = 0;
+                        }, 300);
+                    });
+                    // --- END MODIFIED ROW INTERACTION LOGIC ---
                     
                     headers.forEach(header => { 
                         const td = document.createElement('td'); 
@@ -810,12 +865,35 @@
                 const date = historyItem.timestamp.toDate(); const formattedDate = `${date.toLocaleDateString('th-TH')} ${date.toLocaleTimeString('th-TH')}`; 
                 const card = document.createElement('div'); card.className = 'bg-gray-50 rounded-lg p-4 shadow'; 
                 const tableRows = historyItem.items.map((item, index) => `<tr><td class="py-2 px-2 text-sm text-gray-600 text-center">${index + 1}</td><td class="py-2 px-2 text-sm text-gray-800 break-words">${item.name}</td><td class="py-2 px-2 text-sm text-gray-800 text-center">${item.quantity}</td><td class="py-2 px-2 text-sm text-gray-600 text-center">${item.unit}</td></tr>`).join(''); 
-                // [MODIFIED] Added 'show-grid' class to the history table
                 card.innerHTML = `<div class="flex justify-between items-center mb-3"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="overflow-x-auto"><table class="w-full table-fixed show-grid"><thead><tr><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-10">ลำดับ</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-left w-auto">สินค้า</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-14">จำนวน</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-14">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`; 
                 historyListContainer.appendChild(card); 
             });
         }
         
+        function openContextMenu(event, record) {
+            contextMenuItemRecord = record;
+            const { clientX: mouseX, clientY: mouseY } = event;
+            
+            itemContextMenu.style.top = `${mouseY}px`;
+            itemContextMenu.style.left = `${mouseX}px`;
+            itemContextMenu.classList.remove('hidden');
+
+            const menuRect = itemContextMenu.getBoundingClientRect();
+            if (menuRect.bottom > window.innerHeight) {
+                itemContextMenu.style.top = `${mouseY - menuRect.height}px`;
+            }
+            if (menuRect.right > window.innerWidth) {
+                itemContextMenu.style.left = `${mouseX - menuRect.width}px`;
+            }
+        }
+
+        function closeContextMenu() {
+            if (itemContextMenu && !itemContextMenu.classList.contains('hidden')) {
+                itemContextMenu.classList.add('hidden');
+                contextMenuItemRecord = null;
+            }
+        }
+
         function openItemSettingsModal(record) { currentEditingItemId = record[itemColumnName]; const settings = itemSettings.get(currentEditingItemId) || {}; modalItemName.textContent = `ตั้งค่า: ${currentEditingItemId}`; reorderPointInput.value = settings.reorderPoint || ''; reorderQuantityInput.value = settings.reorderQuantity || ''; itemSettingsModal.classList.remove('hidden'); }
         function closeItemSettingsModal() { itemSettingsModal.classList.add('hidden'); currentEditingItemId = null; }
         function openCategoryActionsModal(category) { currentEditingCategory = category; categoryModalName.textContent = `จัดการหมวดหมู่: ${category.name}`; categoryActionsModal.classList.remove('hidden'); }
@@ -874,6 +952,31 @@
         autoRequisitionBtn.addEventListener('click', generateRequisition);
         requisitionListBody.addEventListener('click', (e) => { if(e.target.classList.contains('delete-req-btn')) { deleteRequisitionItem(e.target.dataset.id); }});
         confirmRequisitionBtn.addEventListener('click', confirmRequisition);
+
+        window.addEventListener('click', closeContextMenu);
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeContextMenu(); });
+
+        contextMenuSettingsBtn.addEventListener('click', () => {
+            if (contextMenuItemRecord) openItemSettingsModal(contextMenuItemRecord);
+            closeContextMenu();
+        });
+
+        contextMenuHideBtn.addEventListener('click', () => {
+            if (contextMenuItemRecord && itemColumnName) {
+                const itemId = contextMenuItemRecord[itemColumnName];
+                hideItem(itemId);
+            }
+            closeContextMenu();
+        });
+        
+        // --- [NEW] Context Menu Add Header Listener ---
+        contextMenuAddHeaderBtn.addEventListener('click', () => {
+            if (contextMenuItemRecord && itemColumnName) {
+                const itemId = contextMenuItemRecord[itemColumnName];
+                openAddHeaderModal(itemId);
+            }
+            closeContextMenu();
+        });
 
         tableBody.addEventListener('keydown', (e) => {
             const focusableRows = Array.from(tableBody.querySelectorAll('tr[tabindex="0"]'));
