@@ -47,6 +47,16 @@
             outline-offset: -2px;
             background-color: #eff6ff; /* blue-50 */
         }
+        
+        /* --- CSS เพิ่มเติมสำหรับเส้นตาราง --- */
+        .show-grid {
+            border-collapse: collapse;
+        }
+        .show-grid th, .show-grid td {
+           border: 1px solid #e5e7eb; /* Tailwind gray-200 */
+        }
+        /* --- จบส่วนที่เพิ่ม --- */
+
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -133,7 +143,7 @@
                     <p id="error-message" class="mt-2">ไม่สามารถโหลดข้อมูลได้ในขณะนี้</p>
                 </div>
                 <div class="overflow-x-auto">
-                    <table id="data-table" class="hidden w-full min-w-full divide-y divide-gray-200 table-auto">
+                    <table id="data-table" class="hidden w-full min-w-full table-auto show-grid">
                         <thead id="table-head" class="bg-gray-50"></thead>
                         <tbody id="table-body" class="bg-white divide-y divide-gray-200"></tbody>
                     </table>
@@ -158,7 +168,7 @@
                      </div>
                  </div>
                  <div class="overflow-x-auto">
-                     <table class="w-full min-w-full divide-y divide-gray-200">
+                     <table class="w-full min-w-full divide-y divide-gray-200 show-grid">
                          <thead class="bg-gray-200">
                              <tr>
                                  <th class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-8">ลำดับ</th>
@@ -800,7 +810,8 @@
                 const date = historyItem.timestamp.toDate(); const formattedDate = `${date.toLocaleDateString('th-TH')} ${date.toLocaleTimeString('th-TH')}`; 
                 const card = document.createElement('div'); card.className = 'bg-gray-50 rounded-lg p-4 shadow'; 
                 const tableRows = historyItem.items.map((item, index) => `<tr><td class="py-2 px-2 text-sm text-gray-600 text-center">${index + 1}</td><td class="py-2 px-2 text-sm text-gray-800 break-words">${item.name}</td><td class="py-2 px-2 text-sm text-gray-800 text-center">${item.quantity}</td><td class="py-2 px-2 text-sm text-gray-600 text-center">${item.unit}</td></tr>`).join(''); 
-                card.innerHTML = `<div class="flex justify-between items-center mb-3"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="overflow-x-auto"><table class="w-full table-fixed"><thead><tr><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-10">ลำดับ</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-left w-auto">สินค้า</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-14">จำนวน</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-14">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`; 
+                // [MODIFIED] Added 'show-grid' class to the history table
+                card.innerHTML = `<div class="flex justify-between items-center mb-3"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="overflow-x-auto"><table class="w-full table-fixed show-grid"><thead><tr><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-10">ลำดับ</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-left w-auto">สินค้า</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-14">จำนวน</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-14">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`; 
                 historyListContainer.appendChild(card); 
             });
         }
