@@ -744,39 +744,21 @@
                         const row = document.createElement('tr'); row.dataset.id = id; row.className = 'bg-gray-200 font-bold'; 
                         const cell = document.createElement('td'); cell.colSpan = headers.length; cell.className = 'px-4 py-0.5 text-gray-800 text-sm text-left'; cell.textContent = rowData.text; 
 
-                        const isDesktop = window.matchMedia('(pointer: fine)').matches;
-                        if (isDesktop) {
-                            row.addEventListener('contextmenu', (e) => {
-                                e.preventDefault();
+                        // MODIFIED: Replaced context menu and long-press with double-click
+                        row.addEventListener('click', (e) => {
+                            if (!row.clickCount) row.clickCount = 0;
+                            row.clickCount++;
+                            if (row.clickCount === 1) {
+                                row.clickTimer = setTimeout(() => {
+                                    row.clickCount = 0;
+                                }, 250);
+                            } else if (row.clickCount === 2) {
+                                clearTimeout(row.clickTimer);
+                                row.clickCount = 0;
                                 openHeaderActionsModal(id, rowData.text);
-                            });
-                        } else {
-                            let longPressTimer = null;
-                            let startX, startY;
-                            row.addEventListener('touchstart', e => {
-                                const touch = e.touches[0];
-                                startX = touch.clientX;
-                                startY = touch.clientY;
-                                longPressTimer = setTimeout(() => {
-                                    openHeaderActionsModal(id, rowData.text);
-                                    longPressTimer = null; 
-                                }, 3000); // MODIFIED: Changed duration to 3 seconds
-                            }, { passive: true });
-                            row.addEventListener('touchmove', e => {
-                                if (!longPressTimer) return;
-                                const touch = e.touches[0];
-                                if (Math.abs(touch.clientX - startX) > 10 || Math.abs(touch.clientY - startY) > 10) {
-                                    clearTimeout(longPressTimer);
-                                    longPressTimer = null;
-                                }
-                            });
-                            row.addEventListener('touchend', e => {
-                                if (longPressTimer) {
-                                    clearTimeout(longPressTimer);
-                                    longPressTimer = null;
-                                }
-                            });
-                        }
+                            }
+                        });
+
                         row.appendChild(cell); tableBody.appendChild(row); 
                     } 
                 } else if (allRecordsMap.has(id)) { 
@@ -784,39 +766,18 @@
                     const row = document.createElement('tr'); row.dataset.id = id; row.className = 'hover:bg-gray-50';
                     row.tabIndex = 0;
 
-                    const isDesktop = window.matchMedia('(pointer: fine)').matches;
-
-                    row.addEventListener('contextmenu', (e) => {
-                        e.preventDefault();
-                        openContextMenu(e, record);
-                    });
-                    
-                    let longPressTimer = null;
-                    let startX, startY;
-                    row.addEventListener('touchstart', e => {
-                        if (isDesktop) return;
-                        const touch = e.touches[0];
-                        startX = touch.clientX;
-                        startY = touch.clientY;
-                        longPressTimer = setTimeout(() => {
-                            openContextMenu(touch, record);
-                            longPressTimer = null;
-                        }, 3000); // MODIFIED: Changed duration to 3 seconds
-                    }, { passive: true });
-
-                    row.addEventListener('touchmove', e => {
-                        if (!longPressTimer) return;
-                        const touch = e.touches[0];
-                        if (Math.abs(touch.clientX - startX) > 10 || Math.abs(touch.clientY - startY) > 10) {
-                            clearTimeout(longPressTimer);
-                            longPressTimer = null; // IMPROVEMENT: Added for reliability
-                        }
-                    });
-
-                    row.addEventListener('touchend', e => {
-                        if (longPressTimer) {
-                             clearTimeout(longPressTimer);
-                             longPressTimer = null; // IMPROVEMENT: Added for reliability
+                    // MODIFIED: Replaced context menu and long-press with double-click
+                    row.addEventListener('click', (e) => {
+                        if (!row.clickCount) row.clickCount = 0;
+                        row.clickCount++;
+                        if (row.clickCount === 1) {
+                            row.clickTimer = setTimeout(() => {
+                                row.clickCount = 0;
+                            }, 250);
+                        } else if (row.clickCount === 2) {
+                            clearTimeout(row.clickTimer);
+                            row.clickCount = 0;
+                            openContextMenu(e, record);
                         }
                     });
 
@@ -956,7 +917,14 @@
         requisitionListBody.addEventListener('click', (e) => { if(e.target.classList.contains('delete-req-btn')) { deleteRequisitionItem(e.target.dataset.id); }});
         confirmRequisitionBtn.addEventListener('click', confirmRequisition);
 
-        window.addEventListener('click', closeContextMenu);
+        window.addEventListener('click', (e) => {
+             // Close context menu if clicking outside of it
+            if (itemContextMenu && !itemContextMenu.classList.contains('hidden')) {
+                if (!itemContextMenu.contains(e.target)) {
+                    closeContextMenu();
+                }
+            }
+        });
         window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeContextMenu(); });
 
         contextMenuSettingsBtn.addEventListener('click', () => {
