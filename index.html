@@ -599,4 +599,422 @@
         async function saveCategoryOrder(newOrder) { if (!categoryOrderDocRef) return; try { await setDoc(categoryOrderDocRef, { order: newOrder }); } catch (error) { showError("บันทึกการจัดเรียงหมวดหมู่ไม่สำเร็จ"); } }
         
         async function hideItem(itemId) { if (!hiddenItemsDocRef || !itemId) return; const categoryKey = activeCategoryName || '__global__'; try { await updateDoc(hiddenItemsDocRef, { [categoryKey]: arrayUnion(itemId) }); } catch (e) { if (e.code === 'not-found') { try { await setDoc(hiddenItemsDocRef, { [categoryKey]: [itemId] }); } catch (setErr) { showError("ซ่อนรายการไม่สำเร็จ"); } } else { showError("ซ่อนรายการไม่สำเร็จ"); } } }
-        async function unhideItems(idsToUnhide) { if (!hiddenItemsDocRef || !idsToUnhide || idsToUnhide.length === 0) return; const categoryKey = activeCategoryName || '__
+        async function unhideItems(idsToUnhide) { if (!hiddenItemsDocRef || !idsToUnhide || idsToUnhide.length === 0) return; const categoryKey = activeCategoryName || '__global__'; try { await updateDoc(hiddenItemsDocRef, { [categoryKey]: arrayRemove(...idsToUnhide) }); } catch (error) { showError("แสดงรายการที่ซ่อนไม่สำเร็จ"); } }
+        async function addCategory() { if (!categoriesCollectionRef) return; const name = categoryInput.value.trim(); if (name && !categories.some(c => c.name.toLowerCase() === name.toLowerCase())) { try { await addDoc(categoriesCollectionRef, { name }); categoryInput.value = ''; showNotification('เพิ่มหมวดหมู่สำเร็จ', false); } catch(error) { showError("เพิ่มหมวดหมู่ไม่สำเร็จ"); } } else if (name) showNotification('มีหมวดหมู่นี้อยู่แล้ว'); }
+        async function editCategory(id, oldName) { if (!categoriesCollectionRef) return; const newName = prompt('แก้ไขชื่อหมวดหมู่:', oldName); if (newName && newName.trim() && newName.trim() !== oldName) { try { await updateDoc(doc(categoriesCollectionRef, id), { name: newName.trim() }); } catch(error) { showError("แก้ไขหมวดหมู่ไม่สำเร็จ"); } } }
+        async function deleteCategory(id) { if (!categoriesCollectionRef) return; try { await deleteDoc(doc(categoriesCollectionRef, id)); displayData(allRecords); } catch(error) { showError("ลบหมวดหมู่ไม่สำเร็จ"); } }
+        async function addHeaderRow(headerText) { if (!headerText || !headerText.trim()) return; try { const key = activeCategoryName || '__global__'; const newDocRef = await addDoc(customRowsCollectionRef, { text: headerText.trim(), categoryName: activeCategoryName }); const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; let currentCategoryOrder = currentOrders[key] || []; const newHeaderId = newDocRef.id; if (insertHeaderAboveId) { const insertIndex = currentCategoryOrder.indexOf(insertHeaderAboveId); if (insertIndex !== -1) { currentCategoryOrder.splice(insertIndex, 0, newHeaderId); } else { currentCategoryOrder.unshift(newHeaderId); } } else { currentCategoryOrder.unshift(newHeaderId); } currentOrders[key] = currentCategoryOrder; await setDoc(sortOrdersDocRef, { orders: currentOrders }); } catch (error) { showError("เพิ่มหัวข้อไม่สำเร็จ"); } }
+        async function editHeaderRow(id, oldText) { const newText = prompt("แก้ไขชื่อหัวข้อ:", oldText); if (newText && newText.trim() && newText.trim() !== oldText) { try { await updateDoc(doc(customRowsCollectionRef, id), { text: newText.trim() }); } catch (error) { showError("แก้ไขหัวข้อไม่สำเร็จ"); } } }
+        async function deleteHeaderRow(id) { if (!customRowsCollectionRef || !sortOrdersDocRef) return; try { const key = activeCategoryName || '__global__'; const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; const currentCategoryOrder = currentOrders[key] || []; currentOrders[key] = currentCategoryOrder.filter(itemId => itemId !== id); await setDoc(sortOrdersDocRef, { orders: currentOrders }); await deleteDoc(doc(customRowsCollectionRef, id)); } catch (error) { showError("ลบหัวข้อไม่สำเร็จ"); } }
+        async function saveItemSettings() { if (!itemSettingsCollectionRef || !currentEditingItemId) return; const point = parseInt(reorderPointInput.value, 10); const quantity = parseInt(reorderQuantityInput.value, 10); const settings = { reorderPoint: isNaN(point) ? null : point, reorderQuantity: isNaN(quantity) ? null : quantity }; try { await setDoc(doc(itemSettingsCollectionRef, currentEditingItemId), settings); closeItemSettingsModal(); } catch(error) { showError("บันทึกการตั้งค่าไม่สำเร็จ"); } }
+        async function saveAppSettings() { if (!appSettingsDocRef) return; const newSettings = { triggerStockColumnName: settingTriggerColInput.value.trim() || 'รักษ์ยา', calculationStockColumnName: settingCalcColInput.value.trim() || 'เบบี้ช็อป', unitColumnName: settingUnitColInput.value.trim() || 'หน่วย', }; try { await setDoc(appSettingsDocRef, newSettings, { merge: true }); showNotification('บันทึกการตั้งค่าแล้ว', false); closeAppSettingsModal(); } catch (error) { showError("บันทึกการตั้งค่าไม่สำเร็จ"); } }
+        async function generateRequisition() {
+            if (!itemSettingsCollectionRef || allRecords.length === 0) { showNotification('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า'); return; }
+            if (allRecords.length > 0) { const firstRecordKeys = Object.keys(allRecords[0]); if (!firstRecordKeys.includes(appSettings.triggerStockColumnName) || !firstRecordKeys.includes(appSettings.calculationStockColumnName)) { showError(`ไม่พบคอลัมน์: "${appSettings.triggerStockColumnName}" หรือ "${appSettings.calculationStockColumnName}" ใน Google Sheet กรุณาตรวจสอบการตั้งค่า`); return; } }
+            const itemsToRequisition = [];
+            allRecords.forEach(record => {
+                const itemId = record[itemColumnName];
+                const settings = itemSettings.get(itemId);
+                if (settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number') {
+                    const triggerStock = parseInt(record[appSettings.triggerStockColumnName] || 0, 10);
+                    if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) {
+                        const calculationStock = parseInt(record[appSettings.calculationStockColumnName], 10);
+                        if (!isNaN(calculationStock) && calculationStock > 0) {
+                            let finalQuantity = settings.reorderQuantity;
+                            const halfCalcStock = 0.5 * calculationStock;
+                            if (settings.reorderQuantity > halfCalcStock) {
+                                const halfAutoQty = 0.5 * settings.reorderQuantity;
+                                finalQuantity = Math.min(halfAutoQty, halfCalcStock);
+                            }
+                            const roundedQuantity = Math.floor(finalQuantity);
+                            if (roundedQuantity > 0) { itemsToRequisition.push({ id: itemId, name: record[itemColumnName], quantity: roundedQuantity, unit: record[appSettings.unitColumnName] || 'ชิ้น' }); }
+                        }
+                    }
+                }
+            });
+            if (itemsToRequisition.length === 0) { showNotification('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข'); return; }
+            try { const batch = writeBatch(db); itemsToRequisition.forEach(item => { const docRef = doc(requisitionListCollectionRef, item.id); batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit }); }); await batch.commit(); showNotification(`สร้างรายการเบิก ${itemsToRequisition.length} รายการสำเร็จ!`, false); switchView('requisition'); } catch (error) { showError("สร้างรายการเบิกไม่สำเร็จ"); }
+        }
+        async function deleteRequisitionItem(id) { if(!requisitionListCollectionRef) return; try { await deleteDoc(doc(requisitionListCollectionRef, id)); } catch (error) { showError("ลบรายการเบิกไม่สำเร็จ"); } }
+        async function confirmRequisition() { if (!requisitionListCollectionRef || requisitionList.length === 0) return; try { await runTransaction(db, async (transaction) => { const counterSnap = await transaction.get(countersDocRef); const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0; const newCounter = currentCounter + 1; const now = new Date(); const reqNumber = `REQ-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}-${newCounter.toString().padStart(4, '0')}`; const historyDocRef = doc(requisitionHistoryCollectionRef); transaction.set(historyDocRef, { requisitionNumber: reqNumber, timestamp: Timestamp.now(), items: requisitionList.map(({id, ...rest}) => rest) }); requisitionList.forEach(item => { transaction.delete(doc(requisitionListCollectionRef, item.id)); }); transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true }); }); showNotification('ยืนยันการเบิกของเรียบร้อย', false); } catch (error) { console.error("Transaction failed: ", error); showError("ยืนยันการเบิกของไม่สำเร็จ"); } }
+        
+        function displayCategories() {
+            if (categorySortableInstance) categorySortableInstance.destroy();
+            categoryList.innerHTML = '';
+            manageCategoryList.innerHTML = '';
+            if (!userId) return;
+            const sortedCategories = [...categories].sort((a, b) => { const indexA = categoryOrder.indexOf(a.id); const indexB = categoryOrder.indexOf(b.id); if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name, 'th'); if (indexA === -1) return 1; if (indexB === -1) return -1; return indexA - indexB; });
+            if (categories.length === 0) { manageCategoryList.innerHTML = '<p class="text-gray-500 text-sm">ยังไม่มีหมวดหมู่</p>'; categoryList.innerHTML = '<p class="text-gray-500 text-sm">ไปที่แท็บ "จัดการ" เพื่อเพิ่มหมวดหมู่</p>'; return; }
+            sortedCategories.forEach((category) => {
+                const categoryBtn = document.createElement('button');
+                categoryBtn.dataset.id = category.id;
+                categoryBtn.className = 'whitespace-nowrap py-4 px-2 font-bold text-sm focus:outline-none';
+                categoryBtn.classList.toggle('text-blue-600', activeCategoryName === category.name);
+                categoryBtn.classList.toggle('text-gray-500', activeCategoryName !== category.name);
+                categoryBtn.classList.toggle('hover:text-gray-700', activeCategoryName !== category.name);
+                categoryBtn.textContent = category.name;
+                categoryBtn.addEventListener('click', () => {
+                    let filteredRecords;
+                    if (category.name === 'อื่นๆ') { const otherCategoryNames = categories.filter(c => c.name !== 'อื่นๆ').map(c => c.name.toLowerCase()); filteredRecords = allRecords.filter(record => !otherCategoryNames.some(catName => (record[itemColumnName]?.toLowerCase() || '').includes(catName))); } 
+                    else { filteredRecords = allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase())); }
+                    noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`;
+                    activeCategoryName = category.name;
+                    displayData(filteredRecords);
+                    document.querySelectorAll('#category-list button').forEach(btn => { btn.classList.remove('text-blue-600'); btn.classList.add('text-gray-500', 'hover:text-gray-700'); });
+                    categoryBtn.classList.add('text-blue-600'); categoryBtn.classList.remove('text-gray-500', 'hover:text-gray-700');
+                });
+                categoryList.appendChild(categoryBtn);
+            });
+            sortedCategories.forEach((category) => {
+                const categoryEl = document.createElement('div');
+                categoryEl.dataset.id = category.id;
+                categoryEl.className = 'flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 transition-shadow duration-200 cursor-pointer select-none';
+                const nameBtn = document.createElement('button');
+                nameBtn.textContent = category.name;
+                nameBtn.className = 'focus:outline-none';
+                categoryEl.addEventListener('click', (e) => {
+                    if (!categoryEl.clickCount) categoryEl.clickCount = 0;
+                    categoryEl.clickCount++;
+                    if (categoryEl.clickCount === 1) { categoryEl.clickTimer = setTimeout(() => { categoryEl.clickCount = 0; }, 250); } 
+                    else if (categoryEl.clickCount === 2) { clearTimeout(categoryEl.clickTimer); categoryEl.clickCount = 0; openCategoryActionsModal(category); }
+                });
+                categoryEl.appendChild(nameBtn);
+                manageCategoryList.appendChild(categoryEl);
+            });
+            categorySortableInstance = new Sortable(manageCategoryList, { animation: 150, ghostClass: 'sortable-ghost', delay: 200, delayOnTouchOnly: true, touchStartThreshold: 5, onEnd: (evt) => { const newOrder = Array.from(manageCategoryList.querySelectorAll('div')).map(el => el.dataset.id); saveCategoryOrder(newOrder); } });
+        }
+
+        async function fetchData() { 
+            try { 
+                loadingEl.classList.remove('hidden'); 
+                const response = await fetch(sheetUrl); 
+                if (!response.ok) throw new Error(`Network: ${response.statusText}`); 
+                const data = await response.json(); 
+                if (!Array.isArray(data.data) || data.data.length === 0) { showNoData(); return; } 
+                allRecords = data.data; 
+                itemColumnName = Object.keys(allRecords[0])[0] || ''; 
+                if (!itemColumnName) { showError("ข้อมูลไม่มีคอลัมน์"); return; } 
+                await categoriesLoadedPromise;
+                const carnationCategory = categories.find(c => c.name === 'Carnation');
+                if (carnationCategory) { const carnationButton = Array.from(categoryList.querySelectorAll('button')).find(btn => btn.textContent === 'Carnation'); if (carnationButton) carnationButton.click(); else displayData(allRecords); } 
+                else { displayData(allRecords); }
+            } catch (error) { showError(error.message); } 
+            finally { loadingEl.classList.add('hidden'); } 
+        }
+        
+        function displayData(records) { 
+            currentRecords = records; 
+            tableHead.innerHTML = ''; tableBody.innerHTML = ''; 
+            if (sortableInstance) sortableInstance.destroy(); 
+            const allRecordsMap = new Map(allRecords.map(r => [r[itemColumnName], r])); 
+            const currentRecordIds = new Set(records.map(r => r[itemColumnName])); 
+            const sortKey = activeCategoryName || '__global__'; 
+            const hiddenIdsForCurrentCategory = hiddenItemsMap[sortKey] || new Set();
+            const currentItemOrder = sortOrdersMap[sortKey] || []; 
+            const combinedOrder = [...new Set([...currentItemOrder, ...records.map(r => r[itemColumnName])])];
+            const displayOrder = combinedOrder.filter(id => customRows.has(id) || currentRecordIds.has(id)); 
+            const visibleIds = new Set(displayOrder.filter(id => !hiddenIdsForCurrentCategory.has(id))); 
+            
+            if (visibleIds.size === 0) { tableEl.classList.add('hidden'); noDataEl.classList.remove('hidden'); return; } 
+            noDataEl.classList.add('hidden'); tableEl.classList.remove('hidden'); 
+            
+            const headers = allRecords.length > 0 ? Object.keys(allRecords[0]) : []; 
+            const headerRow = document.createElement('tr'); 
+            headers.forEach(header => { 
+                const th = document.createElement('th'); th.scope = 'col'; 
+                const narrowColumns = ['รวม', 'หน่วย', 'รักษ์ยา', 'เบบี้ช็อป'];
+                let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left';
+                let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6';
+                th.className = `${padding} py-1 ${alignment} text-sm font-medium text-gray-500 uppercase tracking-wider ${header === itemColumnName ? 'w-full' : ''}`; 
+                const headerContentWrapper = document.createElement('div');
+                headerContentWrapper.className = `flex items-center gap-x-2 ${narrowColumns.includes(header) ? 'justify-center' : ''}`;
+                const headerText = document.createElement('span'); headerText.textContent = header.replace(/_/g, ' ');
+                headerContentWrapper.appendChild(headerText);
+                if (header === itemColumnName) { th.id = 'product-header-cell'; }
+                th.appendChild(headerContentWrapper); headerRow.appendChild(th); 
+            }); 
+            tableHead.appendChild(headerRow); 
+            
+            displayOrder.forEach(id => { 
+                if (!visibleIds.has(id)) return; 
+                
+                if(customRows.has(id)){ 
+                    const rowData = customRows.get(id); 
+                    if (rowData.categoryName === activeCategoryName) { 
+                        const row = document.createElement('tr'); row.dataset.id = id; row.className = 'bg-gray-200 font-bold'; 
+                        const cell = document.createElement('td'); cell.colSpan = headers.length; cell.className = 'px-4 py-0.5 text-gray-800 text-sm text-left'; cell.textContent = rowData.text; 
+                        
+                        // --- [CODE MODIFICATION] - เปลี่ยนการแก้ไข/ลบหัวข้อเป็นคลิกขวา (Desktop) และกดค้าง (Mobile) ---
+                        row.addEventListener('contextmenu', (e) => {
+                            e.preventDefault();
+                            openHeaderActionsModal(id, rowData.text);
+                        });
+
+                        let headerLongPressTimer = null;
+                        let headerStartX, headerStartY;
+                        row.addEventListener('touchstart', e => {
+                            const touch = e.touches[0];
+                            headerStartX = touch.clientX;
+                            headerStartY = touch.clientY;
+                            headerLongPressTimer = setTimeout(() => {
+                                openHeaderActionsModal(id, rowData.text);
+                                headerLongPressTimer = null;
+                            }, 500);
+                        }, { passive: true });
+
+                        row.addEventListener('touchmove', e => {
+                            if (!headerLongPressTimer) return;
+                            const touch = e.touches[0];
+                            if (Math.abs(touch.clientX - headerStartX) > 10 || Math.abs(touch.clientY - headerStartY) > 10) {
+                                clearTimeout(headerLongPressTimer);
+                            }
+                        });
+
+                        row.addEventListener('touchend', e => {
+                            if (headerLongPressTimer) {
+                                clearTimeout(headerLongPressTimer);
+                            }
+                        });
+                        // --- END MODIFICATION ---
+
+                        row.appendChild(cell); tableBody.appendChild(row); 
+                    } 
+                } else if (allRecordsMap.has(id)) { 
+                    const record = allRecordsMap.get(id); 
+                    const row = document.createElement('tr'); row.dataset.id = id; row.className = 'hover:bg-gray-50';
+                    row.tabIndex = 0;
+                    row.clickCount = 0; row.clickTimer = null;
+
+                    const isDesktop = window.matchMedia('(pointer: fine)').matches;
+
+                    row.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        openContextMenu(e, record);
+                    });
+                    
+                    let longPressTimer = null;
+                    let startX, startY;
+                    row.addEventListener('touchstart', e => {
+                        if (isDesktop) return;
+                        const touch = e.touches[0];
+                        startX = touch.clientX;
+                        startY = touch.clientY;
+                        longPressTimer = setTimeout(() => {
+                            openContextMenu(touch, record);
+                            longPressTimer = null;
+                        }, 500);
+                    }, { passive: true });
+
+                    row.addEventListener('touchmove', e => {
+                        if (!longPressTimer) return;
+                        const touch = e.touches[0];
+                        if (Math.abs(touch.clientX - startX) > 10 || Math.abs(touch.clientY - startY) > 10) {
+                            clearTimeout(longPressTimer);
+                        }
+                    });
+
+                    row.addEventListener('touchend', e => {
+                        if (longPressTimer) {
+                             clearTimeout(longPressTimer);
+                        }
+                    });
+
+                    // --- [CODE MODIFICATION] - ยกเลิกการคลิกเพื่อตั้งค่าสินค้า บล็อกด้านล่างถูกลบออก ---
+                    /*
+                    row.addEventListener('click', (e) => {
+                        if (!isDesktop && longPressTimer === null) {
+                            return;
+                        }
+                        row.clickCount++;
+                        if (row.clickTimer) clearTimeout(row.clickTimer);
+                        row.clickTimer = setTimeout(() => {
+                            if (!isDesktop && row.clickCount === 1) {
+                                openItemSettingsModal(record);
+                            }
+                            row.clickCount = 0;
+                        }, 300);
+                    });
+                    */
+                    // --- END MODIFICATION ---
+                    
+                    headers.forEach(header => { 
+                        const td = document.createElement('td'); 
+                        const narrowColumns = ['รวม', 'หน่วย', 'รักษ์ยา', 'เบบี้ช็อป'];
+                        let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left';
+                        let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6';
+                        td.className = `${padding} py-1 ${alignment} text-sm text-gray-700 break-words ${header === itemColumnName ? 'w-full' : ''}`; 
+                        td.textContent = record[header]; row.appendChild(td); 
+                    }); 
+                    tableBody.appendChild(row); 
+                } 
+            }); 
+            
+            const potentialItems = currentRecords;
+            const hasHiddenItemsInView = potentialItems.some(item => hiddenIdsForCurrentCategory.has(item[itemColumnName]));
+            if (hasHiddenItemsInView) {
+                const headerCell = document.getElementById('product-header-cell');
+                if (headerCell && !headerCell.querySelector('.unhide-btn')) {
+                    const headerContentWrapper = headerCell.querySelector('div');
+                    if (headerContentWrapper) {
+                        const showHiddenBtnIcon = document.createElement('button');
+                        showHiddenBtnIcon.title = 'แสดงแถวที่ซ่อน';
+                        showHiddenBtnIcon.className = 'unhide-btn text-gray-400 hover:text-yellow-600 focus:outline-none';
+                        showHiddenBtnIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C3.732 4.943 9.523 3 15 3c5.478 0 11.268 1.943 14.542 7-3.274 5.057-9.064 7-14.542 7-5.477 0-11.268-1.943-14.542-7zM15 11a5 5 0 100-2 5 5 0 000 2z" clip-rule="evenodd" /></svg>`;
+                        showHiddenBtnIcon.onclick = () => { const itemsToUnhide = potentialItems.map(record => record[itemColumnName]).filter(id => hiddenIdsForCurrentCategory.has(id)); if (itemsToUnhide.length > 0) { unhideItems(itemsToUnhide); } };
+                        headerContentWrapper.appendChild(showHiddenBtnIcon);
+                    }
+                }
+            }
+
+            sortableInstance = new Sortable(tableBody, { animation: 150, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen', delay: 200, touchStartThreshold: 5, onEnd: (evt) => { const newOrder = Array.from(tableBody.querySelectorAll('tr')).map(row => row.dataset.id); saveCurrentSortOrder(newOrder); } }); 
+        }
+        
+        function displayRequisitionList() {
+            requisitionListBody.innerHTML = '';
+            if (requisitionList.length === 0) { requisitionListBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">ไม่มีรายการที่ต้องเบิก</td></tr>'; confirmRequisitionBtn.disabled = true; return; }
+            confirmRequisitionBtn.disabled = false;
+            requisitionList.forEach((item, index) => { const row = document.createElement('tr'); row.innerHTML = `<td class="px-2 py-4 text-sm text-gray-600 text-center">${index + 1}</td><td class="px-2 py-4 text-sm text-gray-800 font-medium break-words">${item.name}</td><td class="px-2 py-4 text-sm text-gray-800 text-center">${item.quantity}</td><td class="px-2 py-4 text-sm text-gray-600 text-center">${item.unit}</td><td class="px-2 py-4 text-center text-sm font-medium"><button class="delete-req-btn text-red-600 hover:text-red-900" data-id="${item.id}">ลบ</button></td>`; requisitionListBody.appendChild(row); });
+        }
+        
+        function displayHistory() { 
+            historyListContainer.innerHTML = ''; 
+            if (historyList.length === 0) { historyListContainer.innerHTML = '<p class="text-center py-4 text-gray-500">ยังไม่มีประวัติการเบิก</p>'; return; } 
+            historyList.forEach(historyItem => { 
+                const date = historyItem.timestamp.toDate(); const formattedDate = `${date.toLocaleDateString('th-TH')} ${date.toLocaleTimeString('th-TH')}`; 
+                const card = document.createElement('div'); card.className = 'bg-gray-50 rounded-lg p-4 shadow'; 
+                const tableRows = historyItem.items.map((item, index) => `<tr><td class="py-2 px-2 text-sm text-gray-600 text-center">${index + 1}</td><td class="py-2 px-2 text-sm text-gray-800 break-words">${item.name}</td><td class="py-2 px-2 text-sm text-gray-800 text-center">${item.quantity}</td><td class="py-2 px-2 text-sm text-gray-600 text-center">${item.unit}</td></tr>`).join(''); 
+                card.innerHTML = `<div class="flex justify-between items-center mb-3"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="overflow-x-auto"><table class="w-full table-fixed show-grid"><thead><tr><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-10">ลำดับ</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-left w-auto">สินค้า</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-14">จำนวน</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center w-14">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`; 
+                historyListContainer.appendChild(card); 
+            });
+        }
+        
+        function openContextMenu(event, record) {
+            contextMenuItemRecord = record;
+            const { clientX: mouseX, clientY: mouseY } = event;
+            
+            itemContextMenu.style.top = `${mouseY}px`;
+            itemContextMenu.style.left = `${mouseX}px`;
+            itemContextMenu.classList.remove('hidden');
+
+            const menuRect = itemContextMenu.getBoundingClientRect();
+            if (menuRect.bottom > window.innerHeight) {
+                itemContextMenu.style.top = `${mouseY - menuRect.height}px`;
+            }
+            if (menuRect.right > window.innerWidth) {
+                itemContextMenu.style.left = `${mouseX - menuRect.width}px`;
+            }
+        }
+
+        function closeContextMenu() {
+            if (itemContextMenu && !itemContextMenu.classList.contains('hidden')) {
+                itemContextMenu.classList.add('hidden');
+                contextMenuItemRecord = null;
+            }
+        }
+
+        function openItemSettingsModal(record) { currentEditingItemId = record[itemColumnName]; const settings = itemSettings.get(currentEditingItemId) || {}; modalItemName.textContent = `ตั้งค่า: ${currentEditingItemId}`; reorderPointInput.value = settings.reorderPoint || ''; reorderQuantityInput.value = settings.reorderQuantity || ''; itemSettingsModal.classList.remove('hidden'); }
+        function closeItemSettingsModal() { itemSettingsModal.classList.add('hidden'); currentEditingItemId = null; }
+        function openCategoryActionsModal(category) { currentEditingCategory = category; categoryModalName.textContent = `จัดการหมวดหมู่: ${category.name}`; categoryActionsModal.classList.remove('hidden'); }
+        function closeCategoryActionsModal() { categoryActionsModal.classList.add('hidden'); currentEditingCategory = null; }
+        function openAddHeaderModal(referenceId = null) { insertHeaderAboveId = referenceId; headerInput.value = ''; addHeaderModal.classList.remove('hidden'); setTimeout(() => headerInput.focus(), 100); }
+        function closeAddHeaderModal() { addHeaderModal.classList.add('hidden'); insertHeaderAboveId = null; }
+        function openHeaderActionsModal(id, text) { currentEditingHeaderId = id; currentEditingHeaderText = text; headerModalName.textContent = `จัดการหัวข้อ: "${text}"`; headerActionsModal.classList.remove('hidden'); }
+        function closeHeaderActionsModal() { headerActionsModal.classList.add('hidden'); currentEditingHeaderId = null; currentEditingHeaderText = null; }
+        function showConfirmModal(title, body, onConfirm) { confirmModalTitle.textContent = title; confirmModalBody.textContent = body; confirmCallback = onConfirm; confirmModal.classList.remove('hidden'); }
+        function closeConfirmModal() { confirmModal.classList.add('hidden'); confirmCallback = null; }
+        function openAppSettingsModal() { updateAppSettingsModalInputs(); appSettingsModal.classList.remove('hidden'); }
+        function closeAppSettingsModal() { appSettingsModal.classList.add('hidden'); }
+        function updateAppSettingsModalInputs() { settingTriggerColInput.value = appSettings.triggerStockColumnName; settingCalcColInput.value = appSettings.calculationStockColumnName; settingUnitColInput.value = appSettings.unitColumnName; }
+        function showNotification(message, isError = true) { if (notificationTimeout) clearTimeout(notificationTimeout); notificationMessage.textContent = message; notificationToast.className = `fixed top-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`; notificationToast.classList.remove('hidden', 'opacity-0'); notificationToast.classList.add('show'); notificationTimeout = setTimeout(() => { notificationToast.classList.remove('show'); notificationToast.classList.add('opacity-0'); setTimeout(() => notificationToast.classList.add('hidden'), 300); }, 4000); }
+        function switchView(viewName) { 
+            const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView }; 
+            const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; 
+            Object.values(views).forEach(v => v.classList.add('hidden')); 
+            categoryNavView.classList.add('hidden');
+            Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); 
+            views[viewName].classList.remove('hidden'); 
+            navs[viewName].classList.add('text-blue-600', 'border-blue-600'); 
+            navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+            if (viewName === 'products') { categoryNavView.classList.remove('hidden'); }
+        }
+        function showError(message) { errorMessageEl.textContent = `เกิดข้อผิดพลาด: ${message}`; errorEl.classList.remove('hidden'); }
+        function showNoData() { noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล'; noDataEl.classList.remove('hidden'); tableEl.classList.add('hidden'); }
+        
+        categoryList.addEventListener('wheel', (event) => { if (window.matchMedia('(pointer: fine)').matches) { event.preventDefault(); categoryList.scrollLeft += event.deltaY; } }, { passive: false });
+        addCategoryBtn.addEventListener('click', addCategory); 
+        categoryInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addCategory(); });
+        navProductsBtn.addEventListener('click', () => switchView('products'));
+        navRequisitionBtn.addEventListener('click', () => switchView('requisition'));
+        navHistoryBtn.addEventListener('click', () => switchView('history'));
+        navManageBtn.addEventListener('click', () => switchView('manage'));
+        navAccountBtn.addEventListener('click', () => switchView('account'));
+        modalOkBtn.addEventListener('click', saveItemSettings);
+        modalCancelBtn.addEventListener('click', closeItemSettingsModal);
+        editCategoryBtn.addEventListener('click', () => { if (currentEditingCategory) { editCategory(currentEditingCategory.id, currentEditingCategory.name); closeCategoryActionsModal(); } });
+        deleteCategoryBtn.addEventListener('click', () => { if (currentEditingCategory) { showConfirmModal('ยืนยันการลบ', `ต้องการลบหมวดหมู่ "${currentEditingCategory.name}" หรือไม่?`, () => { deleteCategory(currentEditingCategory.id); closeCategoryActionsModal(); }); } });
+        categoryModalCancelBtn.addEventListener('click', closeCategoryActionsModal);
+        categoryActionsModal.addEventListener('click', (e) => { if (e.target === categoryActionsModal) { closeCategoryActionsModal(); } });
+        headerModalOkBtn.addEventListener('click', async () => { const headerText = headerInput.value.trim(); if (headerText) { await addHeaderRow(headerText); closeAddHeaderModal(); } });
+        headerModalCancelBtn.addEventListener('click', closeAddHeaderModal);
+        headerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const headerText = headerInput.value.trim(); if (headerText) { addHeaderRow(headerText); closeAddHeaderModal(); } } });
+        addHeaderModal.addEventListener('click', (e) => { if (e.target === addHeaderModal) { closeAddHeaderModal(); } });
+        editHeaderBtn.addEventListener('click', () => { if(currentEditingHeaderId) { editHeaderRow(currentEditingHeaderId, currentEditingHeaderText); closeHeaderActionsModal(); } });
+        deleteHeaderBtn.addEventListener('click', () => { if(currentEditingHeaderId) { showConfirmModal('ยืนยันการลบ', `ต้องการลบหัวข้อ "${currentEditingHeaderText}" หรือไม่?`, () => { deleteHeaderRow(currentEditingHeaderId); closeHeaderActionsModal(); }); } });
+        headerActionsCancelBtn.addEventListener('click', closeHeaderActionsModal);
+        headerActionsModal.addEventListener('click', (e) => { if (e.target === headerActionsModal) { closeHeaderActionsModal(); }});
+        confirmModalOkBtn.addEventListener('click', () => { if (typeof confirmCallback === 'function') { confirmCallback(); } closeConfirmModal(); });
+        confirmModalCancelBtn.addEventListener('click', closeConfirmModal);
+        appSettingsBtn.addEventListener('click', openAppSettingsModal);
+        appSettingsSaveBtn.addEventListener('click', saveAppSettings);
+        appSettingsCancelBtn.addEventListener('click', closeAppSettingsModal);
+        autoRequisitionBtn.addEventListener('click', generateRequisition);
+        requisitionListBody.addEventListener('click', (e) => { if(e.target.classList.contains('delete-req-btn')) { deleteRequisitionItem(e.target.dataset.id); }});
+        confirmRequisitionBtn.addEventListener('click', confirmRequisition);
+
+        window.addEventListener('click', closeContextMenu);
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeContextMenu(); });
+
+        contextMenuSettingsBtn.addEventListener('click', () => {
+            if (contextMenuItemRecord) openItemSettingsModal(contextMenuItemRecord);
+            closeContextMenu();
+        });
+
+        contextMenuHideBtn.addEventListener('click', () => {
+            if (contextMenuItemRecord && itemColumnName) {
+                const itemId = contextMenuItemRecord[itemColumnName];
+                hideItem(itemId);
+            }
+            closeContextMenu();
+        });
+        
+        contextMenuAddHeaderBtn.addEventListener('click', () => {
+            if (contextMenuItemRecord && itemColumnName) {
+                const itemId = contextMenuItemRecord[itemColumnName];
+                openAddHeaderModal(itemId);
+            }
+            closeContextMenu();
+        });
+
+        tableBody.addEventListener('keydown', (e) => {
+            const focusableRows = Array.from(tableBody.querySelectorAll('tr[tabindex="0"]'));
+            if (focusableRows.length === 0) return;
+            const currentFocusedElement = document.activeElement;
+            if (!currentFocusedElement || currentFocusedElement.tagName !== 'TR' || !tableBody.contains(currentFocusedElement)) return;
+            const currentIndex = focusableRows.indexOf(currentFocusedElement);
+            let nextIndex = -1;
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); nextIndex = (currentIndex + 1) % focusableRows.length; } 
+            else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); nextIndex = (currentIndex - 1 + focusableRows.length) % focusableRows.length; }
+            if (nextIndex !== -1) { focusableRows[nextIndex].focus(); }
+        });
+
+        const navWrapper = document.getElementById('nav-toggle-wrapper'), navTrigger = document.getElementById('nav-trigger'), navIcon = document.getElementById('nav-trigger-icon');
+        let isNavOpen = false;
+        const openNav = () => { if (isNavOpen) return; isNavOpen = true; navWrapper.classList.remove('h-4'); navWrapper.classList.add('h-16'); navIcon.classList.add('rotate-180'); };
+        const closeNav = () => { if (!isNavOpen) return; isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add('h-4'); navIcon.classList.remove('rotate-180'); };
+        if (window.matchMedia('(pointer: fine)').matches) { navWrapper.addEventListener('mouseenter', openNav); navWrapper.addEventListener('mouseleave', closeNav); } 
+        else { navTrigger.addEventListener('click', () => isNavOpen ? closeNav() : openNav()); }
+    });
+</script>
+
+</body>
+</html>
