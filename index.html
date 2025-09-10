@@ -783,7 +783,6 @@
                     const record = allRecordsMap.get(id); 
                     const row = document.createElement('tr'); row.dataset.id = id; row.className = 'hover:bg-gray-50';
                     row.tabIndex = 0;
-                    row.clickCount = 0; row.clickTimer = null;
 
                     const isDesktop = window.matchMedia('(pointer: fine)').matches;
 
@@ -819,21 +818,8 @@
                         }
                     });
 
-                    row.addEventListener('click', (e) => {
-                        if (!isDesktop && longPressTimer === null) {
-                            return;
-                        }
-                        row.clickCount++;
-                        if (row.clickTimer) clearTimeout(row.clickTimer);
-                        
-                        row.clickTimer = setTimeout(() => {
-                            if (!isDesktop && row.clickCount === 1) {
-                                openItemSettingsModal(record);
-                            }
-                            row.clickCount = 0;
-                        }, 300);
-                    });
-                    
+                    // --- [MODIFICATION] Removed the 'click' event listener that opened settings on mobile tap ---
+
                     headers.forEach(header => { 
                         const td = document.createElement('td'); 
                         const narrowColumns = ['รวม', 'หน่วย', 'รักษ์ยา', 'เบบี้ช็อป'];
@@ -881,9 +867,7 @@
                 const card = document.createElement('div'); card.className = 'bg-gray-50 rounded-lg p-4 shadow'; 
                 const tableRows = historyItem.items.map((item, index) => `<tr><td class="py-2 px-2 text-sm text-gray-600 text-center">${index + 1}</td><td class="py-2 px-2 text-sm text-gray-800 break-words">${item.name}</td><td class="py-2 px-2 text-sm text-gray-800 text-center">${item.quantity}</td><td class="py-2 px-2 text-sm text-gray-600 text-center">${item.unit}</td></tr>`).join(''); 
                 
-                // --- [MODIFICATION] Changed table to 'table-auto' and removed fixed widths from headers to allow the product name column to expand ---
                 card.innerHTML = `<div class="flex justify-between items-center mb-3"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="overflow-x-auto"><table class="w-full table-auto show-grid"><thead><tr><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center">ลำดับ</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-left">สินค้า</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center">จำนวน</th><th class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`; 
-                // --- END MODIFICATION ---
 
                 historyListContainer.appendChild(card); 
             });
