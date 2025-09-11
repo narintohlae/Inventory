@@ -744,7 +744,6 @@
                         const row = document.createElement('tr'); row.dataset.id = id; row.className = 'bg-gray-200 font-bold'; 
                         const cell = document.createElement('td'); cell.colSpan = headers.length; cell.className = 'px-4 py-0.5 text-gray-800 text-sm text-left'; cell.textContent = rowData.text; 
 
-                        // MODIFIED: Replaced context menu and long-press with double-click
                         row.addEventListener('click', (e) => {
                             if (!row.clickCount) row.clickCount = 0;
                             row.clickCount++;
@@ -756,6 +755,7 @@
                                 clearTimeout(row.clickTimer);
                                 row.clickCount = 0;
                                 openHeaderActionsModal(id, rowData.text);
+                                e.stopPropagation(); // FIXED: Stop event from bubbling
                             }
                         });
 
@@ -766,7 +766,6 @@
                     const row = document.createElement('tr'); row.dataset.id = id; row.className = 'hover:bg-gray-50';
                     row.tabIndex = 0;
 
-                    // MODIFIED: Replaced context menu and long-press with double-click
                     row.addEventListener('click', (e) => {
                         if (!row.clickCount) row.clickCount = 0;
                         row.clickCount++;
@@ -778,6 +777,7 @@
                             clearTimeout(row.clickTimer);
                             row.clickCount = 0;
                             openContextMenu(e, record);
+                            e.stopPropagation(); // FIXED: Stop event from bubbling
                         }
                     });
 
@@ -918,7 +918,6 @@
         confirmRequisitionBtn.addEventListener('click', confirmRequisition);
 
         window.addEventListener('click', (e) => {
-             // Close context menu if clicking outside of it
             if (itemContextMenu && !itemContextMenu.classList.contains('hidden')) {
                 if (!itemContextMenu.contains(e.target)) {
                     closeContextMenu();
