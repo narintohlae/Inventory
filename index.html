@@ -718,39 +718,76 @@
             finally { loadingEl.classList.add('hidden'); } 
         }
         
-        function displayData(records) { 
-            currentRecords = records; 
-            tableHead.innerHTML = ''; tableBody.innerHTML = ''; 
-            if (sortableInstance) sortableInstance.destroy(); 
-            const allRecordsMap = new Map(allRecords.map(r => [r[itemColumnName], r])); 
-            const currentRecordIds = new Set(records.map(r => r[itemColumnName])); 
-            const sortKey = activeCategoryName || '__global__'; 
+        function displayData(records) {
+            currentRecords = records;
+            tableHead.innerHTML = '';
+            tableBody.innerHTML = '';
+            if (sortableInstance) sortableInstance.destroy();
+            const allRecordsMap = new Map(allRecords.map(r => [r[itemColumnName], r]));
+            const currentRecordIds = new Set(records.map(r => r[itemColumnName]));
+            const sortKey = activeCategoryName || '__global__';
             const hiddenIdsForCurrentCategory = hiddenItemsMap[sortKey] || new Set();
-            const currentItemOrder = sortOrdersMap[sortKey] || []; 
+            const currentItemOrder = sortOrdersMap[sortKey] || [];
             const combinedOrder = [...new Set([...currentItemOrder, ...records.map(r => r[itemColumnName])])];
-            const displayOrder = combinedOrder.filter(id => customRows.has(id) || currentRecordIds.has(id)); 
-            const visibleIds = new Set(displayOrder.filter(id => !hiddenIdsForCurrentCategory.has(id))); 
-            
-            if (visibleIds.size === 0) { tableEl.classList.add('hidden'); noDataEl.classList.remove('hidden'); return; } 
-            noDataEl.classList.add('hidden'); tableEl.classList.remove('hidden'); 
-            
-            const headers = allRecords.length > 0 ? Object.keys(allRecords[0]) : []; 
-            const headerRow = document.createElement('tr'); 
-            headers.forEach(header => { 
-                const th = document.createElement('th'); th.scope = 'col'; 
+            const displayOrder = combinedOrder.filter(id => customRows.has(id) || currentRecordIds.has(id));
+            const visibleIds = new Set(displayOrder.filter(id => !hiddenIdsForCurrentCategory.has(id)));
+
+            if (visibleIds.size === 0) {
+                tableEl.classList.add('hidden');
+                noDataEl.classList.remove('hidden');
+                return;
+            }
+            noDataEl.classList.add('hidden');
+            tableEl.classList.remove('hidden');
+
+            const headers = allRecords.length > 0 ? Object.keys(allRecords[0]) : [];
+            const headerRow = document.createElement('tr');
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.scope = 'col';
                 const narrowColumns = ['รวม', 'หน่วย', 'รักษ์ยา', 'เบบี้ช็อป'];
                 let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left';
                 let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6';
-                th.className = `${padding} py-1 ${alignment} text-sm font-medium text-gray-500 uppercase tracking-wider ${header === itemColumnName ? 'w-full' : ''}`; 
+                th.className = `${padding} py-1 ${alignment} text-sm font-medium text-gray-500 uppercase tracking-wider ${header === itemColumnName ? 'w-full' : ''}`;
                 const headerContentWrapper = document.createElement('div');
                 headerContentWrapper.className = `flex items-center gap-x-2 ${narrowColumns.includes(header) ? 'justify-center' : ''}`;
-                const headerText = document.createElement('span'); headerText.textContent = header.replace(/_/g, ' ');
+                const headerText = document.createElement('span');
+                headerText.textContent = header.replace(/_/g, ' ');
                 headerContentWrapper.appendChild(headerText);
-                if (header === itemColumnName) { th.id = 'product-header-cell'; }
-                th.appendChild(headerContentWrapper); headerRow.appendChild(th); 
-            }); 
-            tableHead.appendChild(headerRow); 
-            
+
+                if (header === itemColumnName) {
+                    th.id = 'product-header-cell';
+
+                    if (activeCategoryName === 'อื่นๆ') {
+                        const searchInput = document.createElement('input');
+                        searchInput.type = 'text';
+                        searchInput.id = 'product-search-input';
+                        searchInput.placeholder = 'ค้นหาสินค้า...';
+                        searchInput.className = 'ml-4 p-1 border border-gray-300 rounded-md text-sm font-normal normal-case';
+                        searchInput.addEventListener('keyup', () => {
+                            const filter = searchInput.value.toLowerCase();
+                            const rows = tableBody.getElementsByTagName('tr');
+                            for (let i = 0; i < rows.length; i++) {
+                                const cell = rows[i].getElementsByTagName('td')[0];
+                                if (cell) {
+                                    const txtValue = cell.textContent || cell.innerText;
+                                    if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                                        rows[i].style.display = '';
+                                    } else {
+                                        rows[i].style.display = 'none';
+                                    }
+                                }
+                            }
+                        });
+                        headerContentWrapper.appendChild(searchInput);
+                    }
+                }
+
+                th.appendChild(headerContentWrapper);
+                headerRow.appendChild(th);
+            });
+            tableHead.appendChild(headerRow);
+
             displayOrder.forEach(id => { 
                 if (!visibleIds.has(id)) return; 
                 
