@@ -215,7 +215,7 @@
 
                 <div>
                     <h2 class="text-xl font-bold text-gray-700 mb-4">จัดการหมวดหมู่ที่มีอยู่</h2>
-                    <p class="text-sm text-gray-500 mb-2">คลิกขวาที่ชื่อหมวดหมู่เพื่อแก้ไขหรือลบ</p>
+                    <p class="text-sm text-gray-500 mb-2">คลิกขวา หรือ ดับเบิ้ลคลิก ที่ชื่อหมวดหมู่เพื่อแก้ไขหรือลบ</p>
                     <div id="manage-category-list" class="flex flex-wrap gap-2 items-center">
                     </div>
                 </div>
@@ -529,7 +529,7 @@
         let userId = null;
         let categoriesCollectionRef, hiddenItemsDocRef, sortOrdersDocRef, customRowsCollectionRef, categoryOrderDocRef, itemSettingsCollectionRef, requisitionListCollectionRef, requisitionHistoryCollectionRef, countersDocRef, appSettingsDocRef;
         let unsubscribes = [];
-        let lastGoodCellIndex = 0; // NEW: To remember the last column index
+        let lastGoodCellIndex = 0; 
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIzaSyDOx9RPxrG-vO59QHjkhJtGmyDRhdoVFPY", authDomain: "pos-6-23035.firebaseapp.com", projectId: "pos-6-23035", storageBucket: "pos-6-23035.appspot.com", messagingSenderId: "1025982856125", appId: "1:1025982856125:web:28e47483570949900f30d4" };
@@ -683,8 +683,14 @@
                 nameSpan.textContent = category.name;
                 nameSpan.className = 'focus:outline-none';
 
+                // Desktop: right-click
                 categoryEl.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
+                    openCategoryActionsModal(category);
+                });
+
+                // Mobile: double-click
+                categoryEl.addEventListener('dblclick', () => {
                     openCategoryActionsModal(category);
                 });
 
@@ -761,6 +767,7 @@
                         cell.textContent = rowData.text; 
                         cell.setAttribute('tabindex', '-1');
                         row.addEventListener('contextmenu', (e) => { e.preventDefault(); openHeaderActionsModal(id, rowData.text); });
+                        row.addEventListener('dblclick', () => { openHeaderActionsModal(id, rowData.text); }); // Added for mobile
                         row.appendChild(cell); 
                         tableBody.appendChild(row); 
                     } 
@@ -768,6 +775,7 @@
                     const record = allRecordsMap.get(id); 
                     row.className = 'hover:bg-gray-50';
                     row.addEventListener('contextmenu', (e) => { e.preventDefault(); openContextMenu(e, record); });
+                    row.addEventListener('dblclick', (e) => { openContextMenu(e, record); }); // Added for mobile
 
                     headers.forEach(header => { 
                         const td = document.createElement('td'); 
@@ -942,7 +950,6 @@
             closeContextMenu();
         });
 
-        // --- NEW: Google Sheets-like Navigation ---
         function handleKeyNavigation(e) {
             if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 return;
@@ -951,7 +958,6 @@
             const activeElement = document.activeElement;
             const isWithinGrid = activeElement.tagName === 'TD' && activeElement.closest('#data-table tbody');
 
-            // --- 1. Grid Navigation Logic (like Google Sheets) ---
             if (isWithinGrid) {
                 e.preventDefault();
                 const tableBody = activeElement.closest('tbody');
@@ -969,7 +975,6 @@
 
                 if (currentRowIndex === -1) return;
 
-                // If the current row is a normal data row, remember its column index.
                 if (grid[currentRowIndex].length > 1) {
                     lastGoodCellIndex = currentCellIndex;
                 }
@@ -980,11 +985,11 @@
                 switch (e.key) {
                     case 'ArrowUp':
                         nextRowIndex = Math.max(0, currentRowIndex - 1);
-                        nextCellIndex = lastGoodCellIndex; // Use remembered column
+                        nextCellIndex = lastGoodCellIndex;
                         break;
                     case 'ArrowDown':
                         nextRowIndex = Math.min(grid.length - 1, currentRowIndex + 1);
-                        nextCellIndex = lastGoodCellIndex; // Use remembered column
+                        nextCellIndex = lastGoodCellIndex;
                         break;
                     case 'ArrowLeft':
                         nextCellIndex = Math.max(0, currentCellIndex - 1);
@@ -997,8 +1002,6 @@
                 const targetRow = grid[nextRowIndex];
                 if (!targetRow) return;
 
-                // Clamp the target cell index to be valid for the target row.
-                // This correctly handles moving into/out of full-width header rows.
                 const clampedCellIndex = Math.min(nextCellIndex, targetRow.length - 1);
                 const targetCell = targetRow[clampedCellIndex];
                 
@@ -1010,7 +1013,6 @@
                 return;
             }
 
-            // --- 2. Linear Navigation Logic (for all other elements) ---
             if ((activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') && ['ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 return;
             }
@@ -1027,7 +1029,7 @@
                  nextIndex = 0;
             } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
                 nextIndex = currentIndex > 0 ? currentIndex - 1 : allFocusable.length - 1;
-            } else { // ArrowDown or ArrowRight
+            } else { 
                 nextIndex = currentIndex < allFocusable.length - 1 ? currentIndex + 1 : 0;
             }
             
