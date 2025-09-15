@@ -1147,12 +1147,29 @@
 
         document.addEventListener('keydown', handleKeyNavigation);
 
-        const navWrapper = document.getElementById('nav-toggle-wrapper'), navTrigger = document.getElementById('nav-trigger'), navIcon = document.getElementById('nav-trigger-icon');
+        const navWrapper = document.getElementById('nav-toggle-wrapper'), 
+              navTrigger = document.getElementById('nav-trigger'), 
+              navIcon = document.getElementById('nav-trigger-icon'),
+              navTabs = navWrapper.querySelector('nav');
         let isNavOpen = false;
+
         const openNav = () => { if (isNavOpen) return; isNavOpen = true; navWrapper.classList.remove('h-4'); navWrapper.classList.add('h-16'); navIcon.classList.add('rotate-180'); };
         const closeNav = () => { if (!isNavOpen) return; isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add('h-4'); navIcon.classList.remove('rotate-180'); };
-        if (window.matchMedia('(pointer: fine)').matches) { navWrapper.addEventListener('mouseenter', openNav); navWrapper.addEventListener('mouseleave', closeNav); } 
-        else { navTrigger.addEventListener('click', () => isNavOpen ? closeNav() : openNav()); }
+        
+        if (navTabs) {
+            navTabs.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    setTimeout(closeNav, 200);
+                }
+            });
+        }
+        
+        if (window.matchMedia('(pointer: fine)').matches) { 
+            navWrapper.addEventListener('mouseenter', openNav); 
+            navWrapper.addEventListener('mouseleave', closeNav); 
+        } else { 
+            navTrigger.addEventListener('click', () => isNavOpen ? closeNav() : openNav()); 
+        }
     });
 </script>
 
