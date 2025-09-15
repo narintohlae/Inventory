@@ -141,6 +141,12 @@
     <div id="app-container" class="hidden">
         
         <div id="product-list-view">
+             <div id="product-search-container" class="hidden mb-4 relative">
+                <input type="text" id="product-search-input" placeholder="ค้นหาสินค้า..." class="w-full p-2 pl-10 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+            </div>
             <div id="data-container" class="bg-white rounded-lg shadow-md overflow-hidden">
                 <div id="loading" class="p-8 text-center">
                     <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -519,6 +525,8 @@
         const contextMenuHideBtn = document.getElementById('context-menu-hide');
         const contextMenuAddHeaderBtn = document.getElementById('context-menu-add-header');
         const paginationControls = document.getElementById('pagination-controls');
+        const productSearchContainer = document.getElementById('product-search-container');
+        const productSearchInput = document.getElementById('product-search-input');
         
         let allRecords = [], currentRecords = [], categories = [], sortOrdersMap = {}, categoryOrder = [], requisitionList = [], historyList = [];
         let customRows = new Map(), itemSettings = new Map(), hiddenItemsMap = {};
@@ -659,7 +667,9 @@
             allBtn.textContent = 'ทั้งหมด';
             allBtn.addEventListener('click', () => {
                 currentPage = 1;
-                noDataEl.querySelector('p').textContent = `ไม่พบสินค้า`;
+                noDataEl.querySelector('p').textContent = 'ไม่พบสินค้า';
+                productSearchContainer.classList.remove('hidden');
+                productSearchInput.value = '';
                 activeCategoryName = 'ทั้งหมด';
                 displayData(allRecords);
                 document.querySelectorAll('#category-list button').forEach(btn => { btn.classList.remove('text-blue-600'); btn.classList.add('text-gray-500', 'hover:text-gray-700'); });
@@ -681,6 +691,8 @@
                 categoryBtn.textContent = category.name;
                 categoryBtn.addEventListener('click', () => {
                     currentPage = 1;
+                    productSearchContainer.classList.add('hidden');
+                    productSearchInput.value = '';
                     let filteredRecords = allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase()));
                     noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`;
                     activeCategoryName = category.name;
@@ -699,13 +711,11 @@
                 nameSpan.textContent = category.name;
                 nameSpan.className = 'focus:outline-none';
 
-                // Desktop: right-click
                 categoryEl.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     openCategoryActionsModal(category);
                 });
 
-                // Mobile: double-click
                 categoryEl.addEventListener('dblclick', () => {
                     openCategoryActionsModal(category);
                 });
@@ -741,7 +751,9 @@
             if (sortableInstance) sortableInstance.destroy();
 
             let recordsToDisplay = records;
-            if (activeCategoryName === 'ทั้งหมด') {
+            const shouldPaginate = activeCategoryName === 'ทั้งหมด' || productSearchInput.value.length > 0;
+            
+            if (shouldPaginate) {
                 const startIndex = (currentPage - 1) * itemsPerPage;
                 const endIndex = startIndex + itemsPerPage;
                 recordsToDisplay = records.slice(startIndex, endIndex);
@@ -803,7 +815,7 @@
                         cell.textContent = rowData.text; 
                         cell.setAttribute('tabindex', '-1');
                         row.addEventListener('contextmenu', (e) => { e.preventDefault(); openHeaderActionsModal(id, rowData.text); });
-                        row.addEventListener('dblclick', () => { openHeaderActionsModal(id, rowData.text); }); // Added for mobile
+                        row.addEventListener('dblclick', () => { openHeaderActionsModal(id, rowData.text); });
                         row.appendChild(cell); 
                         tableBody.appendChild(row); 
                     } 
@@ -811,7 +823,7 @@
                     const record = allRecordsMap.get(id); 
                     row.className = 'hover:bg-gray-50';
                     row.addEventListener('contextmenu', (e) => { e.preventDefault(); openContextMenu(e, record); });
-                    row.addEventListener('dblclick', (e) => { openContextMenu(e, record); }); // Added for mobile
+                    row.addEventListener('dblclick', (e) => { openContextMenu(e, record); });
 
                     headers.forEach(header => { 
                         const td = document.createElement('td'); 
@@ -865,7 +877,9 @@
             prevButton.addEventListener('click', () => {
                 if (currentPage > 1) {
                     currentPage--;
-                    displayData(allRecords);
+                    const searchTerm = productSearchInput.value.toLowerCase();
+                     const recordsToDisplay = searchTerm ? allRecords.filter(record => record[itemColumnName] && record[itemColumnName].toLowerCase().includes(searchTerm)) : allRecords;
+                    displayData(recordsToDisplay);
                 }
             });
 
@@ -880,7 +894,9 @@
             nextButton.addEventListener('click', () => {
                 if (currentPage < totalPages) {
                     currentPage++;
-                    displayData(allRecords);
+                    const searchTerm = productSearchInput.value.toLowerCase();
+                    const recordsToDisplay = searchTerm ? allRecords.filter(record => record[itemColumnName] && record[itemColumnName].toLowerCase().includes(searchTerm)) : allRecords;
+                    displayData(recordsToDisplay);
                 }
             });
 
@@ -961,10 +977,26 @@
             views[viewName].classList.remove('hidden'); 
             navs[viewName].classList.add('text-blue-600', 'border-blue-600'); 
             navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
-            if (viewName === 'products') { categoryNavView.classList.remove('hidden'); }
+            if (viewName === 'products') { 
+                categoryNavView.classList.remove('hidden');
+                if(activeCategoryName === 'ทั้งหมด') {
+                    productSearchContainer.classList.remove('hidden');
+                }
+            } else {
+                 productSearchContainer.classList.add('hidden');
+            }
         }
         function showError(message) { errorMessageEl.textContent = `เกิดข้อผิดพลาด: ${message}`; errorEl.classList.remove('hidden'); }
         function showNoData() { noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล'; noDataEl.classList.remove('hidden'); tableEl.classList.add('hidden'); }
+        
+        productSearchInput.addEventListener('input', () => {
+            const searchTerm = productSearchInput.value.toLowerCase();
+            const filteredRecords = searchTerm
+                ? allRecords.filter(record => record[itemColumnName] && record[itemColumnName].toLowerCase().includes(searchTerm))
+                : allRecords;
+            currentPage = 1; 
+            displayData(filteredRecords);
+        });
         
         categoryList.addEventListener('wheel', (event) => { if (window.matchMedia('(pointer: fine)').matches) { event.preventDefault(); categoryList.scrollLeft += event.deltaY; } }, { passive: false });
         addCategoryBtn.addEventListener('click', addCategory); 
