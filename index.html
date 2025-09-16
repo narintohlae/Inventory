@@ -440,8 +440,7 @@
     // Firebase Imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setLogLevel, getDocs, setDoc, getDoc, Timestamp, writeBatch, runTransaction, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setLogLevel, getDocs, setDoc, getDoc, Timestamp, writeBatch, runTransaction, arrayUnion, arrayRemove, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     document.addEventListener('DOMContentLoaded', () => {
         const sheetUrl = 'https://script.google.com/macros/s/AKfycbwW8_sUf1C7kBBjdZ-fW7TZwYkPnmZL_lnkPTQS2d3eurnr3zeOZ7zWLKswNymzpCh3/exec';
 
@@ -618,7 +617,69 @@
         async function hideItem(itemId) { if (!hiddenItemsDocRef || !itemId) return; const categoryKey = activeCategoryName || '__global__'; try { await updateDoc(hiddenItemsDocRef, { [categoryKey]: arrayUnion(itemId) }); } catch (e) { if (e.code === 'not-found') { try { await setDoc(hiddenItemsDocRef, { [categoryKey]: [itemId] }); } catch (setErr) { showError("ซ่อนรายการไม่สำเร็จ"); } } else { showError("ซ่อนรายการไม่สำเร็จ"); } } }
         async function unhideItems(idsToUnhide) { if (!hiddenItemsDocRef || !idsToUnhide || idsToUnhide.length === 0) return; const categoryKey = activeCategoryName || '__global__'; try { await updateDoc(hiddenItemsDocRef, { [categoryKey]: arrayRemove(...idsToUnhide) }); } catch (error) { showError("แสดงรายการที่ซ่อนไม่สำเร็จ"); } }
         async function addCategory() { if (!categoriesCollectionRef) return; const name = categoryInput.value.trim(); if (name && !categories.some(c => c.name.toLowerCase() === name.toLowerCase())) { try { await addDoc(categoriesCollectionRef, { name }); categoryInput.value = ''; showNotification('เพิ่มหมวดหมู่สำเร็จ', false); } catch(error) { showError("เพิ่มหมวดหมู่ไม่สำเร็จ"); } } else if (name) showNotification('มีหมวดหมู่นี้อยู่แล้ว'); }
-        async function editCategory(id, oldName) { if (!categoriesCollectionRef) return; const newName = prompt('แก้ไขชื่อหมวดหมู่:', oldName); if (newName && newName.trim() && newName.trim() !== oldName) { try { await updateDoc(doc(categoriesCollectionRef, id), { name: newName.trim() }); } catch(error) { showError("แก้ไขหมวดหมู่ไม่สำเร็จ"); } } }
+async function editCategory(id, oldName) {
+            if (!categoriesCollectionRef) return;
+            const newName = prompt('แก้ไขชื่อหมวดหมู่:', oldName);
+            const trimmedNewName = newName ? newName.trim() : '';
+
+            // ถ้าผู้ใช้กดยกเลิก, ไม่ใส่ชื่อ, หรือใช้ชื่อเดิม ให้ยกเลิก
+            if (!trimmedNewName || trimmedNewName === oldName) {
+                return;
+            }
+
+            // ตรวจสอบว่ามีชื่อซ้ำกับหมวดหมู่อื่นหรือไม่ (ที่ไม่ใช่ตัวเอง)
+            if (categories.some(c => c.name.toLowerCase() === trimmedNewName.toLowerCase() && c.id !== id)) {
+                showNotification('มีหมวดหมู่นี้อยู่แล้ว');
+                return;
+            }
+
+            try {
+                // ใช้ Transaction เพื่อให้แน่ใจว่าทุกการอัปเดตจะสำเร็จทั้งหมดหรือไม่ก็ล้มเหลวทั้งหมด
+                await runTransaction(db, async (transaction) => {
+                    // --- Step 1: จัดการข้อมูล Sort Orders ---
+                    const sortOrdersSnap = await transaction.get(sortOrdersDocRef);
+                    if (sortOrdersSnap.exists()) {
+                        const currentSortOrders = sortOrdersSnap.data().orders || {};
+                        // ถ้ามีข้อมูล sort order ของชื่อเก่าอยู่
+                        if (Object.prototype.hasOwnProperty.call(currentSortOrders, oldName)) {
+                            // คัดลอกไปที่ชื่อใหม่ แล้วลบของเก่า
+                            currentSortOrders[trimmedNewName] = currentSortOrders[oldName];
+                            delete currentSortOrders[oldName];
+                            transaction.set(sortOrdersDocRef, { orders: currentSortOrders });
+                        }
+                    }
+
+                    // --- Step 2: จัดการข้อมูล Hidden Items ---
+                    const hiddenItemsSnap = await transaction.get(hiddenItemsDocRef);
+                    if (hiddenItemsSnap.exists()) {
+                        const currentHiddenItems = hiddenItemsSnap.data();
+                        if (Object.prototype.hasOwnProperty.call(currentHiddenItems, oldName)) {
+                            currentHiddenItems[trimmedNewName] = currentHiddenItems[oldName];
+                            delete currentHiddenItems[oldName];
+                            transaction.set(hiddenItemsDocRef, currentHiddenItems);
+                        }
+                    }
+
+                    // --- Step 3: จัดการข้อมูล Custom Rows (หัวข้อคั่น) ---
+                    // เราต้อง Query นอก Transaction แต่ทำการอัปเดตข้างใน
+                    const customRowsQuery = query(customRowsCollectionRef, where("categoryName", "==", oldName));
+                    const customRowsSnap = await getDocs(customRowsQuery);
+                    customRowsSnap.forEach(docSnap => {
+                        transaction.update(docSnap.ref, { categoryName: trimmedNewName });
+                    });
+
+                    // --- Step 4: อัปเดตชื่อหมวดหมู่เอง ---
+                    const categoryDocRef = doc(categoriesCollectionRef, id);
+                    transaction.update(categoryDocRef, { name: trimmedNewName });
+                });
+                
+                showNotification('แก้ไขหมวดหมู่สำเร็จ', false);
+
+            } catch (error) {
+                console.error("Transaction for editing category failed: ", error);
+                showError("แก้ไขหมวดหมู่ไม่สำเร็จ: " + error.message);
+            }
+        }
         async function deleteCategory(id) { if (!categoriesCollectionRef) return; try { await deleteDoc(doc(categoriesCollectionRef, id)); displayData(allRecords); } catch(error) { showError("ลบหมวดหมู่ไม่สำเร็จ"); } }
         async function addHeaderRow(headerText) { if (!headerText || !headerText.trim()) return; try { const key = activeCategoryName || '__global__'; const newDocRef = await addDoc(customRowsCollectionRef, { text: headerText.trim(), categoryName: activeCategoryName }); const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; let currentCategoryOrder = currentOrders[key] || []; const newHeaderId = newDocRef.id; if (insertHeaderAboveId) { const insertIndex = currentCategoryOrder.indexOf(insertHeaderAboveId); if (insertIndex !== -1) { currentCategoryOrder.splice(insertIndex, 0, newHeaderId); } else { currentCategoryOrder.unshift(newHeaderId); } } else { currentCategoryOrder.unshift(newHeaderId); } currentOrders[key] = currentCategoryOrder; await setDoc(sortOrdersDocRef, { orders: currentOrders }); } catch (error) { showError("เพิ่มหัวข้อไม่สำเร็จ"); } }
         async function editHeaderRow(id, oldText) { const newText = prompt("แก้ไขชื่อหัวข้อ:", oldText); if (newText && newText.trim() && newText.trim() !== oldText) { try { await updateDoc(doc(customRowsCollectionRef, id), { text: newText.trim() }); } catch (error) { showError("แก้ไขหัวข้อไม่สำเร็จ"); } } }
