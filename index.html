@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ข้อมูลจาก Google Sheet</title>
+    <title>ข้อมูลจาก Google Sheet (Updated)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -44,7 +44,7 @@
         }
         
         /* --- Styles for Focus --- */
-        :is(button, [href], input, [tabindex]):focus {
+        :is(button, [href], input, [tabindex]):focus-visible {
              outline: 2px solid #3b82f6; /* blue-500 */
              outline-offset: 2px;
              border-radius: 2px;
@@ -75,6 +75,9 @@
             <nav class="flex justify-center -mb-px space-x-2" aria-label="Tabs">
                 <button id="nav-products" class="whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm text-blue-600 border-blue-600">
                     รายการสินค้า
+                </button>
+                 <button id="nav-dashboard" class="whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
+                    แดชบอร์ด
                 </button>
                 <button id="nav-requisition" class="whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
                     รายการเบิกของ
@@ -141,12 +144,12 @@
     <div id="app-container" class="hidden">
         
         <div id="product-list-view">
-             <div id="product-search-container" class="hidden mb-4 relative">
-                <input type="text" id="product-search-input" placeholder="ค้นหาสินค้า..." class="w-full p-2 pl-10 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </div>
-            </div>
+             <div id="product-search-container" class="mb-4 relative">
+                 <input type="text" id="product-search-input" placeholder="ค้นหาสินค้า..." class="w-full p-2 pl-10 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                     <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                 </div>
+             </div>
             <div id="data-container" class="bg-white rounded-lg shadow-md overflow-hidden">
                 <div id="loading" class="p-8 text-center">
                     <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -169,21 +172,65 @@
             <div id="pagination-controls" class="mt-4 flex justify-between items-center"></div>
         </div>
 
+         <div id="dashboard-view" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div id="summary-card-products" class="bg-white p-6 rounded-lg shadow-md flex items-center space-x-4">
+                     <div class="bg-blue-100 p-3 rounded-full"><svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg></div>
+                    <div>
+                        <p class="text-sm text-gray-500">สินค้าทั้งหมด</p>
+                        <p class="text-2xl font-bold text-gray-800">0</p>
+                    </div>
+                </div>
+                <div id="summary-card-categories" class="bg-white p-6 rounded-lg shadow-md flex items-center space-x-4">
+                    <div class="bg-green-100 p-3 rounded-full"><svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5a2 2 0 012 2v5a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2zm0 14h.01M7 11h5a2 2 0 012 2v5a2 2 0 01-2 2H7a2 2 0 01-2-2v-5a2 2 0 012-2z"/></svg></div>
+                    <div>
+                        <p class="text-sm text-gray-500">หมวดหมู่</p>
+                        <p class="text-2xl font-bold text-gray-800">0</p>
+                    </div>
+                </div>
+                <div id="summary-card-history" class="bg-white p-6 rounded-lg shadow-md flex items-center space-x-4">
+                     <div class="bg-yellow-100 p-3 rounded-full"><svg class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg></div>
+                    <div>
+                        <p class="text-sm text-gray-500">ประวัติการเบิก</p>
+                        <p class="text-2xl font-bold text-gray-800">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-bold text-gray-700 mb-4">สินค้าที่ถึงจุดต้องเบิก</h3>
+                    <div id="low-stock-list" class="space-y-3 max-h-80 overflow-y-auto">
+                        <p class="text-gray-500">ไม่มีรายการ</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-bold text-gray-700 mb-4">สรุปจำนวนสินค้าตามหมวดหมู่</h3>
+                    <div id="category-breakdown-list" class="space-y-3 max-h-80 overflow-y-auto">
+                         <p class="text-gray-500">ไม่มีข้อมูล</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="requisition-view" class="hidden">
                      <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
-                             <div class="flex justify-between items-center mb-4">
-                                   <h2 class="text-2xl font-bold text-gray-700">รายการเบิกของ</h2>
-                                   <div class="flex items-center gap-2">
-                                       <button id="auto-requisition-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                                           เบิกของอัตโนมัติ
-                                       </button>
-                                       <button id="confirm-requisition-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:bg-gray-400">
-                                           ยืนยัน
-                                       </button>
-                                   </div>
+                             <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                                     <h2 class="text-2xl font-bold text-gray-700">รายการเบิกของ</h2>
+                                     <div class="flex items-center gap-2">
+                                         <button id="auto-requisition-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                                             เบิกของอัตโนมัติ
+                                         </button>
+                                          <button id="export-requisition-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:bg-gray-400">
+                                            Export CSV
+                                         </button>
+                                         <button id="confirm-requisition-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:bg-gray-400">
+                                             ยืนยัน
+                                         </button>
+                                     </div>
                              </div>
                              <div class="overflow-x-auto">
-                                 <table class="w-full min-w-full divide-y divide-gray-200 show-grid">
+                                <table class="w-full min-w-full divide-y divide-gray-200 show-grid">
                                      <thead class="bg-gray-200">
                                          <tr>
                                              <th scope="col" class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-8">ลำดับ</th>
@@ -222,7 +269,7 @@
 
                 <div>
                     <h2 class="text-xl font-bold text-gray-700 mb-4">จัดการหมวดหมู่ที่มีอยู่</h2>
-                    <p class="text-sm text-gray-500 mb-2">คลิกขวา หรือ ดับเบิ้ลคลิก ที่ชื่อหมวดหมู่เพื่อแก้ไขหรือลบ</p>
+                    <p class="text-sm text-gray-500 mb-2">ลากเพื่อจัดลำดับ | คลิกขวา หรือ ดับเบิ้ลคลิก ที่ชื่อหมวดหมู่เพื่อแก้ไขหรือลบ</p>
                     <div id="manage-category-list" class="flex flex-wrap gap-2 items-center">
                     </div>
                 </div>
@@ -261,6 +308,38 @@
         </nav>
     </div>
 </div>
+
+<div id="requisition-preview-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-40">
+    <div class="relative mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 text-center">ตรวจสอบรายการเบิกของอัตโนมัติ</h3>
+            <p class="text-sm text-gray-500 text-center mt-1">สามารถแก้ไขจำนวน หรือยกเลิกบางรายการได้ที่นี่</p>
+            <div class="mt-4 px-2 py-3 max-h-[60vh] overflow-y-auto">
+                 <table class="w-full min-w-full divide-y divide-gray-200 show-grid">
+                     <thead class="bg-gray-100 sticky top-0">
+                         <tr>
+                             <th class="py-2 px-2 w-12"><input type="checkbox" id="preview-select-all"></th>
+                             <th class="py-2 px-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">สินค้า</th>
+                             <th class="py-2 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-24">จำนวนเบิก</th>
+                             <th class="py-2 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-20">หน่วย</th>
+                         </tr>
+                     </thead>
+                     <tbody id="requisition-preview-body" class="bg-white divide-y divide-gray-200">
+                         </tbody>
+                 </table>
+            </div>
+            <div class="items-center px-4 py-3 sm:flex sm:flex-row-reverse">
+                <button id="preview-confirm-btn" class="w-full sm:w-auto px-4 py-2 bg-purple-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-purple-600">
+                    เพิ่มเข้ารายการเบิก
+                </button>
+                <button id="preview-cancel-btn" class="mt-3 sm:mt-0 sm:mr-3 w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300">
+                    ยกเลิก
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <div id="item-settings-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-30">
     <div class="relative mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
@@ -377,7 +456,7 @@
                      <input type="text" id="setting-unit-col" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400">
                      <p class="mt-1 text-xs text-gray-500">ชื่อคอลัมน์ที่ระบุหน่วยของสินค้า</p>
                  </div>
-            </div>
+             </div>
             <div class="items-center px-4 py-3 sm:flex">
                  <button id="app-settings-save-btn" class="w-full sm:w-auto px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-600">
                      บันทึก
@@ -436,11 +515,18 @@
     </div>
 </div>
 
+<div id="sync-status-indicator" class="fixed bottom-4 right-4 flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-lg text-sm z-50">
+    <div id="sync-dot" class="w-3 h-3 rounded-full bg-green-500"></div>
+    <span id="sync-text" class="text-gray-600">Online</span>
+</div>
+
+
 <script type="module">
     // Firebase Imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setLogLevel, getDocs, setDoc, getDoc, Timestamp, writeBatch, runTransaction, arrayUnion, arrayRemove, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, setLogLevel, getDocs, setDoc, getDoc, Timestamp, writeBatch, runTransaction, arrayUnion, arrayRemove, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    
     document.addEventListener('DOMContentLoaded', () => {
         const sheetUrl = 'https://script.google.com/macros/s/AKfycbwW8_sUf1C7kBBjdZ-fW7TZwYkPnmZL_lnkPTQS2d3eurnr3zeOZ7zWLKswNymzpCh3/exec';
 
@@ -471,11 +557,13 @@ import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc
         const categoryList = document.getElementById('category-list');
         const manageCategoryList = document.getElementById('manage-category-list');
         const navProductsBtn = document.getElementById('nav-products');
+        const navDashboardBtn = document.getElementById('nav-dashboard');
         const navRequisitionBtn = document.getElementById('nav-requisition');
         const navHistoryBtn = document.getElementById('nav-history');
         const navManageBtn = document.getElementById('nav-manage');
         const navAccountBtn = document.getElementById('nav-account');
         const productListView = document.getElementById('product-list-view');
+        const dashboardView = document.getElementById('dashboard-view');
         const requisitionView = document.getElementById('requisition-view');
         const historyView = document.getElementById('history-view');
         const manageView = document.getElementById('manage-view');
@@ -526,8 +614,14 @@ import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc
         const paginationControls = document.getElementById('pagination-controls');
         const productSearchContainer = document.getElementById('product-search-container');
         const productSearchInput = document.getElementById('product-search-input');
-        
-        let allRecords = [], currentRecords = [], categories = [], sortOrdersMap = {}, categoryOrder = [], requisitionList = [], historyList = [];
+        const requisitionPreviewModal = document.getElementById('requisition-preview-modal');
+        const requisitionPreviewBody = document.getElementById('requisition-preview-body');
+        const previewConfirmBtn = document.getElementById('preview-confirm-btn');
+        const previewCancelBtn = document.getElementById('preview-cancel-btn');
+        const previewSelectAll = document.getElementById('preview-select-all');
+        const exportRequisitionBtn = document.getElementById('export-requisition-btn');
+
+        let allRecords = [], currentFilteredRecords = [], categories = [], sortOrdersMap = {}, categoryOrder = [], requisitionList = [], historyList = [];
         let customRows = new Map(), itemSettings = new Map(), hiddenItemsMap = {};
         let itemColumnName = '', activeCategoryName = null, currentEditingItemId = null, currentEditingCategory = null, currentEditingHeaderId = null, currentEditingHeaderText = null, confirmCallback = null, notificationTimeout = null, insertHeaderAboveId = null;
         let contextMenuItemRecord = null;
@@ -541,13 +635,15 @@ import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc
         let lastGoodCellIndex = 0; 
         let currentPage = 1;
         const itemsPerPage = 50;
+        let initialDataLoaded = false;
+
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIzaSyDOx9RPxrG-vO59QHjkhJtGmyDRhdoVFPY", authDomain: "pos-6-23035.firebaseapp.com", projectId: "pos-6-23035", storageBucket: "pos-6-23035.appspot.com", messagingSenderId: "1025982856125", appId: "1:1025982856125:web:28e47483570949900f30d4" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        setLogLevel('debug');
+        // setLogLevel('debug');
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -557,14 +653,15 @@ import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc
                 document.querySelectorAll('#user-email').forEach(el => el.textContent = user.email);
                 initializeListeners(userId);
                 switchView('products');
-                if(allRecords.length === 0) fetchData(); 
+                if(!initialDataLoaded) fetchAllDataFromSheet(); 
             } else {
                 userId = null;
+                initialDataLoaded = false;
                 authContainer.classList.remove('hidden');
                 appContainer.classList.add('hidden');
                 unsubscribes.forEach(unsub => unsub && unsub());
                 unsubscribes = [];
-                categories = []; hiddenItemsMap = {}; sortOrdersMap = {}; categoryOrder = []; customRows.clear(); itemSettings.clear(); requisitionList = []; historyList = [];
+                allRecords = []; categories = []; hiddenItemsMap = {}; sortOrdersMap = {}; categoryOrder = []; customRows.clear(); itemSettings.clear(); requisitionList = []; historyList = [];
                 displayCategories(); 
             }
         });
@@ -589,20 +686,20 @@ import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc
                      categories = fetchedCategories;
                      displayCategories();
                      if (categoriesFirstLoad && resolveCategoriesLoaded) { categoriesFirstLoad = false; resolveCategoriesLoaded(); }
-                 }, (err) => showError("โหลดหมวดหมู่ไม่สำเร็จ")));
+                 }, (err) => showError("โหลดหมวดหมู่ไม่สำเร็จ: " + err.message)));
                  unsubscribes.push(onSnapshot(hiddenItemsDocRef, (docSnap) => {
                      const data = docSnap.exists() ? docSnap.data() : {};
                      hiddenItemsMap = {}; 
                      for (const categoryName in data) { if (Array.isArray(data[categoryName])) { hiddenItemsMap[categoryName] = new Set(data[categoryName]); } }
-                     if (allRecords.length > 0) { displayData(currentRecords); }
-                 }, (err) => showError("โหลดรายการที่ซ่อนไม่สำเร็จ")));
-                 unsubscribes.push(onSnapshot(sortOrdersDocRef, (snap) => { sortOrdersMap = (snap.exists() && snap.data().orders) ? snap.data().orders : {}; if (allRecords.length > 0) displayData(currentRecords); }, (err) => showError("โหลดลำดับจัดเรียงไม่สำเร็จ")));
-                 unsubscribes.push(onSnapshot(categoryOrderDocRef, (snap) => { categoryOrder = (snap.exists() && snap.data().order) ? snap.data().order : []; if (categories.length > 0) displayCategories(); }, (err) => showError("โหลดลำดับหมวดหมู่ไม่สำเร็จ")));
-                 unsubscribes.push(onSnapshot(customRowsCollectionRef, (snap) => { customRows.clear(); snap.docs.forEach(doc => customRows.set(doc.id, doc.data())); if (allRecords.length > 0) displayData(currentRecords); }, (err) => showError("โหลดหัวข้อไม่สำเร็จ")));
-                 unsubscribes.push(onSnapshot(itemSettingsCollectionRef, (snap) => { itemSettings.clear(); snap.docs.forEach(doc => itemSettings.set(doc.id, doc.data())); }, (err) => showError("โหลดการตั้งค่าสินค้าไม่สำเร็จ")));
-                 unsubscribes.push(onSnapshot(requisitionListCollectionRef, (snap) => { requisitionList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); displayRequisitionList(); }, (err) => showError("โหลดรายการเบิกของไม่สำเร็จ")));
-                 unsubscribes.push(onSnapshot(requisitionHistoryCollectionRef, (snap) => { historyList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => b.timestamp.seconds - a.timestamp.seconds); displayHistory(); }, (err) => showError("โหลดประวัติไม่สำเร็จ")));
-                 unsubscribes.push(onSnapshot(appSettingsDocRef, (snap) => { if (snap.exists()) { appSettings = { ...appSettings, ...snap.data() }; } updateAppSettingsModalInputs(); }, (err) => showError("โหลดการตั้งค่าแอปไม่สำเร็จ")));
+                     if (allRecords.length > 0) { displayData(); }
+                 }, (err) => showError("โหลดรายการที่ซ่อนไม่สำเร็จ: " + err.message)));
+                 unsubscribes.push(onSnapshot(sortOrdersDocRef, (snap) => { sortOrdersMap = (snap.exists() && snap.data().orders) ? snap.data().orders : {}; if (allRecords.length > 0) displayData(); }, (err) => showError("โหลดลำดับจัดเรียงไม่สำเร็จ: " + err.message)));
+                 unsubscribes.push(onSnapshot(categoryOrderDocRef, (snap) => { categoryOrder = (snap.exists() && snap.data().order) ? snap.data().order : []; if (categories.length > 0) displayCategories(); }, (err) => showError("โหลดลำดับหมวดหมู่ไม่สำเร็จ: " + err.message)));
+                 unsubscribes.push(onSnapshot(customRowsCollectionRef, (snap) => { customRows.clear(); snap.docs.forEach(doc => customRows.set(doc.id, doc.data())); if (allRecords.length > 0) displayData(); }, (err) => showError("โหลดหัวข้อไม่สำเร็จ: " + err.message)));
+                 unsubscribes.push(onSnapshot(itemSettingsCollectionRef, (snap) => { itemSettings.clear(); snap.docs.forEach(doc => itemSettings.set(doc.id, doc.data())); }, (err) => showError("โหลดการตั้งค่าสินค้าไม่สำเร็จ: " + err.message)));
+                 unsubscribes.push(onSnapshot(requisitionListCollectionRef, (snap) => { requisitionList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); displayRequisitionList(); }, (err) => showError("โหลดรายการเบิกของไม่สำเร็จ: " + err.message)));
+                 unsubscribes.push(onSnapshot(requisitionHistoryCollectionRef, (snap) => { historyList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => b.timestamp.seconds - a.timestamp.seconds); displayHistory(); }, (err) => showError("โหลดประวัติไม่สำเร็จ: " + err.message)));
+                 unsubscribes.push(onSnapshot(appSettingsDocRef, (snap) => { if (snap.exists()) { appSettings = { ...appSettings, ...snap.data() }; } updateAppSettingsModalInputs(); }, (err) => showError("โหลดการตั้งค่าแอปไม่สำเร็จ: " + err.message)));
         }
 
         showRegisterBtn.addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
@@ -611,84 +708,66 @@ import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc
         registerForm.addEventListener('submit', async (e) => { e.preventDefault(); registerErrorEl.textContent = ''; try { await createUserWithEmailAndPassword(auth, registerEmailInput.value, registerPasswordInput.value); } catch (error) { if (error.code === 'auth/weak-password') registerErrorEl.textContent = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'; else if (error.code === 'auth/email-already-in-use') registerErrorEl.textContent = 'อีเมลนี้ถูกใช้งานแล้ว'; else registerErrorEl.textContent = 'เกิดข้อผิดพลาดในการสมัคร'; } });
         logoutBtn.addEventListener('click', async () => { try { await signOut(auth); } catch (error) { console.error("Logout failed:", error); } });
         
-        async function saveCurrentSortOrder(newOrder) { if (!sortOrdersDocRef) return; const key = activeCategoryName || '__global__'; try { const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; currentOrders[key] = newOrder; await setDoc(sortOrdersDocRef, { orders: currentOrders }); } catch (error) { showError("บันทึกการจัดเรียงไม่สำเร็จ"); } }
-        async function saveCategoryOrder(newOrder) { if (!categoryOrderDocRef) return; try { await setDoc(categoryOrderDocRef, { order: newOrder }); } catch (error) { showError("บันทึกการจัดเรียงหมวดหมู่ไม่สำเร็จ"); } }
+        async function saveCurrentSortOrder(newOrder) { if (!sortOrdersDocRef) return; const key = activeCategoryName || '__global__'; try { const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; currentOrders[key] = newOrder; await setDoc(sortOrdersDocRef, { orders: currentOrders }); } catch (error) { showError("บันทึกการจัดเรียงไม่สำเร็จ: " + error.message); } }
+        async function saveCategoryOrder(newOrder) { if (!categoryOrderDocRef) return; try { await setDoc(categoryOrderDocRef, { order: newOrder }); } catch (error) { showError("บันทึกการจัดเรียงหมวดหมู่ไม่สำเร็จ: " + error.message); } }
         
-        async function hideItem(itemId) { if (!hiddenItemsDocRef || !itemId) return; const categoryKey = activeCategoryName || '__global__'; try { await updateDoc(hiddenItemsDocRef, { [categoryKey]: arrayUnion(itemId) }); } catch (e) { if (e.code === 'not-found') { try { await setDoc(hiddenItemsDocRef, { [categoryKey]: [itemId] }); } catch (setErr) { showError("ซ่อนรายการไม่สำเร็จ"); } } else { showError("ซ่อนรายการไม่สำเร็จ"); } } }
-        async function unhideItems(idsToUnhide) { if (!hiddenItemsDocRef || !idsToUnhide || idsToUnhide.length === 0) return; const categoryKey = activeCategoryName || '__global__'; try { await updateDoc(hiddenItemsDocRef, { [categoryKey]: arrayRemove(...idsToUnhide) }); } catch (error) { showError("แสดงรายการที่ซ่อนไม่สำเร็จ"); } }
-        async function addCategory() { if (!categoriesCollectionRef) return; const name = categoryInput.value.trim(); if (name && !categories.some(c => c.name.toLowerCase() === name.toLowerCase())) { try { await addDoc(categoriesCollectionRef, { name }); categoryInput.value = ''; showNotification('เพิ่มหมวดหมู่สำเร็จ', false); } catch(error) { showError("เพิ่มหมวดหมู่ไม่สำเร็จ"); } } else if (name) showNotification('มีหมวดหมู่นี้อยู่แล้ว'); }
-async function editCategory(id, oldName) {
-            if (!categoriesCollectionRef) return;
-            const newName = prompt('แก้ไขชื่อหมวดหมู่:', oldName);
-            const trimmedNewName = newName ? newName.trim() : '';
-
-            // ถ้าผู้ใช้กดยกเลิก, ไม่ใส่ชื่อ, หรือใช้ชื่อเดิม ให้ยกเลิก
-            if (!trimmedNewName || trimmedNewName === oldName) {
-                return;
-            }
-
-            // ตรวจสอบว่ามีชื่อซ้ำกับหมวดหมู่อื่นหรือไม่ (ที่ไม่ใช่ตัวเอง)
-            if (categories.some(c => c.name.toLowerCase() === trimmedNewName.toLowerCase() && c.id !== id)) {
-                showNotification('มีหมวดหมู่นี้อยู่แล้ว');
-                return;
-            }
-
-            try {
-                // ใช้ Transaction เพื่อให้แน่ใจว่าทุกการอัปเดตจะสำเร็จทั้งหมดหรือไม่ก็ล้มเหลวทั้งหมด
-                await runTransaction(db, async (transaction) => {
-                    // --- Step 1: จัดการข้อมูล Sort Orders ---
-                    const sortOrdersSnap = await transaction.get(sortOrdersDocRef);
-                    if (sortOrdersSnap.exists()) {
-                        const currentSortOrders = sortOrdersSnap.data().orders || {};
-                        // ถ้ามีข้อมูล sort order ของชื่อเก่าอยู่
-                        if (Object.prototype.hasOwnProperty.call(currentSortOrders, oldName)) {
-                            // คัดลอกไปที่ชื่อใหม่ แล้วลบของเก่า
-                            currentSortOrders[trimmedNewName] = currentSortOrders[oldName];
-                            delete currentSortOrders[oldName];
-                            transaction.set(sortOrdersDocRef, { orders: currentSortOrders });
-                        }
-                    }
-
-                    // --- Step 2: จัดการข้อมูล Hidden Items ---
-                    const hiddenItemsSnap = await transaction.get(hiddenItemsDocRef);
-                    if (hiddenItemsSnap.exists()) {
-                        const currentHiddenItems = hiddenItemsSnap.data();
-                        if (Object.prototype.hasOwnProperty.call(currentHiddenItems, oldName)) {
-                            currentHiddenItems[trimmedNewName] = currentHiddenItems[oldName];
-                            delete currentHiddenItems[oldName];
-                            transaction.set(hiddenItemsDocRef, currentHiddenItems);
-                        }
-                    }
-
-                    // --- Step 3: จัดการข้อมูล Custom Rows (หัวข้อคั่น) ---
-                    // เราต้อง Query นอก Transaction แต่ทำการอัปเดตข้างใน
-                    const customRowsQuery = query(customRowsCollectionRef, where("categoryName", "==", oldName));
-                    const customRowsSnap = await getDocs(customRowsQuery);
-                    customRowsSnap.forEach(docSnap => {
-                        transaction.update(docSnap.ref, { categoryName: trimmedNewName });
-                    });
-
-                    // --- Step 4: อัปเดตชื่อหมวดหมู่เอง ---
-                    const categoryDocRef = doc(categoriesCollectionRef, id);
-                    transaction.update(categoryDocRef, { name: trimmedNewName });
-                });
-                
-                showNotification('แก้ไขหมวดหมู่สำเร็จ', false);
-
-            } catch (error) {
-                console.error("Transaction for editing category failed: ", error);
-                showError("แก้ไขหมวดหมู่ไม่สำเร็จ: " + error.message);
-            }
-        }
-        async function deleteCategory(id) { if (!categoriesCollectionRef) return; try { await deleteDoc(doc(categoriesCollectionRef, id)); displayData(allRecords); } catch(error) { showError("ลบหมวดหมู่ไม่สำเร็จ"); } }
-        async function addHeaderRow(headerText) { if (!headerText || !headerText.trim()) return; try { const key = activeCategoryName || '__global__'; const newDocRef = await addDoc(customRowsCollectionRef, { text: headerText.trim(), categoryName: activeCategoryName }); const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; let currentCategoryOrder = currentOrders[key] || []; const newHeaderId = newDocRef.id; if (insertHeaderAboveId) { const insertIndex = currentCategoryOrder.indexOf(insertHeaderAboveId); if (insertIndex !== -1) { currentCategoryOrder.splice(insertIndex, 0, newHeaderId); } else { currentCategoryOrder.unshift(newHeaderId); } } else { currentCategoryOrder.unshift(newHeaderId); } currentOrders[key] = currentCategoryOrder; await setDoc(sortOrdersDocRef, { orders: currentOrders }); } catch (error) { showError("เพิ่มหัวข้อไม่สำเร็จ"); } }
-        async function editHeaderRow(id, oldText) { const newText = prompt("แก้ไขชื่อหัวข้อ:", oldText); if (newText && newText.trim() && newText.trim() !== oldText) { try { await updateDoc(doc(customRowsCollectionRef, id), { text: newText.trim() }); } catch (error) { showError("แก้ไขหัวข้อไม่สำเร็จ"); } } }
-        async function deleteHeaderRow(id) { if (!customRowsCollectionRef || !sortOrdersDocRef) return; try { const key = activeCategoryName || '__global__'; const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; const currentCategoryOrder = currentOrders[key] || []; currentOrders[key] = currentCategoryOrder.filter(itemId => itemId !== id); await setDoc(sortOrdersDocRef, { orders: currentOrders }); await deleteDoc(doc(customRowsCollectionRef, id)); } catch (error) { showError("ลบหัวข้อไม่สำเร็จ"); } }
-        async function saveItemSettings() { if (!itemSettingsCollectionRef || !currentEditingItemId) return; const point = parseInt(reorderPointInput.value, 10); const quantity = parseInt(reorderQuantityInput.value, 10); const settings = { reorderPoint: isNaN(point) ? null : point, reorderQuantity: isNaN(quantity) ? null : quantity }; try { await setDoc(doc(itemSettingsCollectionRef, currentEditingItemId), settings); closeItemSettingsModal(); } catch(error) { showError("บันทึกการตั้งค่าไม่สำเร็จ"); } }
-        async function saveAppSettings() { if (!appSettingsDocRef) return; const newSettings = { triggerStockColumnName: settingTriggerColInput.value.trim() || 'รักษ์ยา', calculationStockColumnName: settingCalcColInput.value.trim() || 'เบบี้ช็อป', unitColumnName: settingUnitColInput.value.trim() || 'หน่วย', }; try { await setDoc(appSettingsDocRef, newSettings, { merge: true }); showNotification('บันทึกการตั้งค่าแล้ว', false); closeAppSettingsModal(); } catch (error) { showError("บันทึกการตั้งค่าไม่สำเร็จ"); } }
-        async function generateRequisition() {
-            if (!itemSettingsCollectionRef || allRecords.length === 0) { showNotification('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า'); return; }
-            if (allRecords.length > 0) { const firstRecordKeys = Object.keys(allRecords[0]); if (!firstRecordKeys.includes(appSettings.triggerStockColumnName) || !firstRecordKeys.includes(appSettings.calculationStockColumnName)) { showError(`ไม่พบคอลัมน์: "${appSettings.triggerStockColumnName}" หรือ "${appSettings.calculationStockColumnName}" ใน Google Sheet กรุณาตรวจสอบการตั้งค่า`); return; } }
+        async function hideItem(itemId, itemName) { if (!hiddenItemsDocRef || !itemId) return; const categoryKey = activeCategoryName || '__global__'; try { await updateDoc(hiddenItemsDocRef, { [categoryKey]: arrayUnion(itemId) }); showNotification(`ซ่อน '${itemName}' แล้ว`, false); } catch (e) { if (e.code === 'not-found') { try { await setDoc(hiddenItemsDocRef, { [categoryKey]: [itemId] }); showNotification(`ซ่อน '${itemName}' แล้ว`, false); } catch (setErr) { showError("ซ่อนรายการไม่สำเร็จ: " + setErr.message); } } else { showError("ซ่อนรายการไม่สำเร็จ: " + e.message); } } }
+        async function unhideItems(idsToUnhide) { if (!hiddenItemsDocRef || !idsToUnhide || idsToUnhide.length === 0) return; const categoryKey = activeCategoryName || '__global__'; try { await updateDoc(hiddenItemsDocRef, { [categoryKey]: arrayRemove(...idsToUnhide) }); showNotification(`แสดง ${idsToUnhide.length} รายการที่ซ่อนแล้ว`, false); } catch (error) { showError("แสดงรายการที่ซ่อนไม่สำเร็จ: " + error.message); } }
+        async function addCategory() { if (!categoriesCollectionRef) return; const name = categoryInput.value.trim(); if (name && !categories.some(c => c.name.toLowerCase() === name.toLowerCase())) { try { await addDoc(categoriesCollectionRef, { name }); categoryInput.value = ''; showNotification(`เพิ่มหมวดหมู่ '${name}' สำเร็จ`, false); } catch(error) { showError("เพิ่มหมวดหมู่ไม่สำเร็จ: " + error.message); } } else if (name) showNotification(`มีหมวดหมู่ '${name}' อยู่แล้ว`); }
+        async function editCategory(id, oldName) {
+            if (!categoriesCollectionRef) return;
+            const newName = prompt('แก้ไขชื่อหมวดหมู่:', oldName);
+            const trimmedNewName = newName ? newName.trim() : '';
+            if (!trimmedNewName || trimmedNewName === oldName) return;
+            if (categories.some(c => c.name.toLowerCase() === trimmedNewName.toLowerCase() && c.id !== id)) { showNotification(`มีหมวดหมู่ '${trimmedNewName}' อยู่แล้ว`); return; }
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const sortOrdersSnap = await transaction.get(sortOrdersDocRef);
+                    if (sortOrdersSnap.exists()) {
+                        const currentSortOrders = sortOrdersSnap.data().orders || {};
+                        if (Object.prototype.hasOwnProperty.call(currentSortOrders, oldName)) {
+                            currentSortOrders[trimmedNewName] = currentSortOrders[oldName];
+                            delete currentSortOrders[oldName];
+                            transaction.set(sortOrdersDocRef, { orders: currentSortOrders });
+                        }
+                    }
+                    const hiddenItemsSnap = await transaction.get(hiddenItemsDocRef);
+                    if (hiddenItemsSnap.exists()) {
+                        const currentHiddenItems = hiddenItemsSnap.data();
+                        if (Object.prototype.hasOwnProperty.call(currentHiddenItems, oldName)) {
+                            currentHiddenItems[trimmedNewName] = currentHiddenItems[oldName];
+                            delete currentHiddenItems[oldName];
+                            transaction.set(hiddenItemsDocRef, currentHiddenItems);
+                        }
+                    }
+                    const customRowsQuery = query(customRowsCollectionRef, where("categoryName", "==", oldName));
+                    const customRowsSnap = await getDocs(customRowsQuery);
+                    customRowsSnap.forEach(docSnap => {
+                        transaction.update(docSnap.ref, { categoryName: trimmedNewName });
+                    });
+                    const categoryDocRef = doc(categoriesCollectionRef, id);
+                    transaction.update(categoryDocRef, { name: trimmedNewName });
+                });
+                showNotification(`แก้ไขหมวดหมู่เป็น '${trimmedNewName}' สำเร็จ`, false);
+            } catch (error) {
+                console.error("Transaction for editing category failed: ", error);
+                showError("แก้ไขหมวดหมู่ไม่สำเร็จ: " + error.message);
+            }
+        }
+        async function deleteCategory(id, name) { if (!categoriesCollectionRef) return; try { await deleteDoc(doc(categoriesCollectionRef, id)); showNotification(`ลบหมวดหมู่ '${name}' แล้ว`, false); displayData(); } catch(error) { showError("ลบหมวดหมู่ไม่สำเร็จ: " + error.message); } }
+        async function addHeaderRow(headerText) { if (!headerText || !headerText.trim()) return; try { const key = activeCategoryName || '__global__'; const newDocRef = await addDoc(customRowsCollectionRef, { text: headerText.trim(), categoryName: activeCategoryName }); const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; let currentCategoryOrder = currentOrders[key] || []; const newHeaderId = newDocRef.id; if (insertHeaderAboveId) { const insertIndex = currentCategoryOrder.indexOf(insertHeaderAboveId); if (insertIndex !== -1) { currentCategoryOrder.splice(insertIndex, 0, newHeaderId); } else { currentCategoryOrder.unshift(newHeaderId); } } else { currentCategoryOrder.unshift(newHeaderId); } currentOrders[key] = currentCategoryOrder; await setDoc(sortOrdersDocRef, { orders: currentOrders }); showNotification(`เพิ่มหัวข้อ '${headerText}' สำเร็จ`, false); } catch (error) { showError("เพิ่มหัวข้อไม่สำเร็จ: " + error.message); } }
+        async function editHeaderRow(id, oldText) { const newText = prompt("แก้ไขชื่อหัวข้อ:", oldText); if (newText && newText.trim() && newText.trim() !== oldText) { try { await updateDoc(doc(customRowsCollectionRef, id), { text: newText.trim() }); showNotification('แก้ไขหัวข้อสำเร็จ', false); } catch (error) { showError("แก้ไขหัวข้อไม่สำเร็จ: " + error.message); } } }
+        async function deleteHeaderRow(id, text) { if (!customRowsCollectionRef || !sortOrdersDocRef) return; try { const key = activeCategoryName || '__global__'; const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; const currentCategoryOrder = currentOrders[key] || []; currentOrders[key] = currentCategoryOrder.filter(itemId => itemId !== id); await setDoc(sortOrdersDocRef, { orders: currentOrders }); await deleteDoc(doc(customRowsCollectionRef, id)); showNotification(`ลบหัวข้อ '${text}' แล้ว`, false); } catch (error) { showError("ลบหัวข้อไม่สำเร็จ: " + error.message); } }
+        async function saveItemSettings() { if (!itemSettingsCollectionRef || !currentEditingItemId) return; const point = parseInt(reorderPointInput.value, 10); const quantity = parseInt(reorderQuantityInput.value, 10); const settings = { reorderPoint: isNaN(point) ? null : point, reorderQuantity: isNaN(quantity) ? null : quantity }; try { await setDoc(doc(itemSettingsCollectionRef, currentEditingItemId), settings); showNotification(`บันทึกการตั้งค่า '${currentEditingItemId}' แล้ว`, false); closeItemSettingsModal(); } catch(error) { showError("บันทึกการตั้งค่าไม่สำเร็จ: " + error.message); } }
+        async function saveAppSettings() { if (!appSettingsDocRef) return; const newSettings = { triggerStockColumnName: settingTriggerColInput.value.trim() || 'รักษ์ยา', calculationStockColumnName: settingCalcColInput.value.trim() || 'เบบี้ช็อป', unitColumnName: settingUnitColInput.value.trim() || 'หน่วย', }; try { await setDoc(appSettingsDocRef, newSettings, { merge: true }); showNotification('บันทึกการตั้งค่าแล้ว', false); closeAppSettingsModal(); } catch (error) { showError("บันทึกการตั้งค่าไม่สำเร็จ: " + error.message); } }
+        
+        function generateRequisitionPreview() {
+            if (allRecords.length === 0) { showNotification('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า'); return; }
+            const firstRecordKeys = Object.keys(allRecords[0]);
+            if (!firstRecordKeys.includes(appSettings.triggerStockColumnName) || !firstRecordKeys.includes(appSettings.calculationStockColumnName)) {
+                showError(`ไม่พบคอลัมน์: "${appSettings.triggerStockColumnName}" หรือ "${appSettings.calculationStockColumnName}" ใน Google Sheet กรุณาตรวจสอบการตั้งค่า`);
+                return;
+            }
             const itemsToRequisition = [];
             allRecords.forEach(record => {
                 const itemId = record[itemColumnName];
@@ -696,25 +775,80 @@ async function editCategory(id, oldName) {
                 if (settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number') {
                     const triggerStock = parseInt(record[appSettings.triggerStockColumnName] || 0, 10);
                     if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) {
-                        const calculationStock = parseInt(record[appSettings.calculationStockColumnName], 10);
-                        if (!isNaN(calculationStock) && calculationStock > 0) {
-                            let finalQuantity = settings.reorderQuantity;
-                            const halfCalcStock = 0.5 * calculationStock;
-                            if (settings.reorderQuantity > halfCalcStock) {
-                                const halfAutoQty = 0.5 * settings.reorderQuantity;
-                                finalQuantity = Math.min(halfAutoQty, halfCalcStock);
-                            }
-                            const roundedQuantity = Math.floor(finalQuantity);
-                            if (roundedQuantity > 0) { itemsToRequisition.push({ id: itemId, name: record[itemColumnName], quantity: roundedQuantity, unit: record[appSettings.unitColumnName] || 'ชิ้น' }); }
-                        }
+                         const calculationStock = parseInt(record[appSettings.calculationStockColumnName], 10);
+                         if (!isNaN(calculationStock) && calculationStock > 0) {
+                             let finalQuantity = settings.reorderQuantity;
+                             const halfCalcStock = 0.5 * calculationStock;
+                             if (settings.reorderQuantity > halfCalcStock) {
+                                 const halfAutoQty = 0.5 * settings.reorderQuantity;
+                                 finalQuantity = Math.min(halfAutoQty, halfCalcStock);
+                             }
+                             const roundedQuantity = Math.floor(finalQuantity);
+                             if (roundedQuantity > 0) { itemsToRequisition.push({ id: itemId, name: record[itemColumnName], quantity: roundedQuantity, unit: record[appSettings.unitColumnName] || 'ชิ้น' }); }
+                         }
                     }
                 }
             });
             if (itemsToRequisition.length === 0) { showNotification('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข'); return; }
-            try { const batch = writeBatch(db); itemsToRequisition.forEach(item => { const docRef = doc(requisitionListCollectionRef, item.id); batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit }); }); await batch.commit(); showNotification(`สร้างรายการเบิก ${itemsToRequisition.length} รายการสำเร็จ!`, false); switchView('requisition'); } catch (error) { showError("สร้างรายการเบิกไม่สำเร็จ"); }
+            
+            requisitionPreviewBody.innerHTML = '';
+            itemsToRequisition.forEach(item => {
+                const row = document.createElement('tr');
+                row.dataset.id = item.id;
+                row.innerHTML = `
+                    <td class="px-2 py-2 text-center"><input type="checkbox" class="preview-item-checkbox h-5 w-5" checked></td>
+                    <td class="px-2 py-2 text-sm text-gray-800">${item.name}</td>
+                    <td class="px-2 py-2 text-center"><input type="number" class="preview-item-quantity w-20 text-center border rounded-md" value="${item.quantity}" min="1"></td>
+                    <td class="px-2 py-2 text-sm text-gray-600 text-center">${item.unit}</td>
+                `;
+                requisitionPreviewBody.appendChild(row);
+            });
+            previewSelectAll.checked = true;
+            requisitionPreviewModal.classList.remove('hidden');
         }
-        async function deleteRequisitionItem(id) { if(!requisitionListCollectionRef) return; try { await deleteDoc(doc(requisitionListCollectionRef, id)); } catch (error) { showError("ลบรายการเบิกไม่สำเร็จ"); } }
-        async function confirmRequisition() { if (!requisitionListCollectionRef || requisitionList.length === 0) return; try { await runTransaction(db, async (transaction) => { const counterSnap = await transaction.get(countersDocRef); const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0; const newCounter = currentCounter + 1; const now = new Date(); const reqNumber = `REQ-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}-${newCounter.toString().padStart(4, '0')}`; const historyDocRef = doc(requisitionHistoryCollectionRef); transaction.set(historyDocRef, { requisitionNumber: reqNumber, timestamp: Timestamp.now(), items: requisitionList.map(({id, ...rest}) => rest) }); requisitionList.forEach(item => { transaction.delete(doc(requisitionListCollectionRef, item.id)); }); transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true }); }); showNotification('ยืนยันการเบิกของเรียบร้อย', false); } catch (error) { console.error("Transaction failed: ", error); showError("ยืนยันการเบิกของไม่สำเร็จ"); } }
+
+        async function confirmRequisitionFromPreview() {
+            const itemsToAdd = [];
+            const rows = requisitionPreviewBody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const checkbox = row.querySelector('.preview-item-checkbox');
+                if (checkbox.checked) {
+                    const quantityInput = row.querySelector('.preview-item-quantity');
+                    const id = row.dataset.id;
+                    const record = allRecords.find(r => r[itemColumnName] === id);
+                    if (record) {
+                        itemsToAdd.push({
+                            id: id,
+                            name: record[itemColumnName],
+                            quantity: parseInt(quantityInput.value, 10) || 1,
+                            unit: record[appSettings.unitColumnName] || 'ชิ้น'
+                        });
+                    }
+                }
+            });
+
+            if (itemsToAdd.length === 0) {
+                showNotification('กรุณาเลือกอย่างน้อย 1 รายการ');
+                return;
+            }
+
+            try {
+                const batch = writeBatch(db);
+                itemsToAdd.forEach(item => {
+                    const docRef = doc(requisitionListCollectionRef, item.id);
+                    batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit });
+                });
+                await batch.commit();
+                showNotification(`เพิ่ม ${itemsToAdd.length} รายการในรายการเบิกของสำเร็จ!`, false);
+                closeRequisitionPreviewModal();
+                switchView('requisition');
+            } catch (error) {
+                showError("สร้างรายการเบิกไม่สำเร็จ: " + error.message);
+            }
+        }
+
+        async function deleteRequisitionItem(id, name) { if(!requisitionListCollectionRef) return; try { await deleteDoc(doc(requisitionListCollectionRef, id)); showNotification(`ลบ '${name}' ออกจากรายการเบิกแล้ว`, false); } catch (error) { showError("ลบรายการเบิกไม่สำเร็จ: " + error.message); } }
+        async function confirmRequisition() { if (!requisitionListCollectionRef || requisitionList.length === 0) return; try { const reqNumber = await runTransaction(db, async (transaction) => { const counterSnap = await transaction.get(countersDocRef); const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0; const newCounter = currentCounter + 1; const now = new Date(); const generatedReqNumber = `REQ-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}-${newCounter.toString().padStart(4, '0')}`; const historyDocRef = doc(requisitionHistoryCollectionRef); transaction.set(historyDocRef, { requisitionNumber: generatedReqNumber, timestamp: Timestamp.now(), items: requisitionList.map(({id, ...rest}) => rest) }); requisitionList.forEach(item => { transaction.delete(doc(requisitionListCollectionRef, item.id)); }); transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true }); return generatedReqNumber; }); showNotification(`ยืนยันการเบิกของ ${reqNumber} เรียบร้อย`, false); } catch (error) { console.error("Transaction failed: ", error); showError("ยืนยันการเบิกของไม่สำเร็จ: " + error.message); } }
         
         function displayCategories() {
             if (categorySortableInstance) categorySortableInstance.destroy();
@@ -732,7 +866,8 @@ async function editCategory(id, oldName) {
                 productSearchContainer.classList.remove('hidden');
                 productSearchInput.value = '';
                 activeCategoryName = 'ทั้งหมด';
-                displayData(allRecords);
+                currentFilteredRecords = [...allRecords];
+                displayData();
                 document.querySelectorAll('#category-list button').forEach(btn => { btn.classList.remove('text-blue-600'); btn.classList.add('text-gray-500', 'hover:text-gray-700'); });
                 allBtn.classList.add('text-blue-600'); allBtn.classList.remove('text-gray-500', 'hover:text-gray-700');
             });
@@ -740,7 +875,11 @@ async function editCategory(id, oldName) {
 
             const sortedCategories = [...categories].sort((a, b) => { const indexA = categoryOrder.indexOf(a.id); const indexB = categoryOrder.indexOf(b.id); if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name, 'th'); if (indexA === -1) return 1; if (indexB === -1) return -1; return indexA - indexB; });
             if (categories.length === 0) { manageCategoryList.innerHTML = '<p class="text-gray-500 text-sm">ยังไม่มีหมวดหมู่</p>';}
-            else { allBtn.classList.add('text-blue-600'); activeCategoryName = 'ทั้งหมด'; }
+            else { allBtn.classList.add('text-blue-600'); }
+            
+            if (activeCategoryName === null && categories.length > 0) {
+                 activeCategoryName = 'ทั้งหมด';
+            }
             
             sortedCategories.forEach((category) => {
                 const categoryBtn = document.createElement('button');
@@ -754,10 +893,10 @@ async function editCategory(id, oldName) {
                     currentPage = 1;
                     productSearchContainer.classList.add('hidden');
                     productSearchInput.value = '';
-                    let filteredRecords = allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase()));
+                    currentFilteredRecords = allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase()));
                     noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`;
                     activeCategoryName = category.name;
-                    displayData(filteredRecords);
+                    displayData();
                     document.querySelectorAll('#category-list button').forEach(btn => { btn.classList.remove('text-blue-600'); btn.classList.add('text-gray-500', 'hover:text-gray-700'); });
                     categoryBtn.classList.add('text-blue-600'); categoryBtn.classList.remove('text-gray-500', 'hover:text-gray-700');
                 });
@@ -771,49 +910,55 @@ async function editCategory(id, oldName) {
                 const nameSpan = document.createElement('span');
                 nameSpan.textContent = category.name;
                 nameSpan.className = 'focus:outline-none';
-
-                categoryEl.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                    openCategoryActionsModal(category);
-                });
-
-                categoryEl.addEventListener('dblclick', () => {
-                    openCategoryActionsModal(category);
-                });
-
+                categoryEl.addEventListener('contextmenu', (e) => { e.preventDefault(); openCategoryActionsModal(category); });
+                categoryEl.addEventListener('dblclick', () => { openCategoryActionsModal(category); });
                 categoryEl.appendChild(nameSpan);
                 manageCategoryList.appendChild(categoryEl);
             });
             categorySortableInstance = new Sortable(manageCategoryList, { animation: 150, ghostClass: 'sortable-ghost', delay: 200, delayOnTouchOnly: true, touchStartThreshold: 5, onEnd: (evt) => { const newOrder = Array.from(manageCategoryList.querySelectorAll('div')).map(el => el.dataset.id); saveCategoryOrder(newOrder); } });
         }
-
-        async function fetchData() { 
+        
+        // This function now only fetches the master data once.
+        async function fetchAllDataFromSheet() { 
+            if (initialDataLoaded) return;
             try { 
                 loadingEl.classList.remove('hidden'); 
                 const response = await fetch(sheetUrl); 
                 if (!response.ok) throw new Error(`Network: ${response.statusText}`); 
                 const data = await response.json(); 
                 if (!Array.isArray(data.data) || data.data.length === 0) { showNoData(); return; } 
-                allRecords = data.data; 
+                allRecords = data.data;
+                currentFilteredRecords = [...allRecords];
+                initialDataLoaded = true;
                 itemColumnName = Object.keys(allRecords[0])[0] || ''; 
                 if (!itemColumnName) { showError("ข้อมูลไม่มีคอลัมน์"); return; } 
+                
                 await categoriesLoadedPromise;
+                
+                // Set default view to "Carnation" category if it exists, otherwise "ทั้งหมด"
                 const carnationCategory = categories.find(c => c.name === 'Carnation');
-                if (carnationCategory) { const carnationButton = Array.from(categoryList.querySelectorAll('button')).find(btn => btn.textContent === 'Carnation'); if (carnationButton) carnationButton.click(); else displayData(allRecords); } 
-                else { displayData(allRecords); }
+                if (carnationCategory) {
+                    const carnationButton = Array.from(categoryList.querySelectorAll('button')).find(btn => btn.textContent === 'Carnation');
+                    if (carnationButton) carnationButton.click();
+                    else displayData();
+                } else {
+                    displayData();
+                }
+
             } catch (error) { showError(error.message); } 
             finally { loadingEl.classList.add('hidden'); } 
         }
-        
-        function displayData(records) {
-            currentRecords = records;
+
+        function displayData() {
             tableHead.innerHTML = '';
             tableBody.innerHTML = '';
             if (sortableInstance) sortableInstance.destroy();
 
+            const records = currentFilteredRecords;
             let recordsToDisplay = records;
-            const shouldPaginate = activeCategoryName === 'ทั้งหมด' || productSearchInput.value.length > 0;
-            
+
+            // Pagination logic applies only in "ทั้งหมด" view or when searching
+            const shouldPaginate = activeCategoryName === 'ทั้งหมด';
             if (shouldPaginate) {
                 const startIndex = (currentPage - 1) * itemsPerPage;
                 const endIndex = startIndex + itemsPerPage;
@@ -828,11 +973,16 @@ async function editCategory(id, oldName) {
             const sortKey = activeCategoryName || '__global__';
             const hiddenIdsForCurrentCategory = hiddenItemsMap[sortKey] || new Set();
             const currentItemOrder = sortOrdersMap[sortKey] || [];
-            const combinedOrder = [...new Set([...currentItemOrder, ...recordsToDisplay.map(r => r[itemColumnName])])];
-            const displayOrder = combinedOrder.filter(id => customRows.has(id) || currentRecordIds.has(id));
-            const visibleIds = new Set(displayOrder.filter(id => !hiddenIdsForCurrentCategory.has(id)));
+            
+            // Combine sorted items and unsorted new items, then filter by current view
+            const combinedOrder = [...new Set([...currentItemOrder, ...records.map(r => r[itemColumnName])])];
+            const displayOrder = combinedOrder.filter(id => customRows.has(id) || allRecordsMap.has(id));
 
-            if (visibleIds.size === 0) {
+            const visibleIds = new Set(displayOrder.filter(id => !hiddenIdsForCurrentCategory.has(id)));
+            const finalDisplayOrder = displayOrder.filter(id => (customRows.has(id) && customRows.get(id).categoryName === activeCategoryName) || currentRecordIds.has(id));
+
+
+            if (finalDisplayOrder.filter(id => visibleIds.has(id)).length === 0) {
                 tableEl.classList.add('hidden');
                 noDataEl.classList.remove('hidden');
                 return;
@@ -842,6 +992,8 @@ async function editCategory(id, oldName) {
 
             const headers = allRecords.length > 0 ? Object.keys(allRecords[0]) : [];
             const headerRow = document.createElement('tr');
+            // Add a placeholder for mobile move buttons
+            headerRow.innerHTML = '<th class="py-1 px-1 sm:hidden"></th>';
             headers.forEach(header => {
                 const th = document.createElement('th');
                 th.scope = 'col';
@@ -854,13 +1006,12 @@ async function editCategory(id, oldName) {
                 const headerText = document.createElement('span');
                 headerText.textContent = header.replace(/_/g, ' ');
                 headerContentWrapper.appendChild(headerText);
-
                 th.appendChild(headerContentWrapper);
                 headerRow.appendChild(th);
             });
             tableHead.appendChild(headerRow);
 
-            displayOrder.forEach(id => { 
+            finalDisplayOrder.forEach(id => { 
                 if (!visibleIds.has(id)) return; 
                 
                 const row = document.createElement('tr');
@@ -871,7 +1022,7 @@ async function editCategory(id, oldName) {
                     if (rowData.categoryName === activeCategoryName) { 
                         row.className = 'bg-gray-200 font-bold'; 
                         const cell = document.createElement('td'); 
-                        cell.colSpan = headers.length; 
+                        cell.colSpan = headers.length + 1; // +1 for mobile move buttons column
                         cell.className = 'px-4 py-0.5 text-gray-800 text-sm text-left'; 
                         cell.textContent = rowData.text; 
                         cell.setAttribute('tabindex', '-1');
@@ -885,6 +1036,17 @@ async function editCategory(id, oldName) {
                     row.className = 'hover:bg-gray-50';
                     row.addEventListener('contextmenu', (e) => { e.preventDefault(); openContextMenu(e, record); });
                     row.addEventListener('dblclick', (e) => { openContextMenu(e, record); });
+                    
+                    // Mobile move buttons cell
+                    const moveCell = document.createElement('td');
+                    moveCell.className = 'px-1 py-1 text-center sm:hidden';
+                    moveCell.innerHTML = `
+                        <div class="flex flex-col">
+                            <button title="เลื่อนขึ้น" class="move-item-up" data-id="${id}"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg></button>
+                            <button title="เลื่อนลง" class="move-item-down" data-id="${id}"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button>
+                        </div>
+                    `;
+                    row.appendChild(moveCell);
 
                     headers.forEach(header => { 
                         const td = document.createElement('td'); 
@@ -905,21 +1067,9 @@ async function editCategory(id, oldName) {
                 firstCell.setAttribute('tabindex', '0');
             }
             
-            const potentialItems = currentRecords;
-            const hasHiddenItemsInView = potentialItems.some(item => hiddenIdsForCurrentCategory.has(item[itemColumnName]));
+            const hasHiddenItemsInView = records.some(item => hiddenIdsForCurrentCategory.has(item[itemColumnName]));
             if (hasHiddenItemsInView) {
-                const headerCell = document.getElementById('product-header-cell');
-                if (headerCell && !headerCell.querySelector('.unhide-btn')) {
-                    const headerContentWrapper = headerCell.querySelector('div');
-                    if (headerContentWrapper) {
-                        const showHiddenBtnIcon = document.createElement('button');
-                        showHiddenBtnIcon.title = 'แสดงแถวที่ซ่อน';
-                        showHiddenBtnIcon.className = 'unhide-btn text-gray-400 hover:text-yellow-600 focus:outline-none';
-                        showHiddenBtnIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C3.732 4.943 9.523 3 15 3c5.478 0 11.268 1.943 14.542 7-3.274 5.057-9.064 7-14.542 7-5.477 0-11.268-1.943-14.542-7zM15 11a5 5 0 100-2 5 5 0 000 2z" clip-rule="evenodd" /></svg>`;
-                        showHiddenBtnIcon.onclick = () => { const itemsToUnhide = potentialItems.map(record => record[itemColumnName]).filter(id => hiddenIdsForCurrentCategory.has(id)); if (itemsToUnhide.length > 0) { unhideItems(itemsToUnhide); } };
-                        headerContentWrapper.appendChild(showHiddenBtnIcon);
-                    }
-                }
+                // Logic to show "unhide" button can be added here if needed
             }
 
             sortableInstance = new Sortable(tableBody, { animation: 150, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen', delay: 200, touchStartThreshold: 5, onEnd: (evt) => { const newOrder = Array.from(tableBody.querySelectorAll('tr')).map(row => row.dataset.id); saveCurrentSortOrder(newOrder); } }); 
@@ -928,21 +1078,13 @@ async function editCategory(id, oldName) {
         function renderPagination(totalItems) {
             clearPagination();
             const totalPages = Math.ceil(totalItems / itemsPerPage);
-
             if (totalPages <= 1) return;
 
             const prevButton = document.createElement('button');
             prevButton.textContent = 'ก่อนหน้า';
             prevButton.className = 'px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50';
             prevButton.disabled = currentPage === 1;
-            prevButton.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    const searchTerm = productSearchInput.value.toLowerCase();
-                     const recordsToDisplay = searchTerm ? allRecords.filter(record => record[itemColumnName] && record[itemColumnName].toLowerCase().includes(searchTerm)) : allRecords;
-                    displayData(recordsToDisplay);
-                }
-            });
+            prevButton.addEventListener('click', () => { if (currentPage > 1) { currentPage--; displayData(); } });
 
             const pageInfo = document.createElement('span');
             pageInfo.textContent = `หน้า ${currentPage} จาก ${totalPages}`;
@@ -952,14 +1094,7 @@ async function editCategory(id, oldName) {
             nextButton.textContent = 'ถัดไป';
             nextButton.className = 'px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50';
             nextButton.disabled = currentPage === totalPages;
-            nextButton.addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    const searchTerm = productSearchInput.value.toLowerCase();
-                    const recordsToDisplay = searchTerm ? allRecords.filter(record => record[itemColumnName] && record[itemColumnName].toLowerCase().includes(searchTerm)) : allRecords;
-                    displayData(recordsToDisplay);
-                }
-            });
+            nextButton.addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; displayData(); } });
 
             paginationControls.appendChild(prevButton);
             paginationControls.appendChild(pageInfo);
@@ -972,9 +1107,15 @@ async function editCategory(id, oldName) {
         
         function displayRequisitionList() {
             requisitionListBody.innerHTML = '';
-            if (requisitionList.length === 0) { requisitionListBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">ไม่มีรายการที่ต้องเบิก</td></tr>'; confirmRequisitionBtn.disabled = true; return; }
-            confirmRequisitionBtn.disabled = false;
-            requisitionList.forEach((item, index) => { const row = document.createElement('tr'); row.innerHTML = `<td class="px-2 py-4 text-sm text-gray-600 text-center">${index + 1}</td><td class="px-2 py-4 text-sm text-gray-800 font-medium break-words">${item.name}</td><td class="px-2 py-4 text-sm text-gray-800 text-center">${item.quantity}</td><td class="px-2 py-4 text-sm text-gray-600 text-center">${item.unit}</td><td class="px-2 py-4 text-center text-sm font-medium"><button class="delete-req-btn text-red-600 hover:text-red-900" data-id="${item.id}">ลบ</button></td>`; requisitionListBody.appendChild(row); });
+            const hasItems = requisitionList.length > 0;
+            confirmRequisitionBtn.disabled = !hasItems;
+            exportRequisitionBtn.disabled = !hasItems;
+
+            if (!hasItems) {
+                requisitionListBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">ไม่มีรายการที่ต้องเบิก</td></tr>';
+                return;
+            }
+            requisitionList.forEach((item, index) => { const row = document.createElement('tr'); row.innerHTML = `<td class="px-2 py-4 text-sm text-gray-600 text-center">${index + 1}</td><td class="px-2 py-4 text-sm text-gray-800 font-medium break-words">${item.name}</td><td class="px-2 py-4 text-sm text-gray-800 text-center">${item.quantity}</td><td class="px-2 py-4 text-sm text-gray-600 text-center">${item.unit}</td><td class="px-2 py-4 text-center text-sm font-medium"><button class="delete-req-btn text-red-600 hover:text-red-900" data-id="${item.id}" data-name="${item.name}">ลบ</button></td>`; requisitionListBody.appendChild(row); });
         }
         
         function displayHistory() { 
@@ -985,36 +1126,67 @@ async function editCategory(id, oldName) {
                 const card = document.createElement('div'); card.className = 'bg-gray-50 rounded-lg p-4 shadow'; 
                 const tableRows = historyItem.items.map((item, index) => `<tr><td class="py-2 px-2 text-sm text-gray-600 text-center">${index + 1}</td><td class="py-2 px-2 text-sm text-gray-800 break-words">${item.name}</td><td class="py-2 px-2 text-sm text-gray-800 text-center">${item.quantity}</td><td class="py-2 px-2 text-sm text-gray-600 text-center">${item.unit}</td></tr>`).join(''); 
                 
-                card.innerHTML = `<div class="flex justify-between items-center mb-3"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="overflow-x-auto"><table class="w-full table-auto show-grid"><thead><tr><th scope="col" class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center">ลำดับ</th><th scope="col" class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-left">สินค้า</th><th scope="col" class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center">จำนวน</th><th scope="col" class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`; 
+                card.innerHTML = `<div class="flex flex-wrap justify-between items-center mb-3 gap-2"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><div class="flex items-center gap-4"><span class="text-sm text-gray-500">${formattedDate}</span><button class="export-history-btn text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md" data-req-id="${historyItem.id}">Export CSV</button></div></div><div class="overflow-x-auto"><table class="w-full table-auto show-grid"><thead><tr><th scope="col" class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center">ลำดับ</th><th scope="col" class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-left">สินค้า</th><th scope="col" class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center">จำนวน</th><th scope="col" class="py-2 px-2 bg-gray-200 text-xs text-gray-600 font-medium text-center">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`; 
 
                 historyListContainer.appendChild(card); 
             });
         }
+
+        function displayDashboard() {
+            // Summary Cards
+            document.querySelector('#summary-card-products p:last-child').textContent = allRecords.length;
+            document.querySelector('#summary-card-categories p:last-child').textContent = categories.length;
+            document.querySelector('#summary-card-history p:last-child').textContent = historyList.length;
+
+            // Low Stock List
+            const lowStockList = document.getElementById('low-stock-list');
+            lowStockList.innerHTML = '';
+            const lowStockItems = allRecords.filter(record => {
+                const settings = itemSettings.get(record[itemColumnName]);
+                if (settings && typeof settings.reorderPoint === 'number') {
+                    const stock = parseInt(record[appSettings.triggerStockColumnName] || 0, 10);
+                    return !isNaN(stock) && stock <= settings.reorderPoint;
+                }
+                return false;
+            });
+
+            if (lowStockItems.length > 0) {
+                lowStockItems.forEach(item => {
+                    const stock = item[appSettings.triggerStockColumnName] || 'N/A';
+                    const reorderPoint = (itemSettings.get(item[itemColumnName]) || {}).reorderPoint;
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'flex justify-between items-center text-sm';
+                    itemEl.innerHTML = `
+                        <p class="text-gray-700">${item[itemColumnName]}</p>
+                        <p class="text-red-500 font-semibold">มี ${stock} / จุดเบิก ${reorderPoint}</p>
+                    `;
+                    lowStockList.appendChild(itemEl);
+                });
+            } else {
+                lowStockList.innerHTML = '<p class="text-gray-500">ไม่พบสินค้าที่ต้องเบิก</p>';
+            }
+
+            // Category Breakdown
+            const categoryBreakdownList = document.getElementById('category-breakdown-list');
+            categoryBreakdownList.innerHTML = '';
+            if (categories.length > 0) {
+                 categories.forEach(category => {
+                    const count = allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase())).length;
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'flex justify-between items-center text-sm';
+                    itemEl.innerHTML = `
+                        <p class="text-gray-700">${category.name}</p>
+                        <p class="font-semibold bg-gray-200 px-2 py-0.5 rounded-full">${count}</p>
+                    `;
+                    categoryBreakdownList.appendChild(itemEl);
+                });
+            } else {
+                 categoryBreakdownList.innerHTML = '<p class="text-gray-500">ยังไม่มีหมวดหมู่</p>';
+            }
+        }
         
-        function openContextMenu(event, record) {
-            contextMenuItemRecord = record;
-            const { clientX: mouseX, clientY: mouseY } = event;
-            
-            itemContextMenu.style.top = `${mouseY}px`;
-            itemContextMenu.style.left = `${mouseX}px`;
-            itemContextMenu.classList.remove('hidden');
-
-            const menuRect = itemContextMenu.getBoundingClientRect();
-            if (menuRect.bottom > window.innerHeight) {
-                itemContextMenu.style.top = `${mouseY - menuRect.height}px`;
-            }
-            if (menuRect.right > window.innerWidth) {
-                itemContextMenu.style.left = `${mouseX - menuRect.width}px`;
-            }
-        }
-
-        function closeContextMenu() {
-            if (itemContextMenu && !itemContextMenu.classList.contains('hidden')) {
-                itemContextMenu.classList.add('hidden');
-                contextMenuItemRecord = null;
-            }
-        }
-
+        function openContextMenu(event, record) { contextMenuItemRecord = record; const { clientX: mouseX, clientY: mouseY } = event; itemContextMenu.style.top = `${mouseY}px`; itemContextMenu.style.left = `${mouseX}px`; itemContextMenu.classList.remove('hidden'); const menuRect = itemContextMenu.getBoundingClientRect(); if (menuRect.bottom > window.innerHeight) { itemContextMenu.style.top = `${mouseY - menuRect.height}px`; } if (menuRect.right > window.innerWidth) { itemContextMenu.style.left = `${mouseX - menuRect.width}px`; } }
+        function closeContextMenu() { if (itemContextMenu && !itemContextMenu.classList.contains('hidden')) { itemContextMenu.classList.add('hidden'); contextMenuItemRecord = null; } }
         function openItemSettingsModal(record) { currentEditingItemId = record[itemColumnName]; const settings = itemSettings.get(currentEditingItemId) || {}; modalItemName.textContent = `ตั้งค่า: ${currentEditingItemId}`; reorderPointInput.value = settings.reorderPoint || ''; reorderQuantityInput.value = settings.reorderQuantity || ''; itemSettingsModal.classList.remove('hidden'); }
         function closeItemSettingsModal() { itemSettingsModal.classList.add('hidden'); currentEditingItemId = null; }
         function openCategoryActionsModal(category) { currentEditingCategory = category; categoryModalName.textContent = `จัดการหมวดหมู่: ${category.name}`; categoryActionsModal.classList.remove('hidden'); }
@@ -1027,17 +1199,19 @@ async function editCategory(id, oldName) {
         function closeConfirmModal() { confirmModal.classList.add('hidden'); confirmCallback = null; }
         function openAppSettingsModal() { updateAppSettingsModalInputs(); appSettingsModal.classList.remove('hidden'); }
         function closeAppSettingsModal() { appSettingsModal.classList.add('hidden'); }
+        function closeRequisitionPreviewModal() { requisitionPreviewModal.classList.add('hidden'); }
         function updateAppSettingsModalInputs() { settingTriggerColInput.value = appSettings.triggerStockColumnName; settingCalcColInput.value = appSettings.calculationStockColumnName; settingUnitColInput.value = appSettings.unitColumnName; }
         function showNotification(message, isError = true) { if (notificationTimeout) clearTimeout(notificationTimeout); notificationMessage.textContent = message; notificationToast.className = `fixed top-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`; notificationToast.classList.remove('hidden', 'opacity-0'); notificationToast.classList.add('show'); notificationTimeout = setTimeout(() => { notificationToast.classList.remove('show'); notificationToast.classList.add('opacity-0'); setTimeout(() => notificationToast.classList.add('hidden'), 300); }, 4000); }
         function switchView(viewName) { 
-            const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView }; 
-            const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; 
+            const views = { products: productListView, dashboard: dashboardView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView }; 
+            const navs = { products: navProductsBtn, dashboard: navDashboardBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; 
             Object.values(views).forEach(v => v.classList.add('hidden')); 
             categoryNavView.classList.add('hidden');
             Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); 
             views[viewName].classList.remove('hidden'); 
             navs[viewName].classList.add('text-blue-600', 'border-blue-600'); 
             navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+            
             if (viewName === 'products') { 
                 categoryNavView.classList.remove('hidden');
                 if(activeCategoryName === 'ทั้งหมด') {
@@ -1046,23 +1220,28 @@ async function editCategory(id, oldName) {
             } else {
                  productSearchContainer.classList.add('hidden');
             }
+
+            if (viewName === 'dashboard') {
+                displayDashboard();
+            }
         }
         function showError(message) { errorMessageEl.textContent = `เกิดข้อผิดพลาด: ${message}`; errorEl.classList.remove('hidden'); }
         function showNoData() { noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล'; noDataEl.classList.remove('hidden'); tableEl.classList.add('hidden'); }
         
         productSearchInput.addEventListener('input', () => {
             const searchTerm = productSearchInput.value.toLowerCase();
-            const filteredRecords = searchTerm
+            currentFilteredRecords = searchTerm
                 ? allRecords.filter(record => record[itemColumnName] && record[itemColumnName].toLowerCase().includes(searchTerm))
                 : allRecords;
             currentPage = 1; 
-            displayData(filteredRecords);
+            displayData();
         });
         
         categoryList.addEventListener('wheel', (event) => { if (window.matchMedia('(pointer: fine)').matches) { event.preventDefault(); categoryList.scrollLeft += event.deltaY; } }, { passive: false });
         addCategoryBtn.addEventListener('click', addCategory); 
         categoryInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addCategory(); });
         navProductsBtn.addEventListener('click', () => switchView('products'));
+        navDashboardBtn.addEventListener('click', () => switchView('dashboard'));
         navRequisitionBtn.addEventListener('click', () => switchView('requisition'));
         navHistoryBtn.addEventListener('click', () => switchView('history'));
         navManageBtn.addEventListener('click', () => switchView('manage'));
@@ -1070,7 +1249,7 @@ async function editCategory(id, oldName) {
         modalOkBtn.addEventListener('click', saveItemSettings);
         modalCancelBtn.addEventListener('click', closeItemSettingsModal);
         editCategoryBtn.addEventListener('click', () => { if (currentEditingCategory) { editCategory(currentEditingCategory.id, currentEditingCategory.name); closeCategoryActionsModal(); } });
-        deleteCategoryBtn.addEventListener('click', () => { if (currentEditingCategory) { showConfirmModal('ยืนยันการลบ', `ต้องการลบหมวดหมู่ "${currentEditingCategory.name}" หรือไม่?`, () => { deleteCategory(currentEditingCategory.id); closeCategoryActionsModal(); }); } });
+        deleteCategoryBtn.addEventListener('click', () => { if (currentEditingCategory) { showConfirmModal('ยืนยันการลบ', `ต้องการลบหมวดหมู่ "${currentEditingCategory.name}" หรือไม่?`, () => { deleteCategory(currentEditingCategory.id, currentEditingCategory.name); closeCategoryActionsModal(); }); } });
         categoryModalCancelBtn.addEventListener('click', closeCategoryActionsModal);
         categoryActionsModal.addEventListener('click', (e) => { if (e.target === categoryActionsModal) { closeCategoryActionsModal(); } });
         headerModalOkBtn.addEventListener('click', async () => { const headerText = headerInput.value.trim(); if (headerText) { await addHeaderRow(headerText); closeAddHeaderModal(); } });
@@ -1078,7 +1257,7 @@ async function editCategory(id, oldName) {
         headerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const headerText = headerInput.value.trim(); if (headerText) { addHeaderRow(headerText); closeAddHeaderModal(); } } });
         addHeaderModal.addEventListener('click', (e) => { if (e.target === addHeaderModal) { closeAddHeaderModal(); } });
         editHeaderBtn.addEventListener('click', () => { if(currentEditingHeaderId) { editHeaderRow(currentEditingHeaderId, currentEditingHeaderText); closeHeaderActionsModal(); } });
-        deleteHeaderBtn.addEventListener('click', () => { if(currentEditingHeaderId) { showConfirmModal('ยืนยันการลบ', `ต้องการลบหัวข้อ "${currentEditingHeaderText}" หรือไม่?`, () => { deleteHeaderRow(currentEditingHeaderId); closeHeaderActionsModal(); }); } });
+        deleteHeaderBtn.addEventListener('click', () => { if(currentEditingHeaderId) { showConfirmModal('ยืนยันการลบ', `ต้องการลบหัวข้อ "${currentEditingHeaderText}" หรือไม่?`, () => { deleteHeaderRow(currentEditingHeaderId, currentEditingHeaderText); closeHeaderActionsModal(); }); } });
         headerActionsCancelBtn.addEventListener('click', closeHeaderActionsModal);
         headerActionsModal.addEventListener('click', (e) => { if (e.target === headerActionsModal) { closeHeaderActionsModal(); }});
         confirmModalOkBtn.addEventListener('click', () => { if (typeof confirmCallback === 'function') { confirmCallback(); } closeConfirmModal(); });
@@ -1086,151 +1265,120 @@ async function editCategory(id, oldName) {
         appSettingsBtn.addEventListener('click', openAppSettingsModal);
         appSettingsSaveBtn.addEventListener('click', saveAppSettings);
         appSettingsCancelBtn.addEventListener('click', closeAppSettingsModal);
-        autoRequisitionBtn.addEventListener('click', generateRequisition);
-        requisitionListBody.addEventListener('click', (e) => { if(e.target.classList.contains('delete-req-btn')) { deleteRequisitionItem(e.target.dataset.id); }});
+        autoRequisitionBtn.addEventListener('click', generateRequisitionPreview);
+        requisitionListBody.addEventListener('click', (e) => { if(e.target.classList.contains('delete-req-btn')) { deleteRequisitionItem(e.target.dataset.id, e.target.dataset.name); }});
         confirmRequisitionBtn.addEventListener('click', confirmRequisition);
-
-        window.addEventListener('click', (e) => {
-            if (itemContextMenu && !itemContextMenu.classList.contains('hidden')) {
-                if (!itemContextMenu.contains(e.target)) {
-                    closeContextMenu();
-                }
-            }
+        previewConfirmBtn.addEventListener('click', confirmRequisitionFromPreview);
+        previewCancelBtn.addEventListener('click', closeRequisitionPreviewModal);
+        previewSelectAll.addEventListener('change', (e) => {
+            requisitionPreviewBody.querySelectorAll('.preview-item-checkbox').forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
         });
+
+        window.addEventListener('click', (e) => { if (itemContextMenu && !itemContextMenu.classList.contains('hidden') && !itemContextMenu.contains(e.target)) { closeContextMenu(); } });
         window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeContextMenu(); });
+        contextMenuSettingsBtn.addEventListener('click', () => { if (contextMenuItemRecord) openItemSettingsModal(contextMenuItemRecord); closeContextMenu(); });
+        contextMenuHideBtn.addEventListener('click', () => { if (contextMenuItemRecord && itemColumnName) { hideItem(contextMenuItemRecord[itemColumnName], contextMenuItemRecord[itemColumnName]); } closeContextMenu(); });
+        contextMenuAddHeaderBtn.addEventListener('click', () => { if (contextMenuItemRecord && itemColumnName) { openAddHeaderModal(contextMenuItemRecord[itemColumnName]); } closeContextMenu(); });
 
-        contextMenuSettingsBtn.addEventListener('click', () => {
-            if (contextMenuItemRecord) openItemSettingsModal(contextMenuItemRecord);
-            closeContextMenu();
-        });
+        async function moveItem(itemId, direction) {
+            const key = activeCategoryName || '__global__';
+            const currentOrder = sortOrdersMap[key] ? [...sortOrdersMap[key]] : [...currentFilteredRecords.map(r => r[itemColumnName])];
+            const fromIndex = currentOrder.indexOf(itemId);
 
-        contextMenuHideBtn.addEventListener('click', () => {
-            if (contextMenuItemRecord && itemColumnName) {
-                const itemId = contextMenuItemRecord[itemColumnName];
-                hideItem(itemId);
-            }
-            closeContextMenu();
-        });
-        
-        contextMenuAddHeaderBtn.addEventListener('click', () => {
-            if (contextMenuItemRecord && itemColumnName) {
-                const itemId = contextMenuItemRecord[itemColumnName];
-                openAddHeaderModal(itemId);
-            }
-            closeContextMenu();
-        });
+            if (fromIndex === -1) return;
 
-        function handleKeyNavigation(e) {
-            if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                return;
-            }
+            const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1;
 
-            const activeElement = document.activeElement;
-            const isWithinGrid = activeElement.tagName === 'TD' && activeElement.closest('#data-table tbody');
+            if (toIndex < 0 || toIndex >= currentOrder.length) return;
 
-            if (isWithinGrid) {
-                e.preventDefault();
-                const tableBody = activeElement.closest('tbody');
-                const grid = Array.from(tableBody.querySelectorAll('tr')).map(r => Array.from(r.querySelectorAll('td')));
-                
-                let currentRowIndex = -1, currentCellIndex = -1;
-                for (let i = 0; i < grid.length; i++) {
-                    let foundIndex = grid[i].indexOf(activeElement);
-                    if (foundIndex !== -1) {
-                        currentRowIndex = i;
-                        currentCellIndex = foundIndex;
-                        break;
-                    }
-                }
+            const [movedItem] = currentOrder.splice(fromIndex, 1);
+            currentOrder.splice(toIndex, 0, movedItem);
 
-                if (currentRowIndex === -1) return;
-
-                if (grid[currentRowIndex].length > 1) {
-                    lastGoodCellIndex = currentCellIndex;
-                }
-
-                let nextRowIndex = currentRowIndex;
-                let nextCellIndex = currentCellIndex;
-
-                switch (e.key) {
-                    case 'ArrowUp':
-                        nextRowIndex = Math.max(0, currentRowIndex - 1);
-                        nextCellIndex = lastGoodCellIndex;
-                        break;
-                    case 'ArrowDown':
-                        nextRowIndex = Math.min(grid.length - 1, currentRowIndex + 1);
-                        nextCellIndex = lastGoodCellIndex;
-                        break;
-                    case 'ArrowLeft':
-                        nextCellIndex = Math.max(0, currentCellIndex - 1);
-                        break;
-                    case 'ArrowRight':
-                        nextCellIndex = Math.min(grid[currentRowIndex].length - 1, currentCellIndex + 1);
-                        break;
-                }
-                
-                const targetRow = grid[nextRowIndex];
-                if (!targetRow) return;
-
-                const clampedCellIndex = Math.min(nextCellIndex, targetRow.length - 1);
-                const targetCell = targetRow[clampedCellIndex];
-                
-                if (targetCell) {
-                    activeElement.setAttribute('tabindex', '-1');
-                    targetCell.setAttribute('tabindex', '0');
-                    targetCell.focus();
-                }
-                return;
-            }
-
-            if ((activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') && ['ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                return;
-            }
-            e.preventDefault();
-            const focusableSelector = 'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-            const allFocusable = Array.from(document.querySelectorAll(focusableSelector))
-                                       .filter(el => el.offsetParent !== null && !el.closest('.hidden'));
-            if (allFocusable.length === 0) return;
-            
-            let currentIndex = allFocusable.indexOf(activeElement);
-            let nextIndex = 0;
-
-            if (currentIndex === -1) {
-                 nextIndex = 0;
-            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-                nextIndex = currentIndex > 0 ? currentIndex - 1 : allFocusable.length - 1;
-            } else { 
-                nextIndex = currentIndex < allFocusable.length - 1 ? currentIndex + 1 : 0;
-            }
-            
-            allFocusable[nextIndex]?.focus();
+            await saveCurrentSortOrder(currentOrder);
+            // The onSnapshot listener for sortOrdersMap will automatically trigger a re-render.
         }
 
-        document.addEventListener('keydown', handleKeyNavigation);
+        tableBody.addEventListener('click', e => {
+            const upButton = e.target.closest('.move-item-up');
+            const downButton = e.target.closest('.move-item-down');
+            if (upButton) {
+                moveItem(upButton.dataset.id, 'up');
+            } else if (downButton) {
+                moveItem(downButton.dataset.id, 'down');
+            }
+        });
+
+        // --- Sync Status ---
+        const syncDot = document.getElementById('sync-dot');
+        const syncText = document.getElementById('sync-text');
+        const updateOnlineStatus = () => {
+            const isOnline = navigator.onLine;
+            syncDot.classList.toggle('bg-green-500', isOnline);
+            syncDot.classList.toggle('bg-gray-400', !isOnline);
+            syncText.textContent = isOnline ? 'Online' : 'Offline';
+        };
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
+
+        // --- Export Logic ---
+        function exportToCsv(filename, rows) {
+            if (!rows || rows.length === 0) {
+                showNotification("ไม่มีข้อมูลสำหรับ Export");
+                return;
+            }
+            const header = Object.keys(rows[0]).join(',');
+            const csvContent = rows.map(row => {
+                return Object.values(row).map(value => {
+                    const strValue = String(value || '');
+                    // Handle commas and quotes in values
+                    if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) {
+                        return `"${strValue.replace(/"/g, '""')}"`;
+                    }
+                    return strValue;
+                }).join(',');
+            }).join('\n');
+
+            const csv = `\uFEFF${header}\n${csvContent}`; // \uFEFF for BOM to support UTF-8 in Excel
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+        
+        exportRequisitionBtn.addEventListener('click', () => {
+            exportToCsv(`requisition-${new Date().toISOString().slice(0, 10)}.csv`, requisitionList.map(({id, ...rest}) => rest));
+        });
+
+        historyListContainer.addEventListener('click', (e) => {
+            const exportBtn = e.target.closest('.export-history-btn');
+            if (exportBtn) {
+                const reqId = exportBtn.dataset.reqId;
+                const historyItem = historyList.find(item => item.id === reqId);
+                if (historyItem) {
+                    exportToCsv(`${historyItem.requisitionNumber}.csv`, historyItem.items);
+                }
+            }
+        });
 
         const navWrapper = document.getElementById('nav-toggle-wrapper'), 
               navTrigger = document.getElementById('nav-trigger'), 
               navIcon = document.getElementById('nav-trigger-icon'),
               navTabs = navWrapper.querySelector('nav');
         let isNavOpen = false;
-
         const openNav = () => { if (isNavOpen) return; isNavOpen = true; navWrapper.classList.remove('h-4'); navWrapper.classList.add('h-16'); navIcon.classList.add('rotate-180'); };
         const closeNav = () => { if (!isNavOpen) return; isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add('h-4'); navIcon.classList.remove('rotate-180'); };
-        
-        if (navTabs) {
-            navTabs.addEventListener('click', (e) => {
-                if (e.target.tagName === 'BUTTON') {
-                    setTimeout(closeNav, 200);
-                }
-            });
-        }
-        
-        if (window.matchMedia('(pointer: fine)').matches) { 
-            navWrapper.addEventListener('mouseenter', openNav); 
-            navWrapper.addEventListener('mouseleave', closeNav); 
-        } else { 
-            navTrigger.addEventListener('click', () => isNavOpen ? closeNav() : openNav()); 
-        }
+        if (navTabs) { navTabs.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { setTimeout(closeNav, 200); } }); }
+        if (window.matchMedia('(pointer: fine)').matches) { navWrapper.addEventListener('mouseenter', openNav); navWrapper.addEventListener('mouseleave', closeNav); } else { navTrigger.addEventListener('click', () => isNavOpen ? closeNav() : openNav()); }
     });
 </script>
 
