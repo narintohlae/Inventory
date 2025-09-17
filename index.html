@@ -10,6 +10,7 @@
     <style>
         body {
             font-family: 'Sarabun', sans-serif;
+            visibility: hidden; /* เพิ่มเข้ามาเพื่อซ่อนเนื้อหาจนกว่าจะตรวจสอบ auth เสร็จ */
         }
         .sortable-ghost {
             background-color: #c0e2ff;
@@ -45,9 +46,9 @@
         
         /* --- Styles for Focus --- */
         :is(button, [href], input, [tabindex]):focus-visible {
-             outline: 2px solid #3b82f6; /* blue-500 */
-             outline-offset: 2px;
-             border-radius: 2px;
+            outline: 2px solid #3b82f6; /* blue-500 */
+            outline-offset: 2px;
+            border-radius: 2px;
         }
         /* Specific focus for table cells */
         #table-body td:focus {
@@ -75,9 +76,6 @@
             <nav class="flex justify-center -mb-px space-x-2" aria-label="Tabs">
                 <button id="nav-products" class="whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm text-blue-600 border-blue-600">
                     รายการสินค้า
-                </button>
-                 <button id="nav-dashboard" class="whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
-                    แดชบอร์ด
                 </button>
                 <button id="nav-requisition" class="whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
                     รายการเบิกของ
@@ -172,47 +170,6 @@
             <div id="pagination-controls" class="mt-4 flex justify-between items-center"></div>
         </div>
 
-         <div id="dashboard-view" class="hidden">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div id="summary-card-products" class="bg-white p-6 rounded-lg shadow-md flex items-center space-x-4">
-                     <div class="bg-blue-100 p-3 rounded-full"><svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg></div>
-                    <div>
-                        <p class="text-sm text-gray-500">สินค้าทั้งหมด</p>
-                        <p class="text-2xl font-bold text-gray-800">0</p>
-                    </div>
-                </div>
-                <div id="summary-card-categories" class="bg-white p-6 rounded-lg shadow-md flex items-center space-x-4">
-                    <div class="bg-green-100 p-3 rounded-full"><svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5a2 2 0 012 2v5a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2zm0 14h.01M7 11h5a2 2 0 012 2v5a2 2 0 01-2 2H7a2 2 0 01-2-2v-5a2 2 0 012-2z"/></svg></div>
-                    <div>
-                        <p class="text-sm text-gray-500">หมวดหมู่</p>
-                        <p class="text-2xl font-bold text-gray-800">0</p>
-                    </div>
-                </div>
-                <div id="summary-card-history" class="bg-white p-6 rounded-lg shadow-md flex items-center space-x-4">
-                     <div class="bg-yellow-100 p-3 rounded-full"><svg class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg></div>
-                    <div>
-                        <p class="text-sm text-gray-500">ประวัติการเบิก</p>
-                        <p class="text-2xl font-bold text-gray-800">0</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                 <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-lg font-bold text-gray-700 mb-4">สินค้าที่ถึงจุดต้องเบิก</h3>
-                    <div id="low-stock-list" class="space-y-3 max-h-80 overflow-y-auto">
-                        <p class="text-gray-500">ไม่มีรายการ</p>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-lg font-bold text-gray-700 mb-4">สรุปจำนวนสินค้าตามหมวดหมู่</h3>
-                    <div id="category-breakdown-list" class="space-y-3 max-h-80 overflow-y-auto">
-                         <p class="text-gray-500">ไม่มีข้อมูล</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div id="requisition-view" class="hidden">
                      <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
                              <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
@@ -228,20 +185,20 @@
                              </div>
                              <div class="overflow-x-auto">
                                 <table class="w-full min-w-full divide-y divide-gray-200 show-grid">
-                                     <thead class="bg-gray-200">
-                                         <tr>
-                                             <th scope="col" class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-8">ลำดับ</th>
-                                             <th scope="col" class="py-3 px-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-auto">สินค้า</th>
-                                             <th scope="col" class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-14">จำนวนเบิก</th>
-                                             <th scope="col" class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-14">หน่วย</th>
-                                             <th scope="col" class="py-3 px-2 text-center text-xs font-medium text-gray-600 uppercase tracking-wider w-12">จัดการ</th>
-                                         </tr>
-                                     </thead>
-                                     <tbody id="requisition-list-body" class="bg-white divide-y divide-gray-200">
-                                     </tbody>
-                                 </table>
+                                    <thead class="bg-gray-200">
+                                        <tr>
+                                            <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider w-10">ลำดับ</th>
+                                            <th scope="col" class="py-2 px-1 sm:px-2 text-left text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider w-1/2 sm:w-auto">สินค้า</th>
+                                            <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider">จำนวนเบิก</th>
+                                            <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider">หน่วย</th>
+                                            <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="requisition-list-body" class="bg-white divide-y divide-gray-200">
+                                    </tbody>
+                                  </table>
                              </div>
-                         </div>
+                       </div>
         </div>
 
          <div id="history-view" class="hidden">
@@ -554,13 +511,11 @@
         const categoryList = document.getElementById('category-list');
         const manageCategoryList = document.getElementById('manage-category-list');
         const navProductsBtn = document.getElementById('nav-products');
-        const navDashboardBtn = document.getElementById('nav-dashboard');
         const navRequisitionBtn = document.getElementById('nav-requisition');
         const navHistoryBtn = document.getElementById('nav-history');
         const navManageBtn = document.getElementById('nav-manage');
         const navAccountBtn = document.getElementById('nav-account');
         const productListView = document.getElementById('product-list-view');
-        const dashboardView = document.getElementById('dashboard-view');
         const requisitionView = document.getElementById('requisition-view');
         const historyView = document.getElementById('history-view');
         const manageView = document.getElementById('manage-view');
@@ -660,6 +615,8 @@
                 allRecords = []; categories = []; hiddenItemsMap = {}; sortOrdersMap = {}; categoryOrder = []; customRows.clear(); itemSettings.clear(); requisitionList = []; historyList = [];
                 displayCategories(); 
             }
+            // ทำให้ body แสดงผลหลังจากตรวจสอบ auth state เสร็จ
+            document.body.style.visibility = 'visible';
         });
         
         function initializeListeners(currentUserId) {
@@ -771,17 +728,17 @@
                 if (settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number') {
                     const triggerStock = parseInt(record[appSettings.triggerStockColumnName] || 0, 10);
                     if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) {
-                         const calculationStock = parseInt(record[appSettings.calculationStockColumnName], 10);
-                         if (!isNaN(calculationStock) && calculationStock > 0) {
-                             let finalQuantity = settings.reorderQuantity;
-                             const halfCalcStock = 0.5 * calculationStock;
-                             if (settings.reorderQuantity > halfCalcStock) {
-                                 const halfAutoQty = 0.5 * settings.reorderQuantity;
-                                 finalQuantity = Math.min(halfAutoQty, halfCalcStock);
-                             }
-                             const roundedQuantity = Math.floor(finalQuantity);
-                             if (roundedQuantity > 0) { itemsToRequisition.push({ id: itemId, name: record[itemColumnName], quantity: roundedQuantity, unit: record[appSettings.unitColumnName] || 'ชิ้น' }); }
-                         }
+                        const calculationStock = parseInt(record[appSettings.calculationStockColumnName], 10);
+                        if (!isNaN(calculationStock) && calculationStock > 0) {
+                            let finalQuantity = settings.reorderQuantity;
+                            const halfCalcStock = 0.5 * calculationStock;
+                            if (settings.reorderQuantity > halfCalcStock) {
+                                const halfAutoQty = 0.5 * settings.reorderQuantity;
+                                finalQuantity = Math.min(halfAutoQty, halfCalcStock);
+                            }
+                            const roundedQuantity = Math.floor(finalQuantity);
+                            if (roundedQuantity > 0) { itemsToRequisition.push({ id: itemId, name: record[itemColumnName], quantity: roundedQuantity, unit: record[appSettings.unitColumnName] || 'ชิ้น' }); }
+                        }
                     }
                 }
             });
@@ -1093,7 +1050,12 @@
                 requisitionListBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">ไม่มีรายการที่ต้องเบิก</td></tr>';
                 return;
             }
-            requisitionList.forEach((item, index) => { const row = document.createElement('tr'); row.innerHTML = `<td class="px-2 py-4 text-sm text-gray-600 text-center">${index + 1}</td><td class="px-2 py-4 text-sm text-gray-800 font-medium break-words">${item.name}</td><td class="px-2 py-4 text-sm text-gray-800 text-center">${item.quantity}</td><td class="px-2 py-4 text-sm text-gray-600 text-center">${item.unit}</td><td class="px-2 py-4 text-center text-sm font-medium"><button class="delete-req-btn text-red-600 hover:text-red-900" data-id="${item.id}" data-name="${item.name}">ลบ</button></td>`; requisitionListBody.appendChild(row); });
+            requisitionList.forEach((item, index) => { 
+                const row = document.createElement('tr'); 
+                // ปรับปรุง class สำหรับ mobile
+                row.innerHTML = `<td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-600 text-center">${index + 1}</td><td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-800 font-medium break-words">${item.name}</td><td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-800 text-center">${item.quantity}</td><td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-600 text-center">${item.unit}</td><td class="px-1 sm:px-2 py-2 text-center text-xs sm:text-sm font-medium"><button class="delete-req-btn text-red-600 hover:text-red-900 p-1" data-id="${item.id}" data-name="${item.name}">ลบ</button></td>`; 
+                requisitionListBody.appendChild(row); 
+            });
         }
         
         function displayHistory() { 
@@ -1110,59 +1072,6 @@
             });
         }
 
-        function displayDashboard() {
-            // Summary Cards
-            document.querySelector('#summary-card-products p:last-child').textContent = allRecords.length;
-            document.querySelector('#summary-card-categories p:last-child').textContent = categories.length;
-            document.querySelector('#summary-card-history p:last-child').textContent = historyList.length;
-
-            // Low Stock List
-            const lowStockList = document.getElementById('low-stock-list');
-            lowStockList.innerHTML = '';
-            const lowStockItems = allRecords.filter(record => {
-                const settings = itemSettings.get(record[itemColumnName]);
-                if (settings && typeof settings.reorderPoint === 'number') {
-                    const stock = parseInt(record[appSettings.triggerStockColumnName] || 0, 10);
-                    return !isNaN(stock) && stock <= settings.reorderPoint;
-                }
-                return false;
-            });
-
-            if (lowStockItems.length > 0) {
-                lowStockItems.forEach(item => {
-                    const stock = item[appSettings.triggerStockColumnName] || 'N/A';
-                    const reorderPoint = (itemSettings.get(item[itemColumnName]) || {}).reorderPoint;
-                    const itemEl = document.createElement('div');
-                    itemEl.className = 'flex justify-between items-center text-sm';
-                    itemEl.innerHTML = `
-                        <p class="text-gray-700">${item[itemColumnName]}</p>
-                        <p class="text-red-500 font-semibold">มี ${stock} / จุดเบิก ${reorderPoint}</p>
-                    `;
-                    lowStockList.appendChild(itemEl);
-                });
-            } else {
-                lowStockList.innerHTML = '<p class="text-gray-500">ไม่พบสินค้าที่ต้องเบิก</p>';
-            }
-
-            // Category Breakdown
-            const categoryBreakdownList = document.getElementById('category-breakdown-list');
-            categoryBreakdownList.innerHTML = '';
-            if (categories.length > 0) {
-                 categories.forEach(category => {
-                    const count = allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase())).length;
-                    const itemEl = document.createElement('div');
-                    itemEl.className = 'flex justify-between items-center text-sm';
-                    itemEl.innerHTML = `
-                        <p class="text-gray-700">${category.name}</p>
-                        <p class="font-semibold bg-gray-200 px-2 py-0.5 rounded-full">${count}</p>
-                    `;
-                    categoryBreakdownList.appendChild(itemEl);
-                });
-            } else {
-                 categoryBreakdownList.innerHTML = '<p class="text-gray-500">ยังไม่มีหมวดหมู่</p>';
-            }
-        }
-        
         function openContextMenu(event, record) { contextMenuItemRecord = record; const { clientX: mouseX, clientY: mouseY } = event; itemContextMenu.style.top = `${mouseY}px`; itemContextMenu.style.left = `${mouseX}px`; itemContextMenu.classList.remove('hidden'); const menuRect = itemContextMenu.getBoundingClientRect(); if (menuRect.bottom > window.innerHeight) { itemContextMenu.style.top = `${mouseY - menuRect.height}px`; } if (menuRect.right > window.innerWidth) { itemContextMenu.style.left = `${mouseX - menuRect.width}px`; } }
         function closeContextMenu() { if (itemContextMenu && !itemContextMenu.classList.contains('hidden')) { itemContextMenu.classList.add('hidden'); contextMenuItemRecord = null; } }
         function openItemSettingsModal(record) { currentEditingItemId = record[itemColumnName]; const settings = itemSettings.get(currentEditingItemId) || {}; modalItemName.textContent = `ตั้งค่า: ${currentEditingItemId}`; reorderPointInput.value = settings.reorderPoint || ''; reorderQuantityInput.value = settings.reorderQuantity || ''; itemSettingsModal.classList.remove('hidden'); }
@@ -1181,8 +1090,8 @@
         function updateAppSettingsModalInputs() { settingTriggerColInput.value = appSettings.triggerStockColumnName; settingCalcColInput.value = appSettings.calculationStockColumnName; settingUnitColInput.value = appSettings.unitColumnName; }
         function showNotification(message, isError = true) { if (notificationTimeout) clearTimeout(notificationTimeout); notificationMessage.textContent = message; notificationToast.className = `fixed top-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`; notificationToast.classList.remove('hidden', 'opacity-0'); notificationToast.classList.add('show'); notificationTimeout = setTimeout(() => { notificationToast.classList.remove('show'); notificationToast.classList.add('opacity-0'); setTimeout(() => notificationToast.classList.add('hidden'), 300); }, 4000); }
         function switchView(viewName) { 
-            const views = { products: productListView, dashboard: dashboardView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView }; 
-            const navs = { products: navProductsBtn, dashboard: navDashboardBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; 
+            const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView }; 
+            const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; 
             Object.values(views).forEach(v => v.classList.add('hidden')); 
             categoryNavView.classList.add('hidden');
             Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); 
@@ -1196,11 +1105,7 @@
                     productSearchContainer.classList.remove('hidden');
                 }
             } else {
-                 productSearchContainer.classList.add('hidden');
-            }
-
-            if (viewName === 'dashboard') {
-                displayDashboard();
+                productSearchContainer.classList.add('hidden');
             }
         }
         function showError(message) { errorMessageEl.textContent = `เกิดข้อผิดพลาด: ${message}`; errorEl.classList.remove('hidden'); }
@@ -1219,7 +1124,6 @@
         addCategoryBtn.addEventListener('click', addCategory); 
         categoryInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addCategory(); });
         navProductsBtn.addEventListener('click', () => switchView('products'));
-        navDashboardBtn.addEventListener('click', () => switchView('dashboard'));
         navRequisitionBtn.addEventListener('click', () => switchView('requisition'));
         navHistoryBtn.addEventListener('click', () => switchView('history'));
         navManageBtn.addEventListener('click', () => switchView('manage'));
