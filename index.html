@@ -171,34 +171,34 @@
         </div>
 
         <div id="requisition-view" class="hidden">
-                     <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
-                             <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
-                                     <h2 class="text-2xl font-bold text-gray-700">รายการเบิกของ</h2>
-                                     <div class="flex items-center gap-2">
-                                         <button id="auto-requisition-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
-                                             เบิกของอัตโนมัติ
-                                         </button>
-                                         <button id="confirm-requisition-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:bg-gray-400">
-                                             ยืนยัน
-                                         </button>
-                                     </div>
+             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                     <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                             <h2 class="text-2xl font-bold text-gray-700">รายการเบิกของ</h2>
+                             <div class="flex items-center gap-2">
+                                 <button id="auto-requisition-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                                     เบิกของอัตโนมัติ
+                                 </button>
+                                 <button id="confirm-requisition-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 disabled:bg-gray-400">
+                                     ยืนยัน
+                                 </button>
                              </div>
-                             <div class="overflow-x-auto">
-                                <table class="w-full min-w-full divide-y divide-gray-200 show-grid">
-                                    <thead class="bg-gray-200">
-                                        <tr>
-                                            <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider w-10">ลำดับ</th>
-                                            <th scope="col" class="py-2 px-1 sm:px-2 text-left text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider w-1/2 sm:w-auto">สินค้า</th>
-                                            <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider">จำนวนเบิก</th>
-                                            <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider">หน่วย</th>
-                                            <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider">จัดการ</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="requisition-list-body" class="bg-white divide-y divide-gray-200">
-                                    </tbody>
-                                  </table>
-                             </div>
-                       </div>
+                     </div>
+                     <div class="overflow-x-auto">
+                        <table class="w-full min-w-full divide-y divide-gray-200 show-grid">
+                            <thead class="bg-gray-200">
+                                <tr>
+                                    <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider w-10">ลำดับ</th>
+                                    <th scope="col" class="py-2 px-1 sm:px-2 text-left text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider w-1/2 sm:w-auto">สินค้า</th>
+                                    <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider">จำนวนเบิก</th>
+                                    <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider">หน่วย</th>
+                                    <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requisition-list-body" class="bg-white divide-y divide-gray-200">
+                            </tbody>
+                          </table>
+                     </div>
+               </div>
         </div>
 
          <div id="history-view" class="hidden">
@@ -262,38 +262,6 @@
         </nav>
     </div>
 </div>
-
-<div id="requisition-preview-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-40">
-    <div class="relative mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-            <h3 class="text-lg leading-6 font-medium text-gray-900 text-center">ตรวจสอบรายการเบิกของอัตโนมัติ</h3>
-            <p class="text-sm text-gray-500 text-center mt-1">สามารถแก้ไขจำนวน หรือยกเลิกบางรายการได้ที่นี่</p>
-            <div class="mt-4 px-2 py-3 max-h-[60vh] overflow-y-auto">
-                 <table class="w-full min-w-full divide-y divide-gray-200 show-grid">
-                     <thead class="bg-gray-100 sticky top-0">
-                         <tr>
-                             <th class="py-1 px-1 sm:px-2 w-12"><input type="checkbox" id="preview-select-all"></th>
-                             <th class="py-1 px-1 sm:py-2 sm:px-2 text-left text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider">สินค้า</th>
-                             <th class="py-1 px-1 sm:py-2 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider w-24">จำนวนเบิก</th>
-                             <th class="py-1 px-1 sm:py-2 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase tracking-wider w-20">หน่วย</th>
-                         </tr>
-                     </thead>
-                     <tbody id="requisition-preview-body" class="bg-white divide-y divide-gray-200">
-                         </tbody>
-                 </table>
-            </div>
-            <div class="items-center px-4 py-3 sm:flex sm:flex-row-reverse">
-                <button id="preview-confirm-btn" class="w-full sm:w-auto px-4 py-2 bg-purple-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-purple-600">
-                    เพิ่มเข้ารายการเบิก
-                </button>
-                <button id="preview-cancel-btn" class="mt-3 sm:mt-0 sm:mr-3 w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300">
-                    ยกเลิก
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 
 <div id="item-settings-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-30">
     <div class="relative mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
@@ -566,11 +534,6 @@
         const paginationControls = document.getElementById('pagination-controls');
         const productSearchContainer = document.getElementById('product-search-container');
         const productSearchInput = document.getElementById('product-search-input');
-        const requisitionPreviewModal = document.getElementById('requisition-preview-modal');
-        const requisitionPreviewBody = document.getElementById('requisition-preview-body');
-        const previewConfirmBtn = document.getElementById('preview-confirm-btn');
-        const previewCancelBtn = document.getElementById('preview-cancel-btn');
-        const previewSelectAll = document.getElementById('preview-select-all');
 
         let allRecords = [], currentFilteredRecords = [], categories = [], sortOrdersMap = {}, categoryOrder = [], requisitionList = [], historyList = [];
         let customRows = new Map(), itemSettings = new Map(), hiddenItemsMap = {};
@@ -620,39 +583,39 @@
         });
         
         function initializeListeners(currentUserId) {
-                 if (!currentUserId) return;
-                 unsubscribes.forEach(unsub => unsub && unsub());
-                 unsubscribes = [];
-                 const userPath = `artifacts/${appId}/users/${currentUserId}`;
-                 categoriesCollectionRef = collection(db, `${userPath}/categories`);
-                 hiddenItemsDocRef = doc(db, `${userPath}/settings`, 'hiddenItemsByCategory');
-                 sortOrdersDocRef = doc(db, `${userPath}/settings`, 'sortOrders');
-                 customRowsCollectionRef = collection(db, `${userPath}/customRows`);
-                 categoryOrderDocRef = doc(db, `${userPath}/settings`, 'categoryOrder');
-                 itemSettingsCollectionRef = collection(db, `${userPath}/itemSettings`);
-                 requisitionListCollectionRef = collection(db, `${userPath}/requisitionList`);
-                 requisitionHistoryCollectionRef = collection(db, `${userPath}/requisitionHistory`);
-                 countersDocRef = doc(db, `${userPath}/settings`, 'counters');
-                 appSettingsDocRef = doc(db, `${userPath}/settings`, 'appSettings');
-                 unsubscribes.push(onSnapshot(categoriesCollectionRef, (snap) => {
-                     const fetchedCategories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                     categories = fetchedCategories;
-                     displayCategories();
-                     if (categoriesFirstLoad && resolveCategoriesLoaded) { categoriesFirstLoad = false; resolveCategoriesLoaded(); }
-                 }, (err) => showError("โหลดหมวดหมู่ไม่สำเร็จ: " + err.message)));
-                 unsubscribes.push(onSnapshot(hiddenItemsDocRef, (docSnap) => {
-                     const data = docSnap.exists() ? docSnap.data() : {};
-                     hiddenItemsMap = {}; 
-                     for (const categoryName in data) { if (Array.isArray(data[categoryName])) { hiddenItemsMap[categoryName] = new Set(data[categoryName]); } }
-                     if (allRecords.length > 0) { displayData(); }
-                 }, (err) => showError("โหลดรายการที่ซ่อนไม่สำเร็จ: " + err.message)));
-                 unsubscribes.push(onSnapshot(sortOrdersDocRef, (snap) => { sortOrdersMap = (snap.exists() && snap.data().orders) ? snap.data().orders : {}; if (allRecords.length > 0) displayData(); }, (err) => showError("โหลดลำดับจัดเรียงไม่สำเร็จ: " + err.message)));
-                 unsubscribes.push(onSnapshot(categoryOrderDocRef, (snap) => { categoryOrder = (snap.exists() && snap.data().order) ? snap.data().order : []; if (categories.length > 0) displayCategories(); }, (err) => showError("โหลดลำดับหมวดหมู่ไม่สำเร็จ: " + err.message)));
-                 unsubscribes.push(onSnapshot(customRowsCollectionRef, (snap) => { customRows.clear(); snap.docs.forEach(doc => customRows.set(doc.id, doc.data())); if (allRecords.length > 0) displayData(); }, (err) => showError("โหลดหัวข้อไม่สำเร็จ: " + err.message)));
-                 unsubscribes.push(onSnapshot(itemSettingsCollectionRef, (snap) => { itemSettings.clear(); snap.docs.forEach(doc => itemSettings.set(doc.id, doc.data())); }, (err) => showError("โหลดการตั้งค่าสินค้าไม่สำเร็จ: " + err.message)));
-                 unsubscribes.push(onSnapshot(requisitionListCollectionRef, (snap) => { requisitionList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); displayRequisitionList(); }, (err) => showError("โหลดรายการเบิกของไม่สำเร็จ: " + err.message)));
-                 unsubscribes.push(onSnapshot(requisitionHistoryCollectionRef, (snap) => { historyList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => b.timestamp.seconds - a.timestamp.seconds); displayHistory(); }, (err) => showError("โหลดประวัติไม่สำเร็จ: " + err.message)));
-                 unsubscribes.push(onSnapshot(appSettingsDocRef, (snap) => { if (snap.exists()) { appSettings = { ...appSettings, ...snap.data() }; } updateAppSettingsModalInputs(); }, (err) => showError("โหลดการตั้งค่าแอปไม่สำเร็จ: " + err.message)));
+             if (!currentUserId) return;
+             unsubscribes.forEach(unsub => unsub && unsub());
+             unsubscribes = [];
+             const userPath = `artifacts/${appId}/users/${currentUserId}`;
+             categoriesCollectionRef = collection(db, `${userPath}/categories`);
+             hiddenItemsDocRef = doc(db, `${userPath}/settings`, 'hiddenItemsByCategory');
+             sortOrdersDocRef = doc(db, `${userPath}/settings`, 'sortOrders');
+             customRowsCollectionRef = collection(db, `${userPath}/customRows`);
+             categoryOrderDocRef = doc(db, `${userPath}/settings`, 'categoryOrder');
+             itemSettingsCollectionRef = collection(db, `${userPath}/itemSettings`);
+             requisitionListCollectionRef = collection(db, `${userPath}/requisitionList`);
+             requisitionHistoryCollectionRef = collection(db, `${userPath}/requisitionHistory`);
+             countersDocRef = doc(db, `${userPath}/settings`, 'counters');
+             appSettingsDocRef = doc(db, `${userPath}/settings`, 'appSettings');
+             unsubscribes.push(onSnapshot(categoriesCollectionRef, (snap) => {
+                 const fetchedCategories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                 categories = fetchedCategories;
+                 displayCategories();
+                 if (categoriesFirstLoad && resolveCategoriesLoaded) { categoriesFirstLoad = false; resolveCategoriesLoaded(); }
+             }, (err) => showError("โหลดหมวดหมู่ไม่สำเร็จ: " + err.message)));
+             unsubscribes.push(onSnapshot(hiddenItemsDocRef, (docSnap) => {
+                 const data = docSnap.exists() ? docSnap.data() : {};
+                 hiddenItemsMap = {}; 
+                 for (const categoryName in data) { if (Array.isArray(data[categoryName])) { hiddenItemsMap[categoryName] = new Set(data[categoryName]); } }
+                 if (allRecords.length > 0) { displayData(); }
+             }, (err) => showError("โหลดรายการที่ซ่อนไม่สำเร็จ: " + err.message)));
+             unsubscribes.push(onSnapshot(sortOrdersDocRef, (snap) => { sortOrdersMap = (snap.exists() && snap.data().orders) ? snap.data().orders : {}; if (allRecords.length > 0) displayData(); }, (err) => showError("โหลดลำดับจัดเรียงไม่สำเร็จ: " + err.message)));
+             unsubscribes.push(onSnapshot(categoryOrderDocRef, (snap) => { categoryOrder = (snap.exists() && snap.data().order) ? snap.data().order : []; if (categories.length > 0) displayCategories(); }, (err) => showError("โหลดลำดับหมวดหมู่ไม่สำเร็จ: " + err.message)));
+             unsubscribes.push(onSnapshot(customRowsCollectionRef, (snap) => { customRows.clear(); snap.docs.forEach(doc => customRows.set(doc.id, doc.data())); if (allRecords.length > 0) displayData(); }, (err) => showError("โหลดหัวข้อไม่สำเร็จ: " + err.message)));
+             unsubscribes.push(onSnapshot(itemSettingsCollectionRef, (snap) => { itemSettings.clear(); snap.docs.forEach(doc => itemSettings.set(doc.id, doc.data())); }, (err) => showError("โหลดการตั้งค่าสินค้าไม่สำเร็จ: " + err.message)));
+             unsubscribes.push(onSnapshot(requisitionListCollectionRef, (snap) => { requisitionList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); displayRequisitionList(); }, (err) => showError("โหลดรายการเบิกของไม่สำเร็จ: " + err.message)));
+             unsubscribes.push(onSnapshot(requisitionHistoryCollectionRef, (snap) => { historyList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => b.timestamp.seconds - a.timestamp.seconds); displayHistory(); }, (err) => showError("โหลดประวัติไม่สำเร็จ: " + err.message)));
+             unsubscribes.push(onSnapshot(appSettingsDocRef, (snap) => { if (snap.exists()) { appSettings = { ...appSettings, ...snap.data() }; } updateAppSettingsModalInputs(); }, (err) => showError("โหลดการตั้งค่าแอปไม่สำเร็จ: " + err.message)));
         }
 
         showRegisterBtn.addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
@@ -714,13 +677,14 @@
         async function saveItemSettings() { if (!itemSettingsCollectionRef || !currentEditingItemId) return; const point = parseInt(reorderPointInput.value, 10); const quantity = parseInt(reorderQuantityInput.value, 10); const settings = { reorderPoint: isNaN(point) ? null : point, reorderQuantity: isNaN(quantity) ? null : quantity }; try { await setDoc(doc(itemSettingsCollectionRef, currentEditingItemId), settings); showNotification(`บันทึกการตั้งค่า '${currentEditingItemId}' แล้ว`, false); closeItemSettingsModal(); } catch(error) { showError("บันทึกการตั้งค่าไม่สำเร็จ: " + error.message); } }
         async function saveAppSettings() { if (!appSettingsDocRef) return; const newSettings = { triggerStockColumnName: settingTriggerColInput.value.trim() || 'รักษ์ยา', calculationStockColumnName: settingCalcColInput.value.trim() || 'เบบี้ช็อป', unitColumnName: settingUnitColInput.value.trim() || 'หน่วย', }; try { await setDoc(appSettingsDocRef, newSettings, { merge: true }); showNotification('บันทึกการตั้งค่าแล้ว', false); closeAppSettingsModal(); } catch (error) { showError("บันทึกการตั้งค่าไม่สำเร็จ: " + error.message); } }
         
-        function generateRequisitionPreview() {
+        async function generateAutoRequisition() {
             if (allRecords.length === 0) { showNotification('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า'); return; }
             const firstRecordKeys = Object.keys(allRecords[0]);
             if (!firstRecordKeys.includes(appSettings.triggerStockColumnName) || !firstRecordKeys.includes(appSettings.calculationStockColumnName)) {
                 showError(`ไม่พบคอลัมน์: "${appSettings.triggerStockColumnName}" หรือ "${appSettings.calculationStockColumnName}" ใน Google Sheet กรุณาตรวจสอบการตั้งค่า`);
                 return;
             }
+
             const itemsToRequisition = [];
             allRecords.forEach(record => {
                 const itemId = record[itemColumnName];
@@ -737,67 +701,57 @@
                                 finalQuantity = Math.min(halfAutoQty, halfCalcStock);
                             }
                             const roundedQuantity = Math.floor(finalQuantity);
-                            if (roundedQuantity > 0) { itemsToRequisition.push({ id: itemId, name: record[itemColumnName], quantity: roundedQuantity, unit: record[appSettings.unitColumnName] || 'ชิ้น' }); }
+                            if (roundedQuantity > 0) {
+                                itemsToRequisition.push({
+                                    id: itemId,
+                                    name: record[itemColumnName],
+                                    quantity: roundedQuantity,
+                                    unit: record[appSettings.unitColumnName] || 'ชิ้น'
+                                });
+                            }
                         }
                     }
                 }
             });
-            if (itemsToRequisition.length === 0) { showNotification('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข'); return; }
-            
-            requisitionPreviewBody.innerHTML = '';
-            itemsToRequisition.forEach(item => {
-                const row = document.createElement('tr');
-                row.dataset.id = item.id;
-                // ปรับปรุง UI สำหรับ Mobile
-                row.innerHTML = `
-                    <td class="px-1 sm:px-2 py-2 text-center"><input type="checkbox" class="preview-item-checkbox h-5 w-5" checked></td>
-                    <td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-800">${item.name}</td>
-                    <td class="px-1 sm:px-2 py-2 text-center"><input type="number" class="preview-item-quantity w-16 sm:w-20 text-center border rounded-md p-1" value="${item.quantity}" min="1"></td>
-                    <td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-600 text-center">${item.unit}</td>
-                `;
-                requisitionPreviewBody.appendChild(row);
-            });
-            previewSelectAll.checked = true;
-            requisitionPreviewModal.classList.remove('hidden');
-        }
 
-        async function confirmRequisitionFromPreview() {
-            const itemsToAdd = [];
-            const rows = requisitionPreviewBody.querySelectorAll('tr');
-            rows.forEach(row => {
-                const checkbox = row.querySelector('.preview-item-checkbox');
-                if (checkbox.checked) {
-                    const quantityInput = row.querySelector('.preview-item-quantity');
-                    const id = row.dataset.id;
-                    const record = allRecords.find(r => r[itemColumnName] === id);
-                    if (record) {
-                        itemsToAdd.push({
-                            id: id,
-                            name: record[itemColumnName],
-                            quantity: parseInt(quantityInput.value, 10) || 1,
-                            unit: record[appSettings.unitColumnName] || 'ชิ้น'
-                        });
-                    }
-                }
-            });
-
-            if (itemsToAdd.length === 0) {
-                showNotification('กรุณาเลือกอย่างน้อย 1 รายการ');
+            if (itemsToRequisition.length === 0) {
+                showNotification('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข');
                 return;
             }
 
             try {
                 const batch = writeBatch(db);
-                itemsToAdd.forEach(item => {
+                itemsToRequisition.forEach(item => {
                     const docRef = doc(requisitionListCollectionRef, item.id);
                     batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit });
                 });
                 await batch.commit();
-                showNotification(`เพิ่ม ${itemsToAdd.length} รายการในรายการเบิกของสำเร็จ!`, false);
-                closeRequisitionPreviewModal();
+                showNotification(`เพิ่ม ${itemsToRequisition.length} รายการในรายการเบิกของสำเร็จ!`, false);
                 switchView('requisition');
             } catch (error) {
-                showError("สร้างรายการเบิกไม่สำเร็จ: " + error.message);
+                showError("สร้างรายการเบิกอัตโนมัติไม่สำเร็จ: " + error.message);
+            }
+        }
+
+        async function updateRequisitionQuantity(id, newQuantity) {
+            if (!requisitionListCollectionRef || !id) return;
+            const quantity = parseInt(newQuantity, 10);
+            if (isNaN(quantity) || quantity < 1) {
+                showNotification('จำนวนต้องเป็นตัวเลขมากกว่า 0', true);
+                // Optionally, revert the input value
+                const input = requisitionListBody.querySelector(`input[data-id="${id}"]`);
+                const originalItem = requisitionList.find(item => item.id === id);
+                if (input && originalItem) {
+                    input.value = originalItem.quantity;
+                }
+                return;
+            }
+            try {
+                const docRef = doc(requisitionListCollectionRef, id);
+                await updateDoc(docRef, { quantity: quantity });
+                // No need for notification on every change to avoid being too noisy
+            } catch (error) {
+                showError("แก้ไขจำนวนเบิกไม่สำเร็จ: " + error.message);
             }
         }
 
@@ -1052,9 +1006,17 @@
                 return;
             }
             requisitionList.forEach((item, index) => { 
-                const row = document.createElement('tr'); 
-                // ปรับปรุง class สำหรับ mobile
-                row.innerHTML = `<td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-600 text-center">${index + 1}</td><td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-800 font-medium break-words">${item.name}</td><td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-800 text-center">${item.quantity}</td><td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-600 text-center">${item.unit}</td><td class="px-1 sm:px-2 py-2 text-center text-xs sm:text-sm font-medium"><button class="delete-req-btn text-red-600 hover:text-red-900 p-1" data-id="${item.id}" data-name="${item.name}">ลบ</button></td>`; 
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-600 text-center">${index + 1}</td>
+                    <td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-800 font-medium break-words">${item.name}</td>
+                    <td class="px-1 sm:px-2 py-2 text-center">
+                        <input type="number" class="requisition-quantity-input w-20 text-center border rounded-md p-1" value="${item.quantity}" data-id="${item.id}" min="1">
+                    </td>
+                    <td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-600 text-center">${item.unit}</td>
+                    <td class="px-1 sm:px-2 py-2 text-center text-xs sm:text-sm font-medium">
+                        <button class="delete-req-btn text-red-600 hover:text-red-900 p-1" data-id="${item.id}" data-name="${item.name}">ลบ</button>
+                    </td>`; 
                 requisitionListBody.appendChild(row); 
             });
         }
@@ -1088,9 +1050,8 @@
         function closeConfirmModal() { confirmModal.classList.add('hidden'); confirmCallback = null; }
         function openAppSettingsModal() { updateAppSettingsModalInputs(); appSettingsModal.classList.remove('hidden'); }
         function closeAppSettingsModal() { appSettingsModal.classList.add('hidden'); }
-        function closeRequisitionPreviewModal() { requisitionPreviewModal.classList.add('hidden'); }
         function updateAppSettingsModalInputs() { settingTriggerColInput.value = appSettings.triggerStockColumnName; settingCalcColInput.value = appSettings.calculationStockColumnName; settingUnitColInput.value = appSettings.unitColumnName; }
-        function showNotification(message, isError = true) { if (notificationTimeout) clearTimeout(notificationTimeout); notificationMessage.textContent = message; notificationToast.className = `fixed top-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`; notificationToast.classList.remove('hidden', 'opacity-0'); notificationToast.classList.add('show'); notificationTimeout = setTimeout(() => { notificationToast.classList.remove('show'); notificationToast.classList.add('opacity-0'); setTimeout(() => notificationToast.classList.add('hidden'), 300); }, 2500); }
+        function showNotification(message, isError = true) { if (notificationTimeout) clearTimeout(notificationTimeout); notificationMessage.textContent = message; notificationToast.className = `fixed top-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`; notificationToast.classList.remove('hidden', 'opacity-0'); notificationToast.classList.add('show'); notificationTimeout = setTimeout(() => { notificationToast.classList.remove('show'); notificationToast.classList.add('opacity-0'); setTimeout(() => notificationToast.classList.add('hidden'), 300); }, 4000); }
         function switchView(viewName) { 
             const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView }; 
             const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; 
@@ -1149,16 +1110,16 @@
         appSettingsBtn.addEventListener('click', openAppSettingsModal);
         appSettingsSaveBtn.addEventListener('click', saveAppSettings);
         appSettingsCancelBtn.addEventListener('click', closeAppSettingsModal);
-        autoRequisitionBtn.addEventListener('click', generateRequisitionPreview);
+        autoRequisitionBtn.addEventListener('click', generateAutoRequisition);
         requisitionListBody.addEventListener('click', (e) => { if(e.target.classList.contains('delete-req-btn')) { deleteRequisitionItem(e.target.dataset.id, e.target.dataset.name); }});
-        confirmRequisitionBtn.addEventListener('click', confirmRequisition);
-        previewConfirmBtn.addEventListener('click', confirmRequisitionFromPreview);
-        previewCancelBtn.addEventListener('click', closeRequisitionPreviewModal);
-        previewSelectAll.addEventListener('change', (e) => {
-            requisitionPreviewBody.querySelectorAll('.preview-item-checkbox').forEach(checkbox => {
-                checkbox.checked = e.target.checked;
-            });
+        requisitionListBody.addEventListener('change', (e) => {
+            if (e.target.classList.contains('requisition-quantity-input')) {
+                const id = e.target.dataset.id;
+                const newQuantity = e.target.value;
+                updateRequisitionQuantity(id, newQuantity);
+            }
         });
+        confirmRequisitionBtn.addEventListener('click', confirmRequisition);
 
         window.addEventListener('click', (e) => { if (itemContextMenu && !itemContextMenu.classList.contains('hidden') && !itemContextMenu.contains(e.target)) { closeContextMenu(); } });
         window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeContextMenu(); });
