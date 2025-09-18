@@ -678,60 +678,78 @@
         async function saveAppSettings() { if (!appSettingsDocRef) return; const newSettings = { triggerStockColumnName: settingTriggerColInput.value.trim() || 'รักษ์ยา', calculationStockColumnName: settingCalcColInput.value.trim() || 'เบบี้ช็อป', unitColumnName: settingUnitColInput.value.trim() || 'หน่วย', }; try { await setDoc(appSettingsDocRef, newSettings, { merge: true }); showNotification('บันทึกการตั้งค่าแล้ว', false); closeAppSettingsModal(); } catch (error) { showError("บันทึกการตั้งค่าไม่สำเร็จ: " + error.message); } }
         
         async function generateAutoRequisition() {
-            if (allRecords.length === 0) { showNotification('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า'); return; }
-            const firstRecordKeys = Object.keys(allRecords[0]);
-            if (!firstRecordKeys.includes(appSettings.triggerStockColumnName) || !firstRecordKeys.includes(appSettings.calculationStockColumnName)) {
-                showError(`ไม่พบคอลัมน์: "${appSettings.triggerStockColumnName}" หรือ "${appSettings.calculationStockColumnName}" ใน Google Sheet กรุณาตรวจสอบการตั้งค่า`);
-                return;
-            }
+            if (allRecords.length === 0) { showNotification('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า'); return; }
+            const firstRecordKeys = Object.keys(allRecords[0]);
+            if (!firstRecordKeys.includes(appSettings.triggerStockColumnName) || !firstRecordKeys.includes(appSettings.calculationStockColumnName)) {
+                showError(`ไม่พบคอลัมน์: "${appSettings.triggerStockColumnName}" หรือ "${appSettings.calculationStockColumnName}" ใน Google Sheet กรุณาตรวจสอบการตั้งค่า`);
+                return;
+            }
 
-            const itemsToRequisition = [];
-            allRecords.forEach(record => {
-                const itemId = record[itemColumnName];
-                const settings = itemSettings.get(itemId);
-                if (settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number') {
-                    const triggerStock = parseInt(record[appSettings.triggerStockColumnName] || 0, 10);
-                    if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) {
-                        const calculationStock = parseInt(record[appSettings.calculationStockColumnName], 10);
-                        if (!isNaN(calculationStock) && calculationStock > 0) {
-                            let finalQuantity = settings.reorderQuantity;
-                            const halfCalcStock = 0.5 * calculationStock;
-                            if (settings.reorderQuantity > halfCalcStock) {
-                                const halfAutoQty = 0.5 * settings.reorderQuantity;
-                                finalQuantity = Math.min(halfAutoQty, halfCalcStock);
-                            }
-                            const roundedQuantity = Math.floor(finalQuantity);
-                            if (roundedQuantity > 0) {
-                                itemsToRequisition.push({
-                                    id: itemId,
-                                    name: record[itemColumnName],
-                                    quantity: roundedQuantity,
-                                    unit: record[appSettings.unitColumnName] || 'ชิ้น'
-                                });
-                            }
-                        }
-                    }
+            const itemsToRequisition = [];
+            allRecords.forEach(record => {
+                const itemId = record[itemColumnName];
+                const settings = itemSettings.get(itemId);
+                
+                // --- START: ส่วนที่เพิ่มเงื่อนไข ---
+                const calculationStock = parseInt(record[appSettings.calculationStockColumnName], 10);
+                const triggerStock = parseInt(record[appSettings.triggerStockColumnName] || 0, 10);
+
+                // เงื่อนไขที่ 1: ถ้าจำนวนใน 'เบบี้ช็อป' น้อยกว่าหรือเท่ากับ 2 ไม่ต้องเบิก
+                if (!isNaN(calculationStock) && calculationStock <= 2) {
+                    return; // ข้ามสินค้านี้ไป
                 }
-            });
 
-            if (itemsToRequisition.length === 0) {
-                showNotification('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข');
-                return;
-            }
+                // ตรวจสอบว่ามี settings ครบถ้วนหรือไม่
+                if (!settings || typeof settings.reorderPoint !== 'number' || typeof settings.reorderQuantity !== 'number') {
+                    return; // ข้ามไปถ้าไม่มีการตั้งค่า
+                }
 
-            try {
-                const batch = writeBatch(db);
-                itemsToRequisition.forEach(item => {
-                    const docRef = doc(requisitionListCollectionRef, item.id);
-                    batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit });
-                });
-                await batch.commit();
-                showNotification(`เพิ่ม ${itemsToRequisition.length} รายการในรายการเบิกของสำเร็จ!`, false);
-                switchView('requisition');
-            } catch (error) {
-                showError("สร้างรายการเบิกอัตโนมัติไม่สำเร็จ: " + error.message);
-            }
-        }
+                // ตรวจสอบเงื่อนไขการเบิก
+                const needsRequisitionBasedOnReorderPoint = !isNaN(triggerStock) && triggerStock <= settings.reorderPoint;
+                const needsRequisitionBasedOnSpecialCondition = !isNaN(calculationStock) && calculationStock <= 5 && !isNaN(triggerStock) && triggerStock <= 2;
+                
+                if (needsRequisitionBasedOnReorderPoint || needsRequisitionBasedOnSpecialCondition) {
+                // --- END: ส่วนที่เพิ่มเงื่อนไข ---
+
+                    // ตรวจสอบอีกครั้งว่า calculationStock เป็นค่าที่ถูกต้องก่อนคำนวณ
+                    if (!isNaN(calculationStock) && calculationStock > 0) {
+                        let finalQuantity = settings.reorderQuantity;
+                        const halfCalcStock = 0.5 * calculationStock;
+                        if (settings.reorderQuantity > halfCalcStock) {
+                            const halfAutoQty = 0.5 * settings.reorderQuantity;
+                            finalQuantity = Math.min(halfAutoQty, halfCalcStock);
+                        }
+                        const roundedQuantity = Math.floor(finalQuantity);
+                        if (roundedQuantity > 0) {
+                            itemsToRequisition.push({
+                                id: itemId,
+                                name: record[itemColumnName],
+                                quantity: roundedQuantity,
+                                unit: record[appSettings.unitColumnName] || 'ชิ้น'
+                            });
+                        }
+                    }
+                }
+            });
+
+            if (itemsToRequisition.length === 0) {
+                showNotification('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข');
+                return;
+            }
+
+            try {
+                const batch = writeBatch(db);
+                itemsToRequisition.forEach(item => {
+                    const docRef = doc(requisitionListCollectionRef, item.id);
+                    batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit });
+                });
+                await batch.commit();
+                showNotification(`เพิ่ม ${itemsToRequisition.length} รายการในรายการเบิกของสำเร็จ!`, false);
+                switchView('requisition');
+            } catch (error) {
+                showError("สร้างรายการเบิกอัตโนมัติไม่สำเร็จ: " + error.message);
+            }
+        }
 
         async function updateRequisitionQuantity(id, newQuantity) {
             if (!requisitionListCollectionRef || !id) return;
