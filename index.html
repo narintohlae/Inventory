@@ -693,7 +693,7 @@
                     const triggerStock = parseInt(record[appSettings.triggerStockColumnName] || 0, 10);
                     if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) {
                         const calculationStock = parseInt(record[appSettings.calculationStockColumnName], 10);
-                        if (!isNaN(calculationStock) && calculationStock > 0) {
+                        if (!isNaN(calculationStock) && calculationStock > 2) {
                             let finalQuantity = settings.reorderQuantity;
                             const halfCalcStock = 0.5 * calculationStock;
                             if (settings.reorderQuantity > halfCalcStock) {
