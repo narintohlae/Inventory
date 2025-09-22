@@ -436,13 +436,6 @@
         </button>
     </div>
 </div>
-
-<div id="sync-status-indicator" class="fixed bottom-4 right-4 flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-lg text-sm z-50">
-    <div id="sync-dot" class="w-3 h-3 rounded-full bg-green-500"></div>
-    <span id="sync-text" class="text-gray-600">Online</span>
-</div>
-
-
 <script type="module">
     // Firebase Imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -1191,20 +1184,6 @@
         
         tableBody.addEventListener('keydown', handleTableKeyDown);
         // --- END: Keyboard Navigation Code ---
-
-        // --- Sync Status ---
-        const syncDot = document.getElementById('sync-dot');
-        const syncText = document.getElementById('sync-text');
-        const updateOnlineStatus = () => {
-            const isOnline = navigator.onLine;
-            syncDot.classList.toggle('bg-green-500', isOnline);
-            syncDot.classList.toggle('bg-gray-400', !isOnline);
-            syncText.textContent = isOnline ? 'Online' : 'Offline';
-        };
-        window.addEventListener('online', updateOnlineStatus);
-        window.addEventListener('offline', updateOnlineStatus);
-        updateOnlineStatus();
-
         // --- Export Logic ---
         function exportToExcelCompatibleCsv(filename, rows) {
             if (!rows || rows.length === 0) {
