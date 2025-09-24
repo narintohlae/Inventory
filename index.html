@@ -637,7 +637,35 @@
 
         function renderPagination(totalItems) { clearPagination(); const totalPages = Math.ceil(totalItems / CONSTANTS.ITEMS_PER_PAGE); if (totalPages <= 1) return; const prevButton = document.createElement('button'); prevButton.textContent = 'ก่อนหน้า'; prevButton.className = 'px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50'; prevButton.disabled = appState.currentPage === 1; prevButton.addEventListener('click', () => { if (appState.currentPage > 1) { appState.currentPage--; displayData(); } }); const pageInfo = document.createElement('span'); pageInfo.textContent = `หน้า ${appState.currentPage} จาก ${totalPages}`; pageInfo.className = 'text-sm text-gray-600'; const nextButton = document.createElement('button'); nextButton.textContent = 'ถัดไป'; nextButton.className = 'px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50'; nextButton.disabled = appState.currentPage === totalPages; nextButton.addEventListener('click', () => { if (appState.currentPage < totalPages) { appState.currentPage++; displayData(); } }); paginationControls.appendChild(prevButton); paginationControls.appendChild(pageInfo); paginationControls.appendChild(nextButton); }
         function clearPagination() { paginationControls.innerHTML = ''; }
-        function displayRequisitionList() { requisitionListBody.innerHTML = ''; const hasItems = appState.requisitionList.length > 0; confirmRequisitionBtn.disabled = !hasItems; if (!hasItems) { requisitionListBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">ไม่มีรายการที่ต้องเบิก</td></tr>'; return; } const fragment = document.createDocumentFragment(); appState.requisitionList.forEach((item, index) => { const row = document.createElement('tr'); row.innerHTML = `<td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-600 text-center">${index + 1}</td><td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-800 font-medium break-words">${item.name}</td><td class="px-1 sm:px-2 py-2 text-center"><input type="number" class="requisition-quantity-input w-20 text-center border rounded-md p-1" value="${item.quantity}" data-id="${item.id}" min="1"></td><td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-600 text-center">${item.unit}</td><td class="px-1 sm:px-2 py-2 text-center text-xs sm:text-sm font-medium"><button class="delete-req-btn text-red-600 hover:text-red-900 p-1" data-id="${item.id}" data-name="${item.name}">ลบ</button></td>`; fragment.appendChild(row); }); requisitionListBody.appendChild(fragment); }
+        function displayRequisitionList() {
+            requisitionListBody.innerHTML = '';
+            const hasItems = appState.requisitionList.length > 0;
+            confirmRequisitionBtn.disabled = !hasItems;
+            if (!hasItems) {
+                requisitionListBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">ไม่มีรายการที่ต้องเบิก</td></tr>';
+                return;
+            }
+            const fragment = document.createDocumentFragment();
+            appState.requisitionList.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-600 text-center">${index + 1}</td>
+                    <td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-800 font-medium break-words">${item.name}</td>
+                    <td class="px-1 sm:px-2 py-2 text-center">
+                        <div class="flex items-center justify-center">
+                            <button class="quantity-change-btn h-8 w-8 rounded-l-md border bg-gray-200 text-gray-600 hover:bg-gray-300" data-id="${item.id}" data-amount="-1">-</button>
+                            <input type="number" class="requisition-quantity-input h-8 w-12 text-center border-t border-b bg-white" value="${item.quantity}" data-id="${item.id}" min="1">
+                            <button class="quantity-change-btn h-8 w-8 rounded-r-md border bg-gray-200 text-gray-600 hover:bg-gray-300" data-id="${item.id}" data-amount="1">+</button>
+                        </div>
+                    </td>
+                    <td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-600 text-center">${item.unit}</td>
+                    <td class="px-1 sm:px-2 py-2 text-center text-xs sm:text-sm font-medium">
+                        <button class="delete-req-btn text-red-600 hover:text-red-900 p-1" data-id="${item.id}" data-name="${item.name}">ลบ</button>
+                    </td>`;
+                fragment.appendChild(row);
+            });
+            requisitionListBody.appendChild(fragment);
+        }
         function displayHistory() { historyListContainer.innerHTML = ''; if (appState.historyList.length === 0) { historyListContainer.innerHTML = '<p class="text-center py-4 text-gray-500">ยังไม่มีประวัติการเบิก</p>'; return; } const fragment = document.createDocumentFragment(); appState.historyList.forEach(historyItem => { const date = historyItem.timestamp.toDate(); const formattedDate = `${date.toLocaleDateString('th-TH')} ${date.toLocaleTimeString('th-TH')}`; const card = document.createElement('div'); card.className = 'bg-gray-50 rounded-lg p-4 shadow'; const tableRows = historyItem.items.map((item, index) => `<tr><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-600 text-center">${index + 1}</td><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-800 break-words">${item.name}</td><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-800 text-center">${item.quantity}</td><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-600 text-center">${item.unit}</td></tr>`).join(''); card.innerHTML = `<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 gap-2"><div class="w-full sm:w-auto"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="w-full sm:w-auto text-left sm:text-right"><button class="export-history-btn text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md mt-2 sm:mt-0" data-req-id="${historyItem.id}">Export to Excel</button></div></div><div class="overflow-x-auto"><table class="w-full table-auto show-grid"><thead><tr><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-center">ลำดับ</th><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-left">สินค้า</th><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-center">จำนวน</th><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-center">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`; fragment.appendChild(card); }); historyListContainer.appendChild(fragment); }
 
         function enableCategoryEditing(category) { const categoryEl = manageCategoryList.querySelector(`div[data-id="${category.id}"]`); if (!categoryEl) return; const nameSpan = categoryEl.querySelector('span:first-child'); const kebabMenu = categoryEl.querySelector('.kebab-menu'); const input = document.createElement('input'); input.type = 'text'; input.value = category.name; input.className = 'editing-input'; const saveChanges = () => { const newName = input.value.trim(); if (newName && newName !== category.name) { updateCategoryName(category.id, category.name, newName); } setTimeout(displayCategories, 200); }; input.addEventListener('blur', saveChanges); input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } else if (e.key === 'Escape') { input.removeEventListener('blur', saveChanges); input.blur(); displayCategories(); } }); nameSpan.style.display = 'none'; kebabMenu.style.display = 'none'; categoryEl.insertBefore(input, kebabMenu); input.focus(); input.select(); }
@@ -694,8 +722,37 @@
         appSettingsSaveBtn.addEventListener('click', saveAppSettings);
         appSettingsCancelBtn.addEventListener('click', closeAppSettingsModal);
         autoRequisitionBtn.addEventListener('click', generateAutoRequisition);
-        requisitionListBody.addEventListener('click', (e) => { if(e.target.classList.contains('delete-req-btn')) { deleteRequisitionItem(e.target.dataset.id, e.target.dataset.name); }});
-        requisitionListBody.addEventListener('change', (e) => { if (e.target.classList.contains('requisition-quantity-input')) { const id = e.target.dataset.id; const newQuantity = e.target.value; updateRequisitionQuantity(id, newQuantity); } });
+        
+        requisitionListBody.addEventListener('click', (e) => {
+            if (e.target.classList.contains('quantity-change-btn')) {
+                const id = e.target.dataset.id;
+                const amount = parseInt(e.target.dataset.amount);
+                const input = requisitionListBody.querySelector(`input.requisition-quantity-input[data-id="${id}"]`);
+                if (input) {
+                    let newQuantity = parseInt(input.value) + amount;
+                    if (newQuantity < 1) {
+                        newQuantity = 1;
+                    }
+                    input.value = newQuantity;
+                    updateRequisitionQuantity(id, newQuantity);
+                }
+            } else if (e.target.classList.contains('delete-req-btn')) {
+                deleteRequisitionItem(e.target.dataset.id, e.target.dataset.name);
+            }
+        });
+
+        requisitionListBody.addEventListener('change', (e) => {
+            if (e.target.classList.contains('requisition-quantity-input')) {
+                const id = e.target.dataset.id;
+                let newQuantity = parseInt(e.target.value);
+                if (isNaN(newQuantity) || newQuantity < 1) {
+                    newQuantity = 1;
+                    e.target.value = newQuantity; 
+                }
+                updateRequisitionQuantity(id, newQuantity);
+            }
+        });
+        
         confirmRequisitionBtn.addEventListener('click', confirmRequisition);
         window.addEventListener('click', (e) => { if (itemContextMenu && !itemContextMenu.classList.contains('hidden') && !itemContextMenu.contains(e.target)) { closeContextMenu(); } });
         window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !itemContextMenu.classList.contains('hidden')) closeContextMenu(); });
