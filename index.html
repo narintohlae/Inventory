@@ -164,18 +164,18 @@
                      </div>
                  </div>
                  <div class="overflow-x-auto">
-                    <table class="w-full min-w-full divide-y divide-gray-200 show-grid">
-                        <thead class="bg-gray-200">
-                            <tr>
-                                <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase w-10">ลำดับ</th>
-                                <th scope="col" class="py-2 px-1 sm:px-2 text-left text-[11px] sm:text-xs font-medium text-gray-600 uppercase w-1/2 sm:w-auto">สินค้า</th>
-                                <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase">จำนวนเบิก</th>
-                                <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase">หน่วย</th>
-                                <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase">จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="requisition-list-body" class="bg-white divide-y divide-gray-200"></tbody>
-                    </table>
+                     <table class="w-full min-w-full divide-y divide-gray-200 show-grid">
+                         <thead class="bg-gray-200">
+                             <tr>
+                                 <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase w-10">ลำดับ</th>
+                                 <th scope="col" class="py-2 px-1 sm:px-2 text-left text-[11px] sm:text-xs font-medium text-gray-600 uppercase w-1/2 sm:w-auto">สินค้า</th>
+                                 <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase">จำนวนเบิก</th>
+                                 <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase">หน่วย</th>
+                                 <th scope="col" class="py-2 px-1 sm:px-2 text-center text-[11px] sm:text-xs font-medium text-gray-600 uppercase">จัดการ</th>
+                             </tr>
+                         </thead>
+                         <tbody id="requisition-list-body" class="bg-white divide-y divide-gray-200"></tbody>
+                     </table>
                  </div>
             </div>
         </div>
@@ -332,8 +332,8 @@
                  </div>
              </div>
             <div class="items-center px-4 py-3 sm:flex">
-                 <button id="app-settings-save-btn" class="w-full sm:w-auto px-4 py-2 bg-blue-500 text-white rounded-md shadow-sm hover:bg-blue-600">บันทึก</button>
-                 <button id="app-settings-cancel-btn" class="mt-3 sm:mt-0 sm:ml-3 w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-800 rounded-md shadow-sm hover:bg-gray-300">ยกเลิก</button>
+                <button id="app-settings-save-btn" class="w-full sm:w-auto px-4 py-2 bg-blue-500 text-white rounded-md shadow-sm hover:bg-blue-600">บันทึก</button>
+                <button id="app-settings-cancel-btn" class="mt-3 sm:mt-0 sm:ml-3 w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-800 rounded-md shadow-sm hover:bg-gray-300">ยกเลิก</button>
             </div>
         </div>
     </div>
@@ -606,7 +606,28 @@
             tableHead.appendChild(headerRow);
 
             const bodyFragment = document.createDocumentFragment();
-            finalDisplayOrder.forEach(id => { if (!visibleIds.has(id)) return; const row = document.createElement('tr'); row.dataset.id = id; if(appState.customRows.has(id)){ const rowData = appState.customRows.get(id); if (rowData.categoryName === appState.activeCategoryName) { row.className = 'bg-gray-200 font-bold'; const cell = document.createElement('td'); cell.colSpan = headers.length; cell.className = 'px-4 py-0.5 text-gray-800 text-sm text-left'; cell.textContent = rowData.text; cell.setAttribute('tabindex', '-1'); row.addEventListener('dblclick', () => { openHeaderActionsModal(id, rowData.text); }); row.appendChild(cell); bodyFragment.appendChild(row); } } else if (allRecordsMap.has(id)) { const record = allRecordsMap.get(id); row.className = 'hover:bg-gray-50'; row.setAttribute('tabindex', '0'); row.addEventListener('contextmenu', (e) => { e.preventDefault(); openContextMenu(e, record); }); row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openContextMenu(e, record); } }); row.addEventListener('click', (e) => { const rowId = record[itemColumnName]; const currentTime = new Date().getTime(); const tapLength = currentTime - lastTap.time; if (tapLength < 400 && tapLength > 0 && lastTap.id === rowId) { e.preventDefault(); openContextMenu(e, record); lastTap = { time: 0, id: null }; } else { lastTap = { time: currentTime, id: rowId }; } }); headers.forEach(header => { const td = document.createElement('td'); td.setAttribute('tabindex', '-1'); const narrowColumns = ['รวม', 'หน่วย', CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK]; let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left'; let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6'; td.className = `${padding} py-1 ${alignment} text-sm text-gray-700 break-words ${header === itemColumnName ? 'w-full' : ''}`; td.textContent = record[header]; row.appendChild(td); }); bodyFragment.appendChild(row); } });
+            finalDisplayOrder.forEach(id => { if (!visibleIds.has(id)) return; const row = document.createElement('tr'); row.dataset.id = id; if(appState.customRows.has(id)){ const rowData = appState.customRows.get(id); if (rowData.categoryName === appState.activeCategoryName) { row.className = 'bg-gray-200 font-bold'; const cell = document.createElement('td'); cell.colSpan = headers.length; cell.className = 'px-4 py-0.5 text-gray-800 text-sm text-left'; cell.textContent = rowData.text; cell.setAttribute('tabindex', '-1'); row.addEventListener('dblclick', () => { openHeaderActionsModal(id, rowData.text); }); row.appendChild(cell); bodyFragment.appendChild(row); } } else if (allRecordsMap.has(id)) { const record = allRecordsMap.get(id); row.className = 'hover:bg-gray-50'; row.setAttribute('tabindex', '0'); 
+            
+            // --- EVENT LISTENERS สำหรับแถวสินค้า ---
+            row.addEventListener('contextmenu', (e) => { e.preventDefault(); openContextMenu(e, record); }); // <-- สำหรับ Desktop (คลิกขวา)
+            row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openContextMenu(e, record); } });
+            
+            // <-- START: โค้ดสำหรับ Double Tap บนมือถือ -->
+            row.addEventListener('click', (e) => {
+                const rowId = record[itemColumnName];
+                const currentTime = new Date().getTime();
+                const tapLength = currentTime - lastTap.time;
+                if (tapLength < 400 && tapLength > 0 && lastTap.id === rowId) {
+                    e.preventDefault();
+                    openContextMenu(e, record);
+                    lastTap = { time: 0, id: null }; // รีเซ็ตค่าหลังจาก double tap สำเร็จ
+                } else {
+                    lastTap = { time: currentTime, id: rowId }; // บันทึกการแตะครั้งแรก
+                }
+            });
+            // <-- END: โค้ดสำหรับ Double Tap บนมือถือ -->
+            
+            headers.forEach(header => { const td = document.createElement('td'); td.setAttribute('tabindex', '-1'); const narrowColumns = ['รวม', 'หน่วย', CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK]; let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left'; let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6'; td.className = `${padding} py-1 ${alignment} text-sm text-gray-700 break-words ${header === itemColumnName ? 'w-full' : ''}`; td.textContent = record[header]; row.appendChild(td); }); bodyFragment.appendChild(row); } });
             tableBody.appendChild(bodyFragment);
             appState.sortableInstance = new Sortable(tableBody, { animation: 150, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen', delay: 200, touchStartThreshold: 5, onEnd: (evt) => { const newOrder = Array.from(tableBody.querySelectorAll('tr')).map(row => row.dataset.id); saveCurrentSortOrder(newOrder); } }); 
         }
