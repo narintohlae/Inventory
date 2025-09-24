@@ -612,14 +612,17 @@
             row.addEventListener('contextmenu', (e) => { e.preventDefault(); openContextMenu(e, record); }); // <-- สำหรับ Desktop (คลิกขวา)
             row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openContextMenu(e, record); } });
             
-            // <-- START: โค้ดสำหรับ Double Tap บนมือถือ -->
-            row.addEventListener('click', (e) => {
+            // <-- START: โค้ดสำหรับ Double Tap บนมือถือ (อัปเดตแล้ว) -->
+            row.addEventListener('touchstart', (e) => {
                 const rowId = record[itemColumnName];
                 const currentTime = new Date().getTime();
                 const tapLength = currentTime - lastTap.time;
                 if (tapLength < 400 && tapLength > 0 && lastTap.id === rowId) {
                     e.preventDefault();
-                    openContextMenu(e, record);
+                    // สร้าง event object ใหม่เพื่อให้เข้ากับฟังก์ชัน openContextMenu
+                    const touch = e.touches[0];
+                    const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY, target: e.target };
+                    openContextMenu(fakeEvent, record);
                     lastTap = { time: 0, id: null }; // รีเซ็ตค่าหลังจาก double tap สำเร็จ
                 } else {
                     lastTap = { time: currentTime, id: rowId }; // บันทึกการแตะครั้งแรก
@@ -718,39 +721,6 @@
         if (navTabs) { navTabs.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { setTimeout(closeNav, 200); } }); }
         if (window.matchMedia('(pointer: fine)').matches) { navWrapper.addEventListener('mouseenter', openNav); navWrapper.addEventListener('mouseleave', closeNav); } else { navTrigger.addEventListener('click', () => isNavOpen ? closeNav() : openNav()); }
     });
-
-        // --- Double Click (Desktop) ---
-        tableBody.addEventListener('dblclick', (e) => {
-            const row = e.target.closest('tr');
-            if (!row) return;
-            openContextMenu(e, row);
-        });
-
-        // --- Double Tap (Mobile) ---
-        let lastTapTime = 0;
-        tableBody.addEventListener('touchstart', (e) => {
-            const now = Date.now();
-            const row = e.target.closest('tr');
-            if (!row) return;
-            if (now - lastTapTime < 300) {
-                e.preventDefault();
-                openContextMenu(e, row);
-            }
-            lastTapTime = now;
-        });
-
-        // --- ฟังก์ชันเปิด Context Menu ---
-        function openContextMenu(e, row) {
-            e.preventDefault();
-            appState.contextMenuItemRecord = row.dataset.id;
-            const menu = document.getElementById('item-context-menu');
-            menu.classList.remove('hidden');
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            menu.style.top = clientY + 'px';
-            menu.style.left = clientX + 'px';
-        }
-
 </script>
 
 </body>
