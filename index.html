@@ -718,6 +718,39 @@
         if (navTabs) { navTabs.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { setTimeout(closeNav, 200); } }); }
         if (window.matchMedia('(pointer: fine)').matches) { navWrapper.addEventListener('mouseenter', openNav); navWrapper.addEventListener('mouseleave', closeNav); } else { navTrigger.addEventListener('click', () => isNavOpen ? closeNav() : openNav()); }
     });
+
+        // --- Double Click (Desktop) ---
+        tableBody.addEventListener('dblclick', (e) => {
+            const row = e.target.closest('tr');
+            if (!row) return;
+            openContextMenu(e, row);
+        });
+
+        // --- Double Tap (Mobile) ---
+        let lastTapTime = 0;
+        tableBody.addEventListener('touchstart', (e) => {
+            const now = Date.now();
+            const row = e.target.closest('tr');
+            if (!row) return;
+            if (now - lastTapTime < 300) {
+                e.preventDefault();
+                openContextMenu(e, row);
+            }
+            lastTapTime = now;
+        });
+
+        // --- ฟังก์ชันเปิด Context Menu ---
+        function openContextMenu(e, row) {
+            e.preventDefault();
+            appState.contextMenuItemRecord = row.dataset.id;
+            const menu = document.getElementById('item-context-menu');
+            menu.classList.remove('hidden');
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            menu.style.top = clientY + 'px';
+            menu.style.left = clientX + 'px';
+        }
+
 </script>
 
 </body>
