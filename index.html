@@ -794,12 +794,19 @@
         addHeaderModal.addEventListener('click', (e) => { if (e.target === addHeaderModal) { closeAddHeaderModal(); } });
         
         // --- FIXED: อัปเดต event listener ให้เรียกใช้ฟังก์ชันแก้ไขใหม่ ---
-        editHeaderBtn.addEventListener('click', () => {
-            if (appState.currentEditingHeaderId && appState.currentEditingHeaderText) {
-                closeHeaderActionsModal();
-                enableHeaderEditing(appState.currentEditingHeaderId, appState.currentEditingHeaderText);
-            }
-        });
+editHeaderBtn.addEventListener('click', () => {
+    if (appState.currentEditingHeaderId && appState.currentEditingHeaderText) {
+        // 1. เก็บค่า ID และ Text ไว้ในตัวแปรชั่วคราวก่อน
+        const idToEdit = appState.currentEditingHeaderId;
+        const textToEdit = appState.currentEditingHeaderText;
+
+        // 2. จากนั้นค่อยปิด Modal (ซึ่งจะล้างค่าใน appState)
+        closeHeaderActionsModal();
+
+        // 3. เรียกใช้ฟังก์ชันแก้ไข โดยใช้ค่าจากตัวแปรที่เก็บไว้
+        enableHeaderEditing(idToEdit, textToEdit);
+    }
+});
         
         deleteHeaderBtn.addEventListener('click', () => { if(appState.currentEditingHeaderId) { showConfirmModal('ยืนยันการลบ', `ต้องการลบหัวข้อ "${appState.currentEditingHeaderText}" หรือไม่?`, () => { deleteHeaderRow(appState.currentEditingHeaderId, appState.currentEditingHeaderText); closeHeaderActionsModal(); }); } });
         headerActionsCancelBtn.addEventListener('click', closeHeaderActionsModal);
