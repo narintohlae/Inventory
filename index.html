@@ -23,8 +23,9 @@
             cursor: grab;
         }
         #notification-toast {
+            opacity: 0; /* --- FIXED: เพิ่มเข้ามาเพื่อให้ fade-in ทำงานถูกต้อง --- */
             transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-            transform: translateY(20px); /* --- CHANGED: ปรับ animation ให้เลื่อนขึ้นจากด้านล่าง --- */
+            transform: translateY(20px);
         }
         #notification-toast.show {
             opacity: 1;
@@ -380,7 +381,7 @@
     </div>
 </div>
 
-<div id="notification-toast" class="hidden opacity-0 fixed bottom-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg z-50">
+<div id="notification-toast" class="opacity-0 fixed bottom-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg z-50">
     <p id="notification-message"></p>
 </div>
 
@@ -431,7 +432,7 @@
 
         // --- NEW: Centralized App State ---
         const appState = {
-            allRecords: [], currentFilteredRecords: [], categories: [], sortOrdersMap: {}, categoryOrder: [], customRows: new Map(), itemSettings: new Map(), requisitionList: [], historyList: [], hiddenItemsMap: {}, activeCategoryName: null, currentEditingItemId: null, currentEditingCategory: null, currentEditingHeaderId: null, currentEditingHeaderText: null, confirmCallback: null, notificationTimeout: null, insertHeaderAboveId: null, contextMenuItemRecord: null, sortableInstance: null, categorySortableInstance: null,
+            allRecords: [], allRecordsMap: new Map(), currentFilteredRecords: [], categories: [], sortOrdersMap: {}, categoryOrder: [], customRows: new Map(), itemSettings: new Map(), requisitionList: [], historyList: [], hiddenItemsMap: {}, activeCategoryName: null, currentEditingItemId: null, currentEditingCategory: null, currentEditingHeaderId: null, currentEditingHeaderText: null, confirmCallback: null, notificationTimeout: null, insertHeaderAboveId: null, contextMenuItemRecord: null, sortableInstance: null, categorySortableInstance: null,
             appSettings: { triggerStockColumnName: CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, calculationStockColumnName: CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK, unitColumnName: CONSTANTS.SHEET_COLUMN_NAMES.UNIT },
             userId: null, unsubscribes: [], currentPage: 1, initialDataLoaded: false, categoriesFirstLoad: true, resolveCategoriesLoaded: null, itemForRequisition: null,
         };
@@ -465,7 +466,7 @@
                 appContainer.classList.add('hidden');
                 appState.unsubscribes.forEach(unsub => unsub && unsub());
                 appState.unsubscribes = [];
-                Object.assign(appState, { allRecords: [], categories: [], hiddenItemsMap: {}, sortOrdersMap: {}, categoryOrder: [], customRows: new Map(), itemSettings: new Map(), requisitionList: [], historyList: [] });
+                Object.assign(appState, { allRecords: [], allRecordsMap: new Map(), categories: [], hiddenItemsMap: {}, sortOrdersMap: {}, categoryOrder: [], customRows: new Map(), itemSettings: new Map(), requisitionList: [], historyList: [] });
                 displayCategories(); 
             }
             document.body.style.visibility = 'visible';
@@ -590,13 +591,13 @@
             if (appState.allRecords.length === 0) { showNoData(); return; }
 
             const itemColumnName = Object.keys(appState.allRecords[0])[0] || '';
-            const allRecordsMap = new Map(appState.allRecords.map(r => [r[itemColumnName], r]));
+            appState.allRecordsMap = new Map(appState.allRecords.map(r => [r[itemColumnName], r]));
             const currentRecordIds = new Set(recordsToDisplay.map(r => r[itemColumnName]));
             const sortKey = appState.activeCategoryName || CONSTANTS.SORT_KEY_GLOBAL;
             const hiddenIdsForCurrentCategory = appState.hiddenItemsMap[sortKey] || new Set();
             const currentItemOrder = appState.sortOrdersMap[sortKey] || [];
             const combinedOrder = [...new Set([...currentItemOrder, ...records.map(r => r[itemColumnName])])];
-            const displayOrder = combinedOrder.filter(id => appState.customRows.has(id) || allRecordsMap.has(id));
+            const displayOrder = combinedOrder.filter(id => appState.customRows.has(id) || appState.allRecordsMap.has(id));
             const visibleIds = new Set(displayOrder.filter(id => !hiddenIdsForCurrentCategory.has(id)));
             const finalDisplayOrder = displayOrder.filter(id => (appState.customRows.has(id) && appState.customRows.get(id).categoryName === appState.activeCategoryName) || currentRecordIds.has(id));
 
@@ -609,31 +610,43 @@
             tableHead.appendChild(headerRow);
 
             const bodyFragment = document.createDocumentFragment();
-            finalDisplayOrder.forEach(id => { if (!visibleIds.has(id)) return; const row = document.createElement('tr'); row.dataset.id = id; if(appState.customRows.has(id)){ const rowData = appState.customRows.get(id); if (rowData.categoryName === appState.activeCategoryName) { row.className = 'bg-gray-200 font-bold'; const cell = document.createElement('td'); cell.colSpan = headers.length; cell.className = 'px-4 py-0.5 text-gray-800 text-sm text-left'; cell.textContent = rowData.text; cell.setAttribute('tabindex', '-1'); row.addEventListener('dblclick', () => { openHeaderActionsModal(id, rowData.text); }); row.appendChild(cell); bodyFragment.appendChild(row); } } else if (allRecordsMap.has(id)) { const record = allRecordsMap.get(id); row.className = 'hover:bg-gray-50'; row.setAttribute('tabindex', '0'); 
-            
-            // --- EVENT LISTENERS สำหรับแถวสินค้า ---
-            row.addEventListener('contextmenu', (e) => { e.preventDefault(); openContextMenu(e, record); }); // <-- สำหรับ Desktop (คลิกขวา)
-            row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openContextMenu(e, record); } });
-            
-            // <-- START: โค้ดสำหรับ Double Tap บนมือถือ (อัปเดตแล้ว) -->
-            row.addEventListener('touchstart', (e) => {
-                const rowId = record[itemColumnName];
-                const currentTime = new Date().getTime();
-                const tapLength = currentTime - lastTap.time;
-                if (tapLength < 400 && tapLength > 0 && lastTap.id === rowId) {
-                    e.preventDefault();
-                    // สร้าง event object ใหม่เพื่อให้เข้ากับฟังก์ชัน openContextMenu
-                    const touch = e.touches[0];
-                    const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY, target: e.target };
-                    openContextMenu(fakeEvent, record);
-                    lastTap = { time: 0, id: null }; // รีเซ็ตค่าหลังจาก double tap สำเร็จ
-                } else {
-                    lastTap = { time: currentTime, id: rowId }; // บันทึกการแตะครั้งแรก
-                }
+            finalDisplayOrder.forEach(id => { 
+                if (!visibleIds.has(id)) return; 
+                const row = document.createElement('tr'); 
+                row.dataset.id = id; 
+                if(appState.customRows.has(id)){ 
+                    const rowData = appState.customRows.get(id); 
+                    if (rowData.categoryName === appState.activeCategoryName) { 
+                        row.className = 'bg-gray-200 font-bold'; 
+                        const cell = document.createElement('td'); 
+                        cell.colSpan = headers.length; 
+                        cell.className = 'px-4 py-0.5 text-gray-800 text-sm text-left'; 
+                        cell.textContent = rowData.text; 
+                        cell.setAttribute('tabindex', '-1'); 
+                        row.addEventListener('dblclick', () => { 
+                            openHeaderActionsModal(id, rowData.text); 
+                        }); 
+                        row.appendChild(cell); 
+                        bodyFragment.appendChild(row); 
+                    } 
+                } else if (appState.allRecordsMap.has(id)) { 
+                    const record = appState.allRecordsMap.get(id); 
+                    row.className = 'hover:bg-gray-50'; 
+                    row.setAttribute('tabindex', '0');
+                    
+                    headers.forEach(header => { 
+                        const td = document.createElement('td'); 
+                        td.setAttribute('tabindex', '-1'); 
+                        const narrowColumns = ['รวม', 'หน่วย', CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK]; 
+                        let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left'; 
+                        let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6'; 
+                        td.className = `${padding} py-1 ${alignment} text-sm text-gray-700 break-words ${header === itemColumnName ? 'w-full' : ''}`; 
+                        td.textContent = record[header]; 
+                        row.appendChild(td); 
+                    }); 
+                    bodyFragment.appendChild(row); 
+                } 
             });
-            // <-- END: โค้ดสำหรับ Double Tap บนมือถือ -->
-            
-            headers.forEach(header => { const td = document.createElement('td'); td.setAttribute('tabindex', '-1'); const narrowColumns = ['รวม', 'หน่วย', CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK]; let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left'; let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6'; td.className = `${padding} py-1 ${alignment} text-sm text-gray-700 break-words ${header === itemColumnName ? 'w-full' : ''}`; td.textContent = record[header]; row.appendChild(td); }); bodyFragment.appendChild(row); } });
             tableBody.appendChild(bodyFragment);
             appState.sortableInstance = new Sortable(tableBody, { animation: 150, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen', delay: 200, touchStartThreshold: 5, onEnd: (evt) => { const newOrder = Array.from(tableBody.querySelectorAll('tr')).map(row => row.dataset.id); saveCurrentSortOrder(newOrder); } }); 
         }
@@ -673,6 +686,48 @@
 
         function enableCategoryEditing(category) { const categoryEl = manageCategoryList.querySelector(`div[data-id="${category.id}"]`); if (!categoryEl) return; const nameSpan = categoryEl.querySelector('span:first-child'); const kebabMenu = categoryEl.querySelector('.kebab-menu'); const input = document.createElement('input'); input.type = 'text'; input.value = category.name; input.className = 'editing-input'; const saveChanges = () => { const newName = input.value.trim(); if (newName && newName !== category.name) { updateCategoryName(category.id, category.name, newName); } setTimeout(displayCategories, 200); }; input.addEventListener('blur', saveChanges); input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } else if (e.key === 'Escape') { input.removeEventListener('blur', saveChanges); input.blur(); displayCategories(); } }); nameSpan.style.display = 'none'; kebabMenu.style.display = 'none'; categoryEl.insertBefore(input, kebabMenu); input.focus(); input.select(); }
         
+        // --- FIXED: ฟังก์ชันใหม่สำหรับแก้ไข Header ---
+        function enableHeaderEditing(headerId, currentText) {
+            const headerRow = tableBody.querySelector(`tr[data-id="${headerId}"]`);
+            if (!headerRow || !headerRow.firstChild) return;
+
+            const cell = headerRow.firstChild;
+            const originalContent = cell.innerHTML;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentText;
+            input.className = 'w-full bg-gray-200 p-1 text-sm text-gray-800 border-blue-500 border-2 rounded';
+
+            const saveChanges = () => {
+                const newText = input.value.trim();
+                if (newText && newText !== currentText) {
+                    editHeaderRow(headerId, newText);
+                } else {
+                    // Restore original if no change or empty
+                    cell.innerHTML = originalContent;
+                    cell.textContent = currentText; // Ensure text is correct
+                }
+            };
+
+            input.addEventListener('blur', saveChanges);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    input.blur();
+                } else if (e.key === 'Escape') {
+                    input.removeEventListener('blur', saveChanges);
+                    input.blur();
+                    cell.innerHTML = originalContent;
+                    cell.textContent = currentText;
+                }
+            });
+
+            cell.textContent = '';
+            cell.appendChild(input);
+            input.focus();
+            input.select();
+        }
+        
         function openItemSettingsModal(record) { const itemColumnName = Object.keys(appState.allRecords[0])[0] || ''; appState.currentEditingItemId = record[itemColumnName]; const settings = appState.itemSettings.get(appState.currentEditingItemId) || {}; modalItemName.textContent = `ตั้งค่า: ${appState.currentEditingItemId}`; reorderPointInput.value = settings.reorderPoint || ''; reorderQuantityInput.value = settings.reorderQuantity || ''; itemSettingsModal.classList.remove('hidden'); }
         function closeItemSettingsModal() { itemSettingsModal.classList.add('hidden'); appState.currentEditingItemId = null; }
         function openCategoryActionsModal(category) { appState.currentEditingCategory = category; categoryModalName.textContent = `จัดการหมวดหมู่: ${category.name}`; categoryActionsModal.classList.remove('hidden'); }
@@ -689,14 +744,17 @@
         function showNotification(message, isError = true) {
             if (appState.notificationTimeout) clearTimeout(appState.notificationTimeout);
             notificationMessage.textContent = message;
-            // --- CHANGED: แก้ไข className เป็น bottom-5 right-5 ---
             notificationToast.className = `fixed bottom-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
             notificationToast.classList.remove('hidden', 'opacity-0');
-            notificationToast.classList.add('show');
+            
+            // ใช้ timeout เล็กน้อยเพื่อให้ browser render การเปลี่ยนแปลงก่อนเริ่ม transition
+            setTimeout(() => {
+                notificationToast.classList.add('show');
+            }, 10);
+
             appState.notificationTimeout = setTimeout(() => {
                 notificationToast.classList.remove('show');
-                notificationToast.classList.add('opacity-0');
-                setTimeout(() => notificationToast.classList.add('hidden'), 300);
+                setTimeout(() => notificationToast.classList.add('hidden'), 300); // ซ่อนหลังจาก animation จบ
             }, 1500);
         }
         function switchView(viewName) { const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView }; const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; Object.values(views).forEach(v => v.classList.add('hidden')); categoryNavView.classList.add('hidden'); Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); views[viewName].classList.remove('hidden'); navs[viewName].classList.add('text-blue-600', 'border-blue-600'); navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); if (viewName === 'products') { categoryNavView.classList.remove('hidden'); if(appState.activeCategoryName === 'ทั้งหมด') { productSearchContainer.classList.remove('hidden'); } } else { productSearchContainer.classList.add('hidden'); } }
@@ -734,7 +792,15 @@
         headerModalCancelBtn.addEventListener('click', closeAddHeaderModal);
         headerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const headerText = headerInput.value.trim(); if (headerText) { addHeaderRow(headerText); closeAddHeaderModal(); } } });
         addHeaderModal.addEventListener('click', (e) => { if (e.target === addHeaderModal) { closeAddHeaderModal(); } });
-        editHeaderBtn.addEventListener('click', () => { if(appState.currentEditingHeaderId) { editHeaderRow(appState.currentEditingHeaderId, appState.currentEditingHeaderText); closeHeaderActionsModal(); } });
+        
+        // --- FIXED: อัปเดต event listener ให้เรียกใช้ฟังก์ชันแก้ไขใหม่ ---
+        editHeaderBtn.addEventListener('click', () => {
+            if (appState.currentEditingHeaderId && appState.currentEditingHeaderText) {
+                closeHeaderActionsModal();
+                enableHeaderEditing(appState.currentEditingHeaderId, appState.currentEditingHeaderText);
+            }
+        });
+        
         deleteHeaderBtn.addEventListener('click', () => { if(appState.currentEditingHeaderId) { showConfirmModal('ยืนยันการลบ', `ต้องการลบหัวข้อ "${appState.currentEditingHeaderText}" หรือไม่?`, () => { deleteHeaderRow(appState.currentEditingHeaderId, appState.currentEditingHeaderText); closeHeaderActionsModal(); }); } });
         headerActionsCancelBtn.addEventListener('click', closeHeaderActionsModal);
         headerActionsModal.addEventListener('click', (e) => { if (e.target === headerActionsModal) { closeHeaderActionsModal(); }});
@@ -764,6 +830,51 @@
         });
         
         confirmRequisitionBtn.addEventListener('click', confirmRequisition);
+
+        // --- IMPROVEMENT: Event Delegation สำหรับ table body ---
+        tableBody.addEventListener('contextmenu', e => {
+            const row = e.target.closest('tr[data-id]');
+            if (!row || appState.customRows.has(row.dataset.id)) return; // ไม่ทำงานกับแถว header
+            const record = appState.allRecordsMap.get(row.dataset.id);
+            if(record) {
+                e.preventDefault();
+                openContextMenu(e, record);
+            }
+        });
+
+        tableBody.addEventListener('touchstart', e => {
+            const row = e.target.closest('tr[data-id]');
+            if (!row || appState.customRows.has(row.dataset.id)) return;
+            const record = appState.allRecordsMap.get(row.dataset.id);
+            if (!record) return;
+
+            const rowId = row.dataset.id;
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap.time;
+            
+            if (tapLength < 400 && tapLength > 0 && lastTap.id === rowId) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY, target: e.target };
+                openContextMenu(fakeEvent, record);
+                lastTap = { time: 0, id: null };
+            } else {
+                lastTap = { time: currentTime, id: rowId };
+            }
+        });
+
+        tableBody.addEventListener('keydown', e => {
+             if (e.key === 'Enter' || e.key === ' ') {
+                const row = e.target.closest('tr[data-id]');
+                if (!row || appState.customRows.has(row.dataset.id)) return;
+                const record = appState.allRecordsMap.get(row.dataset.id);
+                if (record) {
+                    e.preventDefault();
+                    openContextMenu(e, record);
+                }
+            }
+        });
+
         window.addEventListener('click', (e) => { if (itemContextMenu && !itemContextMenu.classList.contains('hidden') && !itemContextMenu.contains(e.target)) { closeContextMenu(); } });
         window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !itemContextMenu.classList.contains('hidden')) closeContextMenu(); });
         contextMenuSettingsBtn.addEventListener('click', () => { if (appState.contextMenuItemRecord) openItemSettingsModal(appState.contextMenuItemRecord); closeContextMenu(); });
