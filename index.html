@@ -70,11 +70,19 @@
         .menu-item-active {
             background-color: #eff6ff; /* สีฟ้าอ่อน Tailwind blue-50 */
         }
-    </style>
+    
+/* --- ดันเนื้อหาลงมาบน desktop เพื่อไม่ให้โดนแทบบาร์บัง --- */
+@media (min-width: 1024px) {
+  #app-container {
+    margin-top: 40px; /* ปรับตามความสูงจริงของ nav bar */
+  }
+}
+
+</style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-<div id="nav-toggle-wrapper" class="fixed top-0 left-0 right-0 z-30 h-4 bg-white shadow-md overflow-hidden transition-all duration-300 ease-in-out">
+<div id="nav-toggle-wrapper" class="fixed top-0 left-0 right-0 z-30 h-4 lg:h-16 bg-white shadow-md border-b overflow-hidden lg:overflow-visible transition-all duration-300 ease-in-out">
     <div class="container mx-auto lg:w-1/2 h-full relative">
         <div class="border-b border-gray-200">
             <nav class="flex justify-center -mb-px space-x-2" aria-label="Tabs">
@@ -85,13 +93,13 @@
                 <button id="nav-account" class="whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">บัญชี</button>
             </nav>
         </div>
-        <div id="nav-trigger" class="absolute bottom-0 left-0 w-full h-4 bg-white cursor-pointer border-t border-gray-200 flex items-center justify-center">
+        <div id="nav-trigger" class="absolute bottom-0 left-0 w-full h-4 bg-white cursor-pointer border-t border-gray-200 flex items-center justify-center lg:hidden">
             <svg id="nav-trigger-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
         </div>
     </div>
 </div>
 
-<div class="container mx-auto px-2 py-4 pt-8 sm:p-6 md:p-8 lg:w-1/2 pb-24">
+<div class="container mx-auto px-2 py-4 pt-20 sm:p-6 md:p-8 lg:w-1/2 pb-24">
     
     <div id="auth-container" class="mb-8">
         <div class="bg-white rounded-lg shadow-md p-6">
@@ -412,9 +420,9 @@
 
 <script type="module">
     // Firebase Imports
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDocs, setDoc, getDoc, Timestamp, writeBatch, runTransaction, arrayUnion, arrayRemove, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDocs, setDoc, getDoc, Timestamp, writeBatch, runTransaction, arrayUnion, arrayRemove, query, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
     
     document.addEventListener('DOMContentLoaded', () => {
         const sheetUrl = 'https://script.google.com/macros/s/AKfycbwW8_sUf1C7kBBjdZ-fW7TZwYkPnmZL_lnkPTQS2d3eurnr3zeOZ7zWLKswNymzpCh3/exec';
@@ -425,7 +433,7 @@
         // --- NEW: Constants Object ---
         const CONSTANTS = {
             FIRESTORE_PATHS: { CATEGORIES: 'categories', HIDDEN_ITEMS: 'hiddenItemsByCategory', SORT_ORDERS: 'sortOrders', CUSTOM_ROWS: 'customRows', CATEGORY_ORDER: 'categoryOrder', ITEM_SETTINGS: 'itemSettings', REQUISITION_LIST: 'requisitionList', REQUISITION_HISTORY: 'requisitionHistory', COUNTERS: 'counters', APP_SETTINGS: 'appSettings' },
-            SHEET_COLUMN_NAMES: { TRIGGER_STOCK: 'รักษ์ยา', CALCULATION_STOCK: 'เบบี้ช็อป', UNIT: 'หน่วย' },
+            SHEET_COLUMN_NAMES: { TRIGGER_STOCK: "รักษ์ยา", CALCULATION_STOCK: "เบบี้ช็อป", UNIT: "หน่วย" },
             SORT_KEY_GLOBAL: '__global__',
             ITEMS_PER_PAGE: 50,
         };
@@ -470,6 +478,8 @@
                 displayCategories(); 
             }
             document.body.style.visibility = 'visible';
+            // --- Fallback เผื่อ Firebase ไม่ตอบ ---
+            setTimeout(() => { if(document.body.style.visibility === 'hidden') document.body.style.visibility = 'visible'; }, 5000);
         });
         
         function initializeListeners(currentUserId) {
@@ -547,7 +557,7 @@
                 const categoryBtn = document.createElement('button');
                 categoryBtn.dataset.id = category.id;
                 categoryBtn.className = 'whitespace-nowrap py-4 px-2 font-bold text-sm focus:outline-none';
-                categoryBtn.classList.toggle('text-blue-600', appState.activeCategoryName === category.name);
+                categoryBtn.classList.toggle('text-blue-600', appState.activeCategoryName === category.name || appState.activeCategoryName === category.id);
                 categoryBtn.classList.toggle('text-gray-500', appState.activeCategoryName !== category.name);
                 categoryBtn.classList.toggle('hover:text-gray-700', appState.activeCategoryName !== category.name);
                 categoryBtn.textContent = category.name;
