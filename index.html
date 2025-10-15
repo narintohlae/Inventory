@@ -423,13 +423,13 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDocs, setDoc, getDoc, Timestamp, writeBatch, runTransaction, arrayUnion, arrayRemove, query, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-    
     document.addEventListener('DOMContentLoaded', () => {
         const sheetUrl = 'https://script.google.com/macros/s/AKfycbwW8_sUf1C7kBBjdZ-fW7TZwYkPnmZL_lnkPTQS2d3eurnr3zeOZ7zWLKswNymzpCh3/exec';
 
         // --- DOM Elements ---
-        const authContainer = document.getElementById('auth-container'), appContainer = document.getElementById('app-container'), loginForm = document.getElementById('login-form'), registerForm = document.getElementById('register-form'), loginEmailInput = document.getElementById('login-email'), loginPasswordInput = document.getElementById('login-password'), registerEmailInput = document.getElementById('register-email'), registerPasswordInput = document.getElementById('register-password'), loginErrorEl = document.getElementById('login-error'), registerErrorEl = document.getElementById('register-error'), showRegisterBtn = document.getElementById('show-register-btn'), showLoginBtn = document.getElementById('show-login-btn'), userEmailEl = document.getElementById('user-email'), logoutBtn = document.getElementById('logout-btn'), loadingEl = document.getElementById('loading'), errorEl = document.getElementById('error'), errorMessageEl = document.getElementById('error-message'), noDataEl = document.getElementById('no-data'), tableEl = document.getElementById('data-table'), tableHead = document.getElementById('table-head'), tableBody = document.getElementById('table-body'), categoryInput = document.getElementById('category-input'), addCategoryBtn = document.getElementById('add-category-btn'), categoryList = document.getElementById('category-list'), manageCategoryList = document.getElementById('manage-category-list'), navProductsBtn = document.getElementById('nav-products'), navRequisitionBtn = document.getElementById('nav-requisition'), navHistoryBtn = document.getElementById('nav-history'), navManageBtn = document.getElementById('nav-manage'), navAccountBtn = document.getElementById('nav-account'), productListView = document.getElementById('product-list-view'), requisitionView = document.getElementById('requisition-view'), historyView = document.getElementById('history-view'), manageView = document.getElementById('manage-view'), accountView = document.getElementById('account-view'), categoryNavView = document.getElementById('category-nav-view'), autoRequisitionBtn = document.getElementById('auto-requisition-btn'), requisitionListBody = document.getElementById('requisition-list-body'), confirmRequisitionBtn = document.getElementById('confirm-requisition-btn'), historyListContainer = document.getElementById('history-list-container'), itemSettingsModal = document.getElementById('item-settings-modal'), modalItemName = document.getElementById('modal-item-name'), reorderPointInput = document.getElementById('reorder-point'), reorderQuantityInput = document.getElementById('reorder-quantity'), modalOkBtn = document.getElementById('modal-ok-btn'), modalCancelBtn = document.getElementById('modal-cancel-btn'), categoryActionsModal = document.getElementById('category-actions-modal'), categoryModalName = document.getElementById('category-modal-name'), editCategoryBtn = document.getElementById('edit-category-btn'), deleteCategoryBtn = document.getElementById('delete-category-btn'), categoryModalCancelBtn = document.getElementById('category-modal-cancel-btn'), addHeaderModal = document.getElementById('add-header-modal'), headerInput = document.getElementById('header-input'), headerModalOkBtn = document.getElementById('header-modal-ok-btn'), headerModalCancelBtn = document.getElementById('header-modal-cancel-btn'), headerActionsModal = document.getElementById('header-actions-modal'), headerModalName = document.getElementById('header-modal-name'), editHeaderBtn = document.getElementById('edit-header-btn'), deleteHeaderBtn = document.getElementById('delete-header-btn'), headerActionsCancelBtn = document.getElementById('header-actions-cancel-btn'), confirmModal = document.getElementById('confirm-modal'), confirmModalTitle = document.getElementById('confirm-modal-title'), confirmModalBody = document.getElementById('confirm-modal-body'), confirmModalOkBtn = document.getElementById('confirm-modal-ok-btn'), confirmModalCancelBtn = document.getElementById('confirm-modal-cancel-btn'), appSettingsModal = document.getElementById('app-settings-modal'), appSettingsBtn = document.getElementById('app-settings-btn'), appSettingsSaveBtn = document.getElementById('app-settings-save-btn'), appSettingsCancelBtn = document.getElementById('app-settings-cancel-btn'), settingTriggerColInput = document.getElementById('setting-trigger-col'), settingCalcColInput = document.getElementById('setting-calc-col'), settingUnitColInput = document.getElementById('setting-unit-col'), notificationToast = document.getElementById('notification-toast'), notificationMessage = document.getElementById('notification-message'), itemContextMenu = document.getElementById('item-context-menu'), contextMenuSettingsBtn = document.getElementById('context-menu-settings'), contextMenuHideBtn = document.getElementById('context-menu-hide'), contextMenuAddHeaderBtn = document.getElementById('context-menu-add-header'), paginationControls = document.getElementById('pagination-controls'), productSearchContainer = document.getElementById('product-search-container'), productSearchInput = document.getElementById('product-search-input'), quantityModal = document.getElementById('quantity-modal'), quantityModalName = document.getElementById('quantity-modal-name'), quantityDisplay = document.getElementById('quantity-display'), quantityModalOkBtn = document.getElementById('quantity-modal-ok-btn'), quantityModalCancelBtn = document.getElementById('quantity-modal-cancel-btn');
-
+        const authContainer = document.getElementById('auth-container'), appContainer = document.getElementById('app-container'), loginForm = document.getElementById('login-form'), registerForm = document.getElementById('register-form'), loginEmailInput = document.getElementById('login-email'), loginPasswordInput = document.getElementById('login-password'), registerEmailInput = document.getElementById('register-email'), registerPasswordInput = document.getElementById('register-password'), loginErrorEl = document.getElementById('login-error'), registerErrorEl = document.getElementById('register-error'), showRegisterBtn = document.getElementById('show-register-btn'), showLoginBtn = document.getElementById('show-login-btn'), userEmailEl = document.getElementById('user-email'), logoutBtn = document.getElementById('logout-btn'), loadingEl = document.getElementById('loading'), errorEl = document.getElementById('error'), errorMessageEl = document.getElementById('error-message'), noDataEl = document.getElementById('no-data'), tableEl = document.getElementById('data-table'), tableHead = document.getElementById('table-head'), tableBody = document.getElementById('table-body'), categoryInput = 
+document.getElementById('category-input'), addCategoryBtn = document.getElementById('add-category-btn'), categoryList = document.getElementById('category-list'), manageCategoryList = document.getElementById('manage-category-list'), navProductsBtn = document.getElementById('nav-products'), navRequisitionBtn = document.getElementById('nav-requisition'), navHistoryBtn = document.getElementById('nav-history'), navManageBtn = document.getElementById('nav-manage'), navAccountBtn = document.getElementById('nav-account'), productListView = document.getElementById('product-list-view'), requisitionView = document.getElementById('requisition-view'), historyView = document.getElementById('history-view'), manageView = document.getElementById('manage-view'), accountView = document.getElementById('account-view'), categoryNavView = document.getElementById('category-nav-view'), autoRequisitionBtn = document.getElementById('auto-requisition-btn'), requisitionListBody = document.getElementById('requisition-list-body'), confirmRequisitionBtn = document.getElementById('confirm-requisition-btn'), historyListContainer = document.getElementById('history-list-container'), itemSettingsModal = document.getElementById('item-settings-modal'), modalItemName = document.getElementById('modal-item-name'), reorderPointInput = document.getElementById('reorder-point'), reorderQuantityInput = document.getElementById('reorder-quantity'), modalOkBtn = document.getElementById('modal-ok-btn'), modalCancelBtn = document.getElementById('modal-cancel-btn'), categoryActionsModal = document.getElementById('category-actions-modal'), categoryModalName = document.getElementById('category-modal-name'), editCategoryBtn = document.getElementById('edit-category-btn'), deleteCategoryBtn = document.getElementById('delete-category-btn'), categoryModalCancelBtn = document.getElementById('category-modal-cancel-btn'), addHeaderModal = document.getElementById('add-header-modal'), headerInput = document.getElementById('header-input'), headerModalOkBtn = document.getElementById('header-modal-ok-btn'), headerModalCancelBtn = document.getElementById('header-modal-cancel-btn'), 
+headerActionsModal = document.getElementById('header-actions-modal'), headerModalName = document.getElementById('header-modal-name'), editHeaderBtn = document.getElementById('edit-header-btn'), deleteHeaderBtn = document.getElementById('delete-header-btn'), headerActionsCancelBtn = document.getElementById('header-actions-cancel-btn'), confirmModal = document.getElementById('confirm-modal'), confirmModalTitle = document.getElementById('confirm-modal-title'), confirmModalBody = document.getElementById('confirm-modal-body'), confirmModalOkBtn = document.getElementById('confirm-modal-ok-btn'), confirmModalCancelBtn = document.getElementById('confirm-modal-cancel-btn'), appSettingsModal = document.getElementById('app-settings-modal'), appSettingsBtn = document.getElementById('app-settings-btn'), appSettingsSaveBtn = document.getElementById('app-settings-save-btn'), appSettingsCancelBtn = document.getElementById('app-settings-cancel-btn'), settingTriggerColInput = document.getElementById('setting-trigger-col'), settingCalcColInput = document.getElementById('setting-calc-col'), settingUnitColInput = document.getElementById('setting-unit-col'), notificationToast = document.getElementById('notification-toast'), notificationMessage = document.getElementById('notification-message'), itemContextMenu = document.getElementById('item-context-menu'), contextMenuSettingsBtn = document.getElementById('context-menu-settings'), contextMenuHideBtn = document.getElementById('context-menu-hide'), contextMenuAddHeaderBtn = document.getElementById('context-menu-add-header'), paginationControls = document.getElementById('pagination-controls'), productSearchContainer = document.getElementById('product-search-container'), productSearchInput = document.getElementById('product-search-input'), quantityModal = document.getElementById('quantity-modal'), quantityModalName = document.getElementById('quantity-modal-name'), quantityDisplay = document.getElementById('quantity-display'), quantityModalOkBtn = document.getElementById('quantity-modal-ok-btn'), quantityModalCancelBtn = document.getElementById('quantity-modal-cancel-btn');
         // --- NEW: Constants Object ---
         const CONSTANTS = {
             FIRESTORE_PATHS: { CATEGORIES: 'categories', HIDDEN_ITEMS: 'hiddenItemsByCategory', SORT_ORDERS: 'sortOrders', CUSTOM_ROWS: 'customRows', CATEGORY_ORDER: 'categoryOrder', ITEM_SETTINGS: 'itemSettings', REQUISITION_LIST: 'requisitionList', REQUISITION_HISTORY: 'requisitionHistory', COUNTERS: 'counters', APP_SETTINGS: 'appSettings' },
@@ -441,19 +441,18 @@
         // --- NEW: Centralized App State ---
         const appState = {
             allRecords: [], allRecordsMap: new Map(), currentFilteredRecords: [], categories: [], sortOrdersMap: {}, categoryOrder: [], customRows: new Map(), itemSettings: new Map(), requisitionList: [], historyList: [], hiddenItemsMap: {}, activeCategoryName: null, currentEditingItemId: null, currentEditingCategory: null, currentEditingHeaderId: null, currentEditingHeaderText: null, confirmCallback: null, notificationTimeout: null, insertHeaderAboveId: null, contextMenuItemRecord: null, sortableInstance: null, categorySortableInstance: null,
-            appSettings: { triggerStockColumnName: CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, calculationStockColumnName: CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK, unitColumnName: CONSTANTS.SHEET_COLUMN_NAMES.UNIT },
+            appSettings: { triggerStockColumnName: CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, calculationStockColumnName: CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK, unitColumnName: CONSTANTS.SHEET_COLUMN_NAMES.UNIT 
+},
             userId: null, unsubscribes: [], currentPage: 1, initialDataLoaded: false, categoriesFirstLoad: true, resolveCategoriesLoaded: null, itemForRequisition: null,
         };
         const categoriesLoadedPromise = new Promise(resolve => { appState.resolveCategoriesLoaded = resolve; });
-
         // --- NEW: Double Tap Tracker ---
         let lastTap = { time: 0, id: null };
-
         // Firebase Refs
         let categoriesCollectionRef, hiddenItemsDocRef, sortOrdersDocRef, customRowsCollectionRef, categoryOrderDocRef, itemSettingsCollectionRef, requisitionListCollectionRef, requisitionHistoryCollectionRef, countersDocRef, appSettingsDocRef;
-        
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIzaSyDOx9RPxrG-vO59QHjkhJtGmyDRhdoVFPY", authDomain: "pos-6-23035.firebaseapp.com", projectId: "pos-6-23035", storageBucket: "pos-6-23035.appspot.com", messagingSenderId: "1025982856125", appId: "1:1025982856125:web:28e47483570949900f30d4" };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ?
+JSON.parse(__firebase_config) : { apiKey: "AIzaSyDOx9RPxrG-vO59QHjkhJtGmyDRhdoVFPY", authDomain: "pos-6-23035.firebaseapp.com", projectId: "pos-6-23035", storageBucket: "pos-6-23035.appspot.com", messagingSenderId: "1025982856125", appId: "1:1025982856125:web:28e47483570949900f30d4" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
@@ -474,7 +473,8 @@
                 appContainer.classList.add('hidden');
                 appState.unsubscribes.forEach(unsub => unsub && unsub());
                 appState.unsubscribes = [];
-                Object.assign(appState, { allRecords: [], allRecordsMap: new Map(), categories: [], hiddenItemsMap: {}, sortOrdersMap: {}, categoryOrder: [], customRows: new Map(), itemSettings: new Map(), requisitionList: [], historyList: [] });
+                Object.assign(appState, { allRecords: [], allRecordsMap: new Map(), categories: [], hiddenItemsMap: {}, sortOrdersMap: {}, categoryOrder: [], customRows: new Map(), itemSettings: 
+new Map(), requisitionList: [], historyList: [] });
                 displayCategories(); 
             }
             document.body.style.visibility = 'visible';
@@ -515,152 +515,160 @@
         loginForm.addEventListener('submit', async (e) => { e.preventDefault(); loginErrorEl.textContent = ''; try { await signInWithEmailAndPassword(auth, loginEmailInput.value, loginPasswordInput.value); } catch (error) { loginErrorEl.textContent = "อีเมลหรือรหัสผ่านไม่ถูกต้อง"; } });
         registerForm.addEventListener('submit', async (e) => { e.preventDefault(); registerErrorEl.textContent = ''; try { await createUserWithEmailAndPassword(auth, registerEmailInput.value, registerPasswordInput.value); } catch (error) { if (error.code === 'auth/weak-password') registerErrorEl.textContent = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'; else if (error.code === 'auth/email-already-in-use') registerErrorEl.textContent = 'อีเมลนี้ถูกใช้งานแล้ว'; else registerErrorEl.textContent = 'เกิดข้อผิดพลาดในการสมัคร'; } });
         logoutBtn.addEventListener('click', async () => { try { await signOut(auth); } catch (error) { console.error("Logout failed:", error); } });
-        
-        async function saveCurrentSortOrder(newOrder) { if (!sortOrdersDocRef) return; const key = appState.activeCategoryName || CONSTANTS.SORT_KEY_GLOBAL; try { const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; currentOrders[key] = newOrder; await setDoc(sortOrdersDocRef, { orders: currentOrders }); } catch (error) { showError("บันทึกการจัดเรียงไม่สำเร็จ: " + error.message); } }
-        async function saveCategoryOrder(newOrder) { if (!categoryOrderDocRef) return; try { await setDoc(categoryOrderDocRef, { order: newOrder }); } catch (error) { showError("บันทึกการจัดเรียงหมวดหมู่ไม่สำเร็จ: " + error.message); } }
-        async function hideItem(itemId, itemName) { if (!hiddenItemsDocRef || !itemId) return; const categoryKey = appState.activeCategoryName || CONSTANTS.SORT_KEY_GLOBAL; try { await updateDoc(hiddenItemsDocRef, { [categoryKey]: arrayUnion(itemId) }); showNotification(`ซ่อน '${itemName}' แล้ว`, false); } catch (e) { if (e.code === 'not-found') { try { await setDoc(hiddenItemsDocRef, { [categoryKey]: [itemId] }); showNotification(`ซ่อน '${itemName}' แล้ว`, false); } catch (setErr) { showError("ซ่อนรายการไม่สำเร็จ: " + setErr.message); } } else { showError("ซ่อนรายการไม่สำเร็จ: " + e.message); } } }
-        async function addCategory() { if (!categoriesCollectionRef) return; const name = categoryInput.value.trim(); if (name && !appState.categories.some(c => c.name.toLowerCase() === name.toLowerCase())) { try { await addDoc(categoriesCollectionRef, { name }); categoryInput.value = ''; showNotification(`เพิ่มหมวดหมู่ '${name}' สำเร็จ`, false); } catch(error) { showError("เพิ่มหมวดหมู่ไม่สำเร็จ: " + error.message); } } else if (name) showNotification(`มีหมวดหมู่ '${name}' อยู่แล้ว`); }
-        async function updateCategoryName(id, oldName, newName) { const trimmedNewName = newName.trim(); if (!trimmedNewName || trimmedNewName === oldName) return; if (appState.categories.some(c => c.name.toLowerCase() === trimmedNewName.toLowerCase() && c.id !== id)) { showNotification(`มีหมวดหมู่ '${trimmedNewName}' อยู่แล้ว`); return; } try { await runTransaction(db, async (transaction) => { const sortOrdersSnap = await transaction.get(sortOrdersDocRef); if (sortOrdersSnap.exists()) { const currentSortOrders = sortOrdersSnap.data().orders || {}; if (Object.prototype.hasOwnProperty.call(currentSortOrders, oldName)) { currentSortOrders[trimmedNewName] = currentSortOrders[oldName]; delete currentSortOrders[oldName]; transaction.set(sortOrdersDocRef, { orders: currentSortOrders }); } } const hiddenItemsSnap = await transaction.get(hiddenItemsDocRef); if (hiddenItemsSnap.exists()) { const currentHiddenItems = hiddenItemsSnap.data(); if (Object.prototype.hasOwnProperty.call(currentHiddenItems, oldName)) { currentHiddenItems[trimmedNewName] = currentHiddenItems[oldName]; delete currentHiddenItems[oldName]; transaction.set(hiddenItemsDocRef, currentHiddenItems); } } const customRowsQuery = query(customRowsCollectionRef, where("categoryName", "==", oldName)); const customRowsSnap = await getDocs(customRowsQuery); customRowsSnap.forEach(docSnap => { transaction.update(docSnap.ref, { categoryName: trimmedNewName }); }); const categoryDocRef = doc(categoriesCollectionRef, id); transaction.update(categoryDocRef, { name: trimmedNewName }); }); showNotification(`แก้ไขหมวดหมู่เป็น '${trimmedNewName}' สำเร็จ`, false); } catch (error) { console.error("Transaction for editing category failed: ", error); showError("แก้ไขหมวดหมู่ไม่สำเร็จ: " + error.message); } }
-        async function deleteCategory(id, name) { if (!categoriesCollectionRef) return; try { await deleteDoc(doc(categoriesCollectionRef, id)); showNotification(`ลบหมวดหมู่ '${name}' แล้ว`, false); displayData(); } catch(error) { showError("ลบหมวดหมู่ไม่สำเร็จ: " + error.message); } }
-        async function addHeaderRow(headerText) { if (!headerText || !headerText.trim()) return; try { const key = appState.activeCategoryName || CONSTANTS.SORT_KEY_GLOBAL; const newDocRef = await addDoc(customRowsCollectionRef, { text: headerText.trim(), categoryName: appState.activeCategoryName }); const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; let currentCategoryOrder = currentOrders[key] || []; const newHeaderId = newDocRef.id; if (appState.insertHeaderAboveId) { const insertIndex = currentCategoryOrder.indexOf(appState.insertHeaderAboveId); if (insertIndex !== -1) { currentCategoryOrder.splice(insertIndex, 0, newHeaderId); } else { currentCategoryOrder.unshift(newHeaderId); } } else { currentCategoryOrder.unshift(newHeaderId); } currentOrders[key] = currentCategoryOrder; await setDoc(sortOrdersDocRef, { orders: currentOrders }); showNotification(`เพิ่มหัวข้อ '${headerText}' สำเร็จ`, false); } catch (error) { showError("เพิ่มหัวข้อไม่สำเร็จ: " + error.message); } }
-        async function editHeaderRow(id, newText) { const trimmedText = newText.trim(); if(trimmedText) { try { await updateDoc(doc(customRowsCollectionRef, id), { text: trimmedText }); showNotification('แก้ไขหัวข้อสำเร็จ', false); } catch (error) { showError("แก้ไขหัวข้อไม่สำเร็จ: " + error.message); } } }
-        async function deleteHeaderRow(id, text) { if (!customRowsCollectionRef || !sortOrdersDocRef) return; try { const key = appState.activeCategoryName || CONSTANTS.SORT_KEY_GLOBAL; const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; const currentCategoryOrder = currentOrders[key] || []; currentOrders[key] = currentCategoryOrder.filter(itemId => itemId !== id); await setDoc(sortOrdersDocRef, { orders: currentOrders }); await deleteDoc(doc(customRowsCollectionRef, id)); showNotification(`ลบหัวข้อ '${text}' แล้ว`, false); } catch (error) { showError("ลบหัวข้อไม่สำเร็จ: " + error.message); } }
-        async function saveItemSettings() { if (!itemSettingsCollectionRef || !appState.currentEditingItemId) return; const point = parseInt(reorderPointInput.value, 10); const quantity = parseInt(reorderQuantityInput.value, 10); const settings = { reorderPoint: isNaN(point) ? null : point, reorderQuantity: isNaN(quantity) ? null : quantity }; try { await setDoc(doc(itemSettingsCollectionRef, appState.currentEditingItemId), settings); showNotification(`บันทึกการตั้งค่า '${appState.currentEditingItemId}' แล้ว`, false); closeItemSettingsModal(); } catch(error) { showError("บันทึกการตั้งค่าไม่สำเร็จ: " + error.message); } }
-        async function saveAppSettings() { if (!appSettingsDocRef) return; const newSettings = { triggerStockColumnName: settingTriggerColInput.value.trim() || CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, calculationStockColumnName: settingCalcColInput.value.trim() || CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK, unitColumnName: settingUnitColInput.value.trim() || CONSTANTS.SHEET_COLUMN_NAMES.UNIT, }; try { await setDoc(appSettingsDocRef, newSettings, { merge: true }); showNotification('บันทึกการตั้งค่าแล้ว', false); closeAppSettingsModal(); } catch (error) { showError("บันทึกการตั้งค่าไม่สำเร็จ: " + error.message); } }
-        async function generateAutoRequisition() { if (appState.allRecords.length === 0) { showNotification('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า'); return; } const firstRecordKeys = Object.keys(appState.allRecords[0]); if (!firstRecordKeys.includes(appState.appSettings.triggerStockColumnName) || !firstRecordKeys.includes(appState.appSettings.calculationStockColumnName)) { showError(`ไม่พบคอลัมน์: "${appState.appSettings.triggerStockColumnName}" หรือ "${appState.appSettings.calculationStockColumnName}" ใน Google Sheet กรุณาตรวจสอบการตั้งค่า`); return; } const itemColumnName = Object.keys(appState.allRecords[0])[0] || ''; const itemsToRequisition = []; appState.allRecords.forEach(record => { const itemId = record[itemColumnName]; const settings = appState.itemSettings.get(itemId); if (settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number') { const triggerStock = parseInt(record[appState.appSettings.triggerStockColumnName] || 0, 10); if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) { const calculationStock = parseInt(record[appState.appSettings.calculationStockColumnName], 10); if (!isNaN(calculationStock) && calculationStock > 2) { let finalQuantity = settings.reorderQuantity; const halfCalcStock = 0.5 * calculationStock; if (settings.reorderQuantity > halfCalcStock) { const halfAutoQty = 0.5 * settings.reorderQuantity; finalQuantity = Math.min(halfAutoQty, halfCalcStock); } const roundedQuantity = Math.floor(finalQuantity); if (roundedQuantity > 0) { itemsToRequisition.push({ id: itemId, name: record[itemColumnName], quantity: roundedQuantity, unit: record[appState.appSettings.unitColumnName] || 'ชิ้น' }); } } } } }); if (itemsToRequisition.length === 0) { showNotification('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข'); return; } try { const batch = writeBatch(db); itemsToRequisition.forEach(item => { const docRef = doc(requisitionListCollectionRef, item.id); batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit }); }); await batch.commit(); showNotification(`เพิ่ม ${itemsToRequisition.length} รายการในรายการเบิกของสำเร็จ!`, false); switchView('requisition'); } catch (error) { showError("สร้างรายการเบิกอัตโนมัติไม่สำเร็จ: " + error.message); } }
-        async function updateRequisitionQuantity(id, newQuantity) { if (!requisitionListCollectionRef || !id) return; const quantity = parseInt(newQuantity, 10); if (isNaN(quantity) || quantity < 1) { showNotification('จำนวนต้องเป็นตัวเลขมากกว่า 0', true); const display = requisitionListBody.querySelector(`span[data-id="${id}"]`); const originalItem = appState.requisitionList.find(item => item.id === id); if (display && originalItem) { display.textContent = originalItem.quantity; } return; } try { const docRef = doc(requisitionListCollectionRef, id); await updateDoc(docRef, { quantity: quantity }); } catch (error) { showError("แก้ไขจำนวนเบิกไม่สำเร็จ: " + error.message); } }
-        async function deleteRequisitionItem(id, name) { if(!requisitionListCollectionRef) return; try { await deleteDoc(doc(requisitionListCollectionRef, id)); showNotification(`ลบ '${name}' ออกจากรายการเบิกแล้ว`, false); } catch (error) { showError("ลบรายการเบิกไม่สำเร็จ: " + error.message); } }
-        async function confirmRequisition() { if (!requisitionListCollectionRef || appState.requisitionList.length === 0) return; try { const reqNumber = await runTransaction(db, async (transaction) => { const counterSnap = await transaction.get(countersDocRef); const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0; const newCounter = currentCounter + 1; const now = new Date(); const generatedReqNumber = `REQ-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}-${newCounter.toString().padStart(4, '0')}`; const historyDocRef = doc(requisitionHistoryCollectionRef); transaction.set(historyDocRef, { requisitionNumber: generatedReqNumber, timestamp: Timestamp.now(), items: appState.requisitionList.map(({id, ...rest}) => rest) }); appState.requisitionList.forEach(item => { transaction.delete(doc(requisitionListCollectionRef, item.id)); }); transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true }); return generatedReqNumber; }); showNotification(`ยืนยันการเบิกของ ${reqNumber} เรียบร้อย`, false); } catch (error) { console.error("Transaction failed: ", error); showError("ยืนยันการเบิกของไม่สำเร็จ: " + error.message); } }
-        async function addManualRequisition(item, quantity) { if (!requisitionListCollectionRef || !item || !quantity || quantity < 1) return; const itemColumnName = Object.keys(appState.allRecords[0])[0]; const unitColumnName = appState.appSettings.unitColumnName; const itemId = item[itemColumnName]; const itemName = item[itemColumnName]; const itemUnit = item[unitColumnName] || 'ชิ้น'; try { const docRef = doc(requisitionListCollectionRef, itemId); await setDoc(docRef, { name: itemName, quantity: quantity, unit: itemUnit }, { merge: true }); showNotification(`เพิ่ม/อัปเดต '${itemName}' จำนวน ${quantity} ${itemUnit}`, false); } catch (error) { showError("เพิ่มรายการเบิกไม่สำเร็จ: " + error.message); } }
+        async function saveCurrentSortOrder(newOrder) { if (!sortOrdersDocRef) return; const key = appState.activeCategoryName || CONSTANTS.SORT_KEY_GLOBAL; try { const docSnap = await getDoc(sortOrdersDocRef);
+        const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; currentOrders[key] = newOrder; await setDoc(sortOrdersDocRef, { orders: currentOrders });
+        } catch (error) { showError("บันทึกการจัดเรียงไม่สำเร็จ: " + error.message); } }
+        async function saveCategoryOrder(newOrder) { if (!categoryOrderDocRef) return;
+        try { await setDoc(categoryOrderDocRef, { order: newOrder }); } catch (error) { showError("บันทึกการจัดเรียงหมวดหมู่ไม่สำเร็จ: " + error.message);
+        } }
+        async function hideItem(itemId, itemName) { if (!hiddenItemsDocRef || !itemId) return;
+        const categoryKey = appState.activeCategoryName || CONSTANTS.SORT_KEY_GLOBAL; try { await updateDoc(hiddenItemsDocRef, { [categoryKey]: arrayUnion(itemId) }); showNotification(`ซ่อน '${itemName}' แล้ว`, false);
+        } catch (e) { if (e.code === 'not-found') { try { await setDoc(hiddenItemsDocRef, { [categoryKey]: [itemId] });
+        showNotification(`ซ่อน '${itemName}' แล้ว`, false); } catch (setErr) { showError("ซ่อนรายการไม่สำเร็จ: " + setErr.message); } } else { showError("ซ่อนรายการไม่สำเร็จ: " + e.message);
+        } } }
+        async function addCategory() { if (!categoriesCollectionRef) return;
+        const name = categoryInput.value.trim(); if (name && !appState.categories.some(c => c.name.toLowerCase() === name.toLowerCase())) { try { await addDoc(categoriesCollectionRef, { name });
+        categoryInput.value = ''; showNotification(`เพิ่มหมวดหมู่ '${name}' สำเร็จ`, false); } catch(error) { showError("เพิ่มหมวดหมู่ไม่สำเร็จ: " + error.message);
+        } } else if (name) showNotification(`มีหมวดหมู่ '${name}' อยู่แล้ว`); }
+        async function updateCategoryName(id, oldName, newName) { const trimmedNewName = newName.trim();
+        if (!trimmedNewName || trimmedNewName === oldName) return; if (appState.categories.some(c => c.name.toLowerCase() === trimmedNewName.toLowerCase() && c.id !== id)) { showNotification(`มีหมวดหมู่ '${trimmedNewName}' อยู่แล้ว`);
+        return; } try { await runTransaction(db, async (transaction) => { const sortOrdersSnap = await transaction.get(sortOrdersDocRef); if (sortOrdersSnap.exists()) { const currentSortOrders = sortOrdersSnap.data().orders || {}; if (Object.prototype.hasOwnProperty.call(currentSortOrders, oldName)) { currentSortOrders[trimmedNewName] = currentSortOrders[oldName]; delete currentSortOrders[oldName]; transaction.set(sortOrdersDocRef, { orders: currentSortOrders }); } } const hiddenItemsSnap = await transaction.get(hiddenItemsDocRef); if (hiddenItemsSnap.exists()) { const currentHiddenItems = hiddenItemsSnap.data(); if (Object.prototype.hasOwnProperty.call(currentHiddenItems, oldName)) { currentHiddenItems[trimmedNewName] = currentHiddenItems[oldName]; delete currentHiddenItems[oldName]; transaction.set(hiddenItemsDocRef, currentHiddenItems); } } const customRowsQuery = query(customRowsCollectionRef, where("categoryName", "==", oldName)); const customRowsSnap = await getDocs(customRowsQuery); customRowsSnap.forEach(docSnap => { transaction.update(docSnap.ref, { categoryName: trimmedNewName });
+        }); const categoryDocRef = doc(categoriesCollectionRef, id); transaction.update(categoryDocRef, { name: trimmedNewName }); }); showNotification(`แก้ไขหมวดหมู่เป็น '${trimmedNewName}' สำเร็จ`, false);
+        } catch (error) { console.error("Transaction for editing category failed: ", error); showError("แก้ไขหมวดหมู่ไม่สำเร็จ: " + error.message);
+        } }
+        async function deleteCategory(id, name) { if (!categoriesCollectionRef) return;
+        try { await deleteDoc(doc(categoriesCollectionRef, id)); showNotification(`ลบหมวดหมู่ '${name}' แล้ว`, false); displayData(); } catch(error) { showError("ลบหมวดหมู่ไม่สำเร็จ: " + error.message);
+        } }
+        async function addHeaderRow(headerText) { if (!headerText || !headerText.trim()) return;
+        try { const key = appState.activeCategoryName || CONSTANTS.SORT_KEY_GLOBAL; const newDocRef = await addDoc(customRowsCollectionRef, { text: headerText.trim(), categoryName: appState.activeCategoryName });
+        const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ? docSnap.data().orders : {}; let currentCategoryOrder = currentOrders[key] ||
+        []; const newHeaderId = newDocRef.id; if (appState.insertHeaderAboveId) { const insertIndex = currentCategoryOrder.indexOf(appState.insertHeaderAboveId); if (insertIndex !== -1) { currentCategoryOrder.splice(insertIndex, 0, newHeaderId);
+        } else { currentCategoryOrder.unshift(newHeaderId); } } else { currentCategoryOrder.unshift(newHeaderId); } currentOrders[key] = currentCategoryOrder; await setDoc(sortOrdersDocRef, { orders: currentOrders });
+        showNotification(`เพิ่มหัวข้อ '${headerText}' สำเร็จ`, false); } catch (error) { showError("เพิ่มหัวข้อไม่สำเร็จ: " + error.message);
+        } }
+        async function editHeaderRow(id, newText) { const trimmedText = newText.trim();
+        if(trimmedText) { try { await updateDoc(doc(customRowsCollectionRef, id), { text: trimmedText }); showNotification('แก้ไขหัวข้อสำเร็จ', false);
+        } catch (error) { showError("แก้ไขหัวข้อไม่สำเร็จ: " + error.message); } } }
+        async function deleteHeaderRow(id, text) { if (!customRowsCollectionRef || !sortOrdersDocRef) return;
+        try { const key = appState.activeCategoryName || CONSTANTS.SORT_KEY_GLOBAL; const docSnap = await getDoc(sortOrdersDocRef); const currentOrders = (docSnap.exists() && docSnap.data().orders) ?
+        docSnap.data().orders : {}; const currentCategoryOrder = currentOrders[key] || []; currentOrders[key] = currentCategoryOrder.filter(itemId => itemId !== id);
+        await setDoc(sortOrdersDocRef, { orders: currentOrders }); await deleteDoc(doc(customRowsCollectionRef, id)); showNotification(`ลบหัวข้อ '${text}' แล้ว`, false);
+        } catch (error) { showError("ลบหัวข้อไม่สำเร็จ: " + error.message); } }
+        async function saveItemSettings() { if (!itemSettingsCollectionRef || !appState.currentEditingItemId) return;
+        const point = parseInt(reorderPointInput.value, 10); const quantity = parseInt(reorderQuantityInput.value, 10); const settings = { reorderPoint: isNaN(point) ?
+        null : point, reorderQuantity: isNaN(quantity) ? null : quantity }; try { await setDoc(doc(itemSettingsCollectionRef, appState.currentEditingItemId), settings); showNotification(`บันทึกการตั้งค่า '${appState.currentEditingItemId}' แล้ว`, false);
+        closeItemSettingsModal(); } catch(error) { showError("บันทึกการตั้งค่าไม่สำเร็จ: " + error.message); } }
+        async function saveAppSettings() { if (!appSettingsDocRef) return;
+        const newSettings = { triggerStockColumnName: settingTriggerColInput.value.trim() || CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, calculationStockColumnName: settingCalcColInput.value.trim() || CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK, unitColumnName: settingUnitColInput.value.trim() || CONSTANTS.SHEET_COLUMN_NAMES.UNIT, };
+        try { await setDoc(appSettingsDocRef, newSettings, { merge: true }); showNotification('บันทึกการตั้งค่าแล้ว', false); closeAppSettingsModal(); } catch (error) { showError("บันทึกการตั้งค่าไม่สำเร็จ: " + error.message);
+        } }
+        async function generateAutoRequisition() { if (appState.allRecords.length === 0) { showNotification('ยังไม่มีข้อมูลสินค้าหรือการตั้งค่า'); return;
+        } const firstRecordKeys = Object.keys(appState.allRecords[0]); if (!firstRecordKeys.includes(appState.appSettings.triggerStockColumnName) || !firstRecordKeys.includes(appState.appSettings.calculationStockColumnName)) { showError(`ไม่พบคอลัมน์: "${appState.appSettings.triggerStockColumnName}" หรือ "${appState.appSettings.calculationStockColumnName}" ใน Google Sheet กรุณาตรวจสอบการตั้งค่า`); return;
+        } const itemColumnName = Object.keys(appState.allRecords[0])[0] || ''; const itemsToRequisition = [];
+        appState.allRecords.forEach(record => { const itemId = record[itemColumnName]; const settings = appState.itemSettings.get(itemId); if (settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number') { const triggerStock = parseInt(record[appState.appSettings.triggerStockColumnName] || 0, 10); if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) { const calculationStock = parseInt(record[appState.appSettings.calculationStockColumnName], 10); if (!isNaN(calculationStock) && calculationStock > 2) { let finalQuantity = settings.reorderQuantity; const halfCalcStock = 0.5 * calculationStock; if (settings.reorderQuantity > halfCalcStock) { const halfAutoQty = 0.5 * settings.reorderQuantity; finalQuantity = Math.min(halfAutoQty, halfCalcStock); } const roundedQuantity = Math.floor(finalQuantity); if (roundedQuantity > 0) { itemsToRequisition.push({ id: itemId, name: record[itemColumnName], quantity: roundedQuantity, unit: record[appState.appSettings.unitColumnName] ||
+        'ชิ้น' }); } } } } }); if (itemsToRequisition.length === 0) { showNotification('ไม่พบสินค้าที่ถึงจุดเบิกของตามเงื่อนไข'); return;
+        } try { const batch = writeBatch(db); itemsToRequisition.forEach(item => { const docRef = doc(requisitionListCollectionRef, item.id); batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit }); });
+        await batch.commit(); showNotification(`เพิ่ม ${itemsToRequisition.length} รายการในรายการเบิกของสำเร็จ!`, false); switchView('requisition'); } catch (error) { showError("สร้างรายการเบิกอัตโนมัติไม่สำเร็จ: " + error.message);
+        } }
+        async function updateRequisitionQuantity(id, newQuantity) { if (!requisitionListCollectionRef || !id) return;
+        const quantity = parseInt(newQuantity, 10); if (isNaN(quantity) || quantity < 1) { showNotification('จำนวนต้องเป็นตัวเลขมากกว่า 0', true); const display = requisitionListBody.querySelector(`span[data-id="${id}"]`);
+        const originalItem = appState.requisitionList.find(item => item.id === id); if (display && originalItem) { display.textContent = originalItem.quantity; } return;
+        } try { const docRef = doc(requisitionListCollectionRef, id); await updateDoc(docRef, { quantity: quantity });
+        } catch (error) { showError("แก้ไขจำนวนเบิกไม่สำเร็จ: " + error.message); } }
+        async function deleteRequisitionItem(id, name) { if(!requisitionListCollectionRef) return;
+        try { await deleteDoc(doc(requisitionListCollectionRef, id)); showNotification(`ลบ '${name}' ออกจากรายการเบิกแล้ว`, false); } catch (error) { showError("ลบรายการเบิกไม่สำเร็จ: " + error.message);
+        } }
+        async function confirmRequisition() { if (!requisitionListCollectionRef || appState.requisitionList.length === 0) return;
+        try { const reqNumber = await runTransaction(db, async (transaction) => { const counterSnap = await transaction.get(countersDocRef); const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0; const newCounter = currentCounter + 1; const now = new Date(); const generatedReqNumber = `REQ-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}-${newCounter.toString().padStart(4, '0')}`; const historyDocRef = doc(requisitionHistoryCollectionRef); transaction.set(historyDocRef, { requisitionNumber: generatedReqNumber, timestamp: Timestamp.now(), items: appState.requisitionList.map(({id, ...rest}) => rest) }); appState.requisitionList.forEach(item => { transaction.delete(doc(requisitionListCollectionRef, item.id)); }); transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true }); return generatedReqNumber; });
+        showNotification(`ยืนยันการเบิกของ ${reqNumber} เรียบร้อย`, false); } catch (error) { console.error("Transaction failed: ", error); showError("ยืนยันการเบิกของไม่สำเร็จ: " + error.message);
+        } }
+        async function addManualRequisition(item, quantity) { if (!requisitionListCollectionRef || !item || !quantity || quantity < 1) return;
+        const itemColumnName = Object.keys(appState.allRecords[0])[0]; const unitColumnName = appState.appSettings.unitColumnName; const itemId = item[itemColumnName]; const itemName = item[itemColumnName];
+        const itemUnit = item[unitColumnName] || 'ชิ้น'; try { const docRef = doc(requisitionListCollectionRef, itemId);
+        await setDoc(docRef, { name: itemName, quantity: quantity, unit: itemUnit }, { merge: true }); showNotification(`เพิ่ม/อัปเดต '${itemName}' จำนวน ${quantity} ${itemUnit}`, false);
+        } catch (error) { showError("เพิ่มรายการเบิกไม่สำเร็จ: " + error.message); } }
 
-function displayCategories() {
-    if (appState.categorySortableInstance) appState.categorySortableInstance.destroy(); [cite: 175]
-    categoryList.innerHTML = '';
-    manageCategoryList.innerHTML = ''; [cite: 176]
-    if (!appState.userId) return;
+        function displayCategories() {
+            if (appState.categorySortableInstance) appState.categorySortableInstance.destroy();
+            categoryList.innerHTML = ''; manageCategoryList.innerHTML = '';
+            if (!appState.userId) return;
 
-    const navFragment = document.createDocumentFragment();
-    const manageFragment = document.createDocumentFragment();
-    const allBtn = document.createElement('button'); [cite: 177]
-    allBtn.dataset.id = 'all';
-    allBtn.className = 'whitespace-nowrap py-4 px-2 font-bold text-sm focus:outline-none';
-    allBtn.textContent = 'ทั้งหมด'; [cite: 177]
-    allBtn.addEventListener('click', () => {
-        appState.currentPage = 1;
-        noDataEl.querySelector('p').textContent = 'ไม่พบสินค้า';
-        productSearchContainer.classList.remove('hidden');
-        productSearchInput.value = '';
-        appState.activeCategoryName = 'ทั้งหมด';
-        appState.currentFilteredRecords = [...appState.allRecords];
-        displayData();
-        document.querySelectorAll('#category-list button').forEach(btn => {
-            btn.classList.remove('text-blue-600');
-            btn.classList.add('text-gray-500', 'hover:text-gray-700');
-        });
-        allBtn.classList.add('text-blue-600');
-        allBtn.classList.remove('text-gray-500', 'hover:text-gray-700');
-    }); [cite: 178]
-    navFragment.appendChild(allBtn); [cite: 179]
+            const navFragment = document.createDocumentFragment();
+            const manageFragment = document.createDocumentFragment();
+            const allBtn = document.createElement('button');
+            allBtn.dataset.id = 'all';
+            allBtn.className = 'whitespace-nowrap py-4 px-2 font-bold text-sm focus:outline-none';
+            allBtn.textContent = 'ทั้งหมด';
+            allBtn.addEventListener('click', () => { appState.currentPage = 1; noDataEl.querySelector('p').textContent = 'ไม่พบสินค้า'; productSearchContainer.classList.remove('hidden'); productSearchInput.value = ''; appState.activeCategoryName = 'ทั้งหมด'; appState.currentFilteredRecords = [...appState.allRecords]; displayData(); document.querySelectorAll('#category-list button').forEach(btn => { btn.classList.remove('text-blue-600'); btn.classList.add('text-gray-500', 'hover:text-gray-700'); }); allBtn.classList.add('text-blue-600'); allBtn.classList.remove('text-gray-500', 'hover:text-gray-700'); });
+            navFragment.appendChild(allBtn);
 
-    const sortedCategories = [...appState.categories].sort((a, b) => {
-        const indexA = appState.categoryOrder.indexOf(a.id);
-        const indexB = appState.categoryOrder.indexOf(b.id);
-        if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name, 'th');
-        if (indexA === -1) return 1;
-        if (indexB === -1) return -1;
-        return indexA - indexB;
-    }); [cite: 179]
-    if (appState.categories.length === 0) {
-        manageCategoryList.innerHTML = '<p class="text-gray-500 text-sm">ยังไม่มีหมวดหมู่</p>';
-    } else {
-        allBtn.classList.add('text-blue-600'); [cite: 180]
-    }
-    if (appState.activeCategoryName === null && appState.categories.length > 0) {
-        appState.activeCategoryName = 'ทั้งหมด'; [cite: 181]
-    }
-
-    sortedCategories.forEach((category) => {
-        const categoryBtn = document.createElement('button');
-        categoryBtn.dataset.id = category.id;
-        categoryBtn.className = 'whitespace-nowrap py-4 px-2 font-bold text-sm focus:outline-none'; [cite: 182]
-
-        categoryBtn.classList.toggle('text-blue-600', appState.activeCategoryName === category.name || appState.activeCategoryName === category.id); [cite: 183]
-        categoryBtn.classList.toggle('text-gray-500', appState.activeCategoryName !== category.name); [cite: 183]
-        categoryBtn.classList.toggle('hover:text-gray-700', appState.activeCategoryName !== category.name); [cite: 183]
-        categoryBtn.textContent = category.name;
-        categoryBtn.addEventListener('click', () => {
-            const itemColumnName = appState.allRecords.length > 0 ? Object.keys(appState.allRecords[0])[0] : '';
-            if (!itemColumnName) return;
-            appState.currentPage =
-                1; [cite: 183]
-            productSearchContainer.classList.add('hidden');
-            productSearchInput.value = '';
-            appState.currentFilteredRecords = appState.allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase()));
-            noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`;
-            appState.activeCategoryName = category.name;
-            displayData(); [cite: 184]
-            document.querySelectorAll('#category-list button').forEach(btn => {
-                btn.classList.remove('text-blue-600');
-                btn.classList.add('text-gray-500', 'hover:text-gray-700');
-            });
-            categoryBtn.classList.add('text-blue-600');
-            categoryBtn.classList.remove('text-gray-500', 'hover:text-gray-700');
-        }); [cite: 185]
-        navFragment.appendChild(categoryBtn);
-
-        const categoryEl = document.createElement('div');
-        categoryEl.dataset.id = category.id;
-        categoryEl.className = 'flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 transition-shadow duration-200 cursor-pointer select-none'; [cite: 186]
-        categoryEl.setAttribute('tabindex', '0');
-        const nameSpan = document.createElement('span'); [cite: 187]
-        nameSpan.textContent = category.name;
-        nameSpan.className = 'focus:outline-none';
-        const kebabMenu = document.createElement('span');
-        kebabMenu.innerHTML = '&#8942;';
-        kebabMenu.className = 'kebab-menu';
-        kebabMenu.title = 'ตัวเลือก'; [cite: 188]
-        categoryEl.appendChild(nameSpan);
-        categoryEl.appendChild(kebabMenu);
-        kebabMenu.addEventListener('click', (e) => {
-            e.stopPropagation();
-            openCategoryActionsModal(category);
-        });
-        categoryEl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                openCategoryActionsModal(category);
+            const sortedCategories = [...appState.categories].sort((a, b) => { const indexA = appState.categoryOrder.indexOf(a.id); const indexB = appState.categoryOrder.indexOf(b.id); if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name, 'th'); if (indexA === -1) return 1; if (indexB === -1) return -1; return indexA - indexB; });
+            if (appState.categories.length === 0) { manageCategoryList.innerHTML = '<p class="text-gray-500 text-sm">ยังไม่มีหมวดหมู่</p>';}
+            else { allBtn.classList.add('text-blue-600');
             }
-        }); [cite: 189]
-        manageFragment.appendChild(categoryEl);
-    });
+            if (appState.activeCategoryName === null && appState.categories.length > 0) { appState.activeCategoryName = 'ทั้งหมด';
+            }
+            
+            sortedCategories.forEach((category) => {
+                const categoryBtn = document.createElement('button');
+                categoryBtn.dataset.id = category.id;
+                categoryBtn.className = 'whitespace-nowrap py-4 px-2 font-bold text-sm focus:outline-none';
+              
+                categoryBtn.classList.toggle('text-blue-600', appState.activeCategoryName === category.name || appState.activeCategoryName === category.id);
+                categoryBtn.classList.toggle('text-gray-500', appState.activeCategoryName !== category.name);
+                categoryBtn.classList.toggle('hover:text-gray-700', appState.activeCategoryName !== category.name);
+                categoryBtn.textContent = category.name;
+                categoryBtn.addEventListener('click', () => { const itemColumnName = appState.allRecords.length > 0 ? Object.keys(appState.allRecords[0])[0] : ''; if (!itemColumnName) return; appState.currentPage = 
+1; productSearchContainer.classList.add('hidden'); productSearchInput.value = ''; appState.currentFilteredRecords = appState.allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase())); noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`; appState.activeCategoryName = category.name; displayData();
+document.querySelectorAll('#category-list button').forEach(btn => { btn.classList.remove('text-blue-600'); btn.classList.add('text-gray-500', 'hover:text-gray-700'); }); categoryBtn.classList.add('text-blue-600'); categoryBtn.classList.remove('text-gray-500', 'hover:text-gray-700'); });
+                navFragment.appendChild(categoryBtn);
+                
+                const categoryEl = document.createElement('div');
+                categoryEl.dataset.id = category.id;
+                categoryEl.className = 'flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 transition-shadow duration-200 cursor-pointer select-none';
+                categoryEl.setAttribute('tabindex', '0');
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = category.name;
+                nameSpan.className = 'focus:outline-none';
+                const kebabMenu = document.createElement('span');
+                kebabMenu.innerHTML = '&#8942;';
+                kebabMenu.className = 'kebab-menu';
+                kebabMenu.title = 'ตัวเลือก';
+                categoryEl.appendChild(nameSpan);
+                categoryEl.appendChild(kebabMenu);
+                kebabMenu.addEventListener('click', (e) => { e.stopPropagation(); openCategoryActionsModal(category); });
+                categoryEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); openCategoryActionsModal(category); } });
+                manageFragment.appendChild(categoryEl);
+            });
 
-    categoryList.appendChild(navFragment);
-    manageCategoryList.appendChild(manageFragment);
-    appState.categorySortableInstance = new Sortable(manageCategoryList, {
-        animation: 150,
-        ghostClass: 'sortable-ghost',
-        delay: 200,
-        delayOnTouchOnly: true,
-        touchStartThreshold: 5,
-        onEnd: (evt) => {
-            const newOrder = Array.from(manageCategoryList.querySelectorAll('div')).map(el => el.dataset.id);
-            saveCategoryOrder(newOrder);
+            categoryList.appendChild(navFragment);
+            manageCategoryList.appendChild(manageFragment);
+            appState.categorySortableInstance = new Sortable(manageCategoryList, { animation: 150, ghostClass: 'sortable-ghost', delay: 200, delayOnTouchOnly: true, touchStartThreshold: 5, onEnd: (evt) => { const newOrder = Array.from(manageCategoryList.querySelectorAll('div')).map(el => el.dataset.id); saveCategoryOrder(newOrder); } });
         }
-    }); [cite: 190]
-}
         
-        async function fetchWithRetry(url, retries = 3, delay = 2000) { for (let i = 0; i < retries; i++) { try { const response = await fetch(url); if (!response.ok) throw new Error(`Network: ${response.statusText}`); return await response.json(); } catch (error) { if (i === retries - 1) throw error; console.warn(`Fetch attempt ${i + 1} failed for ${url}. Retrying in ${delay / 1000}s...`); showNotification(`เชื่อมต่อไม่ได้ กำลังลองใหม่... (ครั้งที่ ${i + 1})`, true); await new Promise(res => setTimeout(res, delay)); } } }
-        async function fetchAllDataFromSheet() { if (appState.initialDataLoaded) return; try { loadingEl.classList.remove('hidden'); const data = await fetchWithRetry(sheetUrl); if (!Array.isArray(data.data) || data.data.length === 0) { showNoData(); return; } appState.allRecords = data.data; appState.currentFilteredRecords = [...appState.allRecords]; appState.initialDataLoaded = true; await categoriesLoadedPromise; const carnationCategory = appState.categories.find(c => c.name === 'Carnation'); if (carnationCategory) { const carnationButton = Array.from(categoryList.querySelectorAll('button')).find(btn => btn.textContent === 'Carnation'); if (carnationButton) carnationButton.click(); else displayData(); } else { displayData(); } } catch (error) { showError(error.message); } finally { loadingEl.classList.add('hidden'); } }
+        async function fetchWithRetry(url, retries = 3, delay = 2000) { for (let i = 0; i < retries; i++) { try { const response = await fetch(url);
+        if (!response.ok) throw new Error(`Network: ${response.statusText}`); return await response.json(); } catch (error) { if (i === retries - 1) throw error;
+        console.warn(`Fetch attempt ${i + 1} failed for ${url}. Retrying in ${delay / 1000}s...`); showNotification(`เชื่อมต่อไม่ได้ กำลังลองใหม่... (ครั้งที่ ${i + 1})`, true);
+        await new Promise(res => setTimeout(res, delay)); } } }
+        async function fetchAllDataFromSheet() { if (appState.initialDataLoaded) return;
+        try { loadingEl.classList.remove('hidden'); const data = await fetchWithRetry(sheetUrl); if (!Array.isArray(data.data) || data.data.length === 0) { showNoData(); return;
+        } appState.allRecords = data.data; appState.currentFilteredRecords = [...appState.allRecords]; appState.initialDataLoaded = true; await categoriesLoadedPromise; const carnationCategory = appState.categories.find(c => c.name === 'Carnation');
+        if (carnationCategory) { const carnationButton = Array.from(categoryList.querySelectorAll('button')).find(btn => btn.textContent === 'Carnation'); if (carnationButton) carnationButton.click(); else displayData(); } else { displayData();
+        } } catch (error) { showError(error.message); } finally { loadingEl.classList.add('hidden');
+        } }
 
         function displayData() {
-            tableHead.innerHTML = ''; tableBody.innerHTML = '';
+            tableHead.innerHTML = '';
+            tableBody.innerHTML = '';
             if (appState.sortableInstance) appState.sortableInstance.destroy();
 
             const records = appState.currentFilteredRecords;
             let recordsToDisplay = records;
             const shouldPaginate = appState.activeCategoryName === 'ทั้งหมด';
-            if (shouldPaginate) { const startIndex = (appState.currentPage - 1) * CONSTANTS.ITEMS_PER_PAGE; const endIndex = startIndex + CONSTANTS.ITEMS_PER_PAGE; recordsToDisplay = records.slice(startIndex, endIndex); renderPagination(records.length); } else { clearPagination(); }
-            if (appState.allRecords.length === 0) { showNoData(); return; }
+            if (shouldPaginate) { const startIndex = (appState.currentPage - 1) * CONSTANTS.ITEMS_PER_PAGE; const endIndex = startIndex + CONSTANTS.ITEMS_PER_PAGE;
+            recordsToDisplay = records.slice(startIndex, endIndex); renderPagination(records.length); } else { clearPagination(); }
+            if (appState.allRecords.length === 0) { showNoData();
+            return; }
 
             const itemColumnName = Object.keys(appState.allRecords[0])[0] || '';
             appState.allRecordsMap = new Map(appState.allRecords.map(r => [r[itemColumnName], r]));
@@ -672,8 +680,8 @@ function displayCategories() {
             const displayOrder = combinedOrder.filter(id => appState.customRows.has(id) || appState.allRecordsMap.has(id));
             const visibleIds = new Set(displayOrder.filter(id => !hiddenIdsForCurrentCategory.has(id)));
             const finalDisplayOrder = displayOrder.filter(id => (appState.customRows.has(id) && appState.customRows.get(id).categoryName === appState.activeCategoryName) || currentRecordIds.has(id));
-
-            if (finalDisplayOrder.filter(id => visibleIds.has(id)).length === 0) { tableEl.classList.add('hidden'); noDataEl.classList.remove('hidden'); return; }
+            if (finalDisplayOrder.filter(id => visibleIds.has(id)).length === 0) { tableEl.classList.add('hidden'); noDataEl.classList.remove('hidden'); return;
+            }
             noDataEl.classList.add('hidden'); tableEl.classList.remove('hidden');
 
             const headers = Object.keys(appState.allRecords[0]);
@@ -687,22 +695,26 @@ function displayCategories() {
                 const row = document.createElement('tr'); 
                 row.dataset.id = id; 
                 if(appState.customRows.has(id)){ 
-                    const rowData = appState.customRows.get(id); 
+                 
+                   const rowData = appState.customRows.get(id); 
                     if (rowData.categoryName === appState.activeCategoryName) { 
                         row.className = 'bg-gray-200 font-bold'; 
                         const cell = document.createElement('td'); 
+            
                         cell.colSpan = headers.length; 
                         cell.className = 'px-4 py-0.5 text-gray-800 text-sm text-left'; 
                         cell.textContent = rowData.text; 
                         cell.setAttribute('tabindex', '-1'); 
-                        row.addEventListener('dblclick', () => { 
+ 
+                       row.addEventListener('dblclick', () => { 
                             openHeaderActionsModal(id, rowData.text); 
                         }); 
-                        row.appendChild(cell); 
+                  
+               row.appendChild(cell); 
                         bodyFragment.appendChild(row); 
                     } 
                 } else if (appState.allRecordsMap.has(id)) { 
-                    const record = appState.allRecordsMap.get(id); 
+                    const record = appState.allRecordsMap.get(id);
                     row.className = 'hover:bg-gray-50'; 
                     row.setAttribute('tabindex', '0');
                     
@@ -710,21 +722,30 @@ function displayCategories() {
                         const td = document.createElement('td'); 
                         td.setAttribute('tabindex', '-1'); 
                         const narrowColumns = ['รวม', 'หน่วย', CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK]; 
-                        let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left'; 
+       
+                         let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left'; 
                         let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6'; 
                         td.className = `${padding} py-1 ${alignment} text-sm text-gray-700 break-words ${header === itemColumnName ? 'w-full' : ''}`; 
-                        td.textContent = record[header]; 
+   
+                         td.textContent = record[header]; 
                         row.appendChild(td); 
-                    }); 
+                    });
                     bodyFragment.appendChild(row); 
                 } 
             });
             tableBody.appendChild(bodyFragment);
-            appState.sortableInstance = new Sortable(tableBody, { animation: 150, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen', delay: 200, touchStartThreshold: 5, onEnd: (evt) => { const newOrder = Array.from(tableBody.querySelectorAll('tr')).map(row => row.dataset.id); saveCurrentSortOrder(newOrder); } }); 
+            appState.sortableInstance = new Sortable(tableBody, { animation: 150, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen', delay: 200, touchStartThreshold: 5, onEnd: (evt) => { const newOrder = Array.from(tableBody.querySelectorAll('tr')).map(row => row.dataset.id); saveCurrentSortOrder(newOrder); } });
         }
 
-        function renderPagination(totalItems) { clearPagination(); const totalPages = Math.ceil(totalItems / CONSTANTS.ITEMS_PER_PAGE); if (totalPages <= 1) return; const prevButton = document.createElement('button'); prevButton.textContent = 'ก่อนหน้า'; prevButton.className = 'px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50'; prevButton.disabled = appState.currentPage === 1; prevButton.addEventListener('click', () => { if (appState.currentPage > 1) { appState.currentPage--; displayData(); } }); const pageInfo = document.createElement('span'); pageInfo.textContent = `หน้า ${appState.currentPage} จาก ${totalPages}`; pageInfo.className = 'text-sm text-gray-600'; const nextButton = document.createElement('button'); nextButton.textContent = 'ถัดไป'; nextButton.className = 'px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50'; nextButton.disabled = appState.currentPage === totalPages; nextButton.addEventListener('click', () => { if (appState.currentPage < totalPages) { appState.currentPage++; displayData(); } }); paginationControls.appendChild(prevButton); paginationControls.appendChild(pageInfo); paginationControls.appendChild(nextButton); }
-        function clearPagination() { paginationControls.innerHTML = ''; }
+        function renderPagination(totalItems) { clearPagination(); const totalPages = Math.ceil(totalItems / CONSTANTS.ITEMS_PER_PAGE);
+        if (totalPages <= 1) return; const prevButton = document.createElement('button'); prevButton.textContent = 'ก่อนหน้า'; prevButton.className = 'px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50';
+        prevButton.disabled = appState.currentPage === 1; prevButton.addEventListener('click', () => { if (appState.currentPage > 1) { appState.currentPage--; displayData(); } });
+        const pageInfo = document.createElement('span'); pageInfo.textContent = `หน้า ${appState.currentPage} จาก ${totalPages}`; pageInfo.className = 'text-sm text-gray-600'; const nextButton = document.createElement('button');
+        nextButton.textContent = 'ถัดไป'; nextButton.className = 'px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50'; nextButton.disabled = appState.currentPage === totalPages;
+        nextButton.addEventListener('click', () => { if (appState.currentPage < totalPages) { appState.currentPage++; displayData(); } }); paginationControls.appendChild(prevButton); paginationControls.appendChild(pageInfo); paginationControls.appendChild(nextButton);
+        }
+        function clearPagination() { paginationControls.innerHTML = '';
+        }
         function displayRequisitionList() {
             requisitionListBody.innerHTML = '';
             const hasItems = appState.requisitionList.length > 0;
@@ -739,24 +760,38 @@ function displayCategories() {
                 row.innerHTML = `
                     <td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-600 text-center">${index + 1}</td>
                     <td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-800 font-medium break-words">${item.name}</td>
-                    <td class="px-1 sm:px-2 py-2 text-center">
+   
+                     <td class="px-1 sm:px-2 py-2 text-center">
                         <div class="flex items-center justify-center">
                             <button class="quantity-change-btn h-8 w-8 rounded-l-md border bg-gray-200 text-gray-600 hover:bg-gray-300" data-id="${item.id}" data-amount="-1">-</button>
-                            <span class="requisition-quantity-display h-8 w-12 text-center border-t border-b bg-white flex items-center justify-center" data-id="${item.id}">${item.quantity}</span>
+              
+                           <span class="requisition-quantity-display h-8 w-12 text-center border-t border-b bg-white flex items-center justify-center" data-id="${item.id}">${item.quantity}</span>
                             <button class="quantity-change-btn h-8 w-8 rounded-r-md border bg-gray-200 text-gray-600 hover:bg-gray-300" data-id="${item.id}" data-amount="1">+</button>
                         </div>
-                    </td>
+             
+               </td>
                     <td class="px-1 sm:px-2 py-2 text-xs sm:text-sm text-gray-600 text-center">${item.unit}</td>
                     <td class="px-1 sm:px-2 py-2 text-center text-xs sm:text-sm font-medium">
                         <button class="delete-req-btn text-red-600 hover:text-red-900 p-1" data-id="${item.id}" data-name="${item.name}">ลบ</button>
-                    </td>`;
+         
+                   </td>`;
                 fragment.appendChild(row);
             });
             requisitionListBody.appendChild(fragment);
         }
-        function displayHistory() { historyListContainer.innerHTML = ''; if (appState.historyList.length === 0) { historyListContainer.innerHTML = '<p class="text-center py-4 text-gray-500">ยังไม่มีประวัติการเบิก</p>'; return; } const fragment = document.createDocumentFragment(); appState.historyList.forEach(historyItem => { const date = historyItem.timestamp.toDate(); const formattedDate = `${date.toLocaleDateString('th-TH')} ${date.toLocaleTimeString('th-TH')}`; const card = document.createElement('div'); card.className = 'bg-gray-50 rounded-lg p-4 shadow'; const tableRows = historyItem.items.map((item, index) => `<tr><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-600 text-center">${index + 1}</td><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-800 break-words">${item.name}</td><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-800 text-center">${item.quantity}</td><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-600 text-center">${item.unit}</td></tr>`).join(''); card.innerHTML = `<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 gap-2"><div class="w-full sm:w-auto"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="w-full sm:w-auto text-left sm:text-right"><button class="export-history-btn text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md mt-2 sm:mt-0" data-req-id="${historyItem.id}">Export to Excel</button></div></div><div class="overflow-x-auto"><table class="w-full table-auto show-grid"><thead><tr><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-center">ลำดับ</th><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-left">สินค้า</th><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-center">จำนวน</th><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-center">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`; fragment.appendChild(card); }); historyListContainer.appendChild(fragment); }
+        function displayHistory() { historyListContainer.innerHTML = '';
+        if (appState.historyList.length === 0) { historyListContainer.innerHTML = '<p class="text-center py-4 text-gray-500">ยังไม่มีประวัติการเบิก</p>'; return; } const fragment = document.createDocumentFragment();
+        appState.historyList.forEach(historyItem => { const date = historyItem.timestamp.toDate(); const formattedDate = `${date.toLocaleDateString('th-TH')} ${date.toLocaleTimeString('th-TH')}`; const card = document.createElement('div'); card.className = 'bg-gray-50 rounded-lg p-4 shadow'; const tableRows = historyItem.items.map((item, index) => `<tr><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-600 text-center">${index + 1}</td><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-800 break-words">${item.name}</td><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-800 text-center">${item.quantity}</td><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-600 text-center">${item.unit}</td></tr>`).join(''); card.innerHTML = `<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 gap-2"><div class="w-full sm:w-auto"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="w-full sm:w-auto text-left sm:text-right"><button class="export-history-btn text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md mt-2 sm:mt-0" data-req-id="${historyItem.id}">Export to Excel</button></div></div><div class="overflow-x-auto"><table class="w-full table-auto show-grid"><thead><tr><th class="py-1 
+px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-center">ลำดับ</th><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-left">สินค้า</th><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-center">จำนวน</th><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-center">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`;
+        fragment.appendChild(card); }); historyListContainer.appendChild(fragment); }
 
-        function enableCategoryEditing(category) { const categoryEl = manageCategoryList.querySelector(`div[data-id="${category.id}"]`); if (!categoryEl) return; const nameSpan = categoryEl.querySelector('span:first-child'); const kebabMenu = categoryEl.querySelector('.kebab-menu'); const input = document.createElement('input'); input.type = 'text'; input.value = category.name; input.className = 'editing-input'; const saveChanges = () => { const newName = input.value.trim(); if (newName && newName !== category.name) { updateCategoryName(category.id, category.name, newName); } setTimeout(displayCategories, 200); }; input.addEventListener('blur', saveChanges); input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } else if (e.key === 'Escape') { input.removeEventListener('blur', saveChanges); input.blur(); displayCategories(); } }); nameSpan.style.display = 'none'; kebabMenu.style.display = 'none'; categoryEl.insertBefore(input, kebabMenu); input.focus(); input.select(); }
+        function enableCategoryEditing(category) { const categoryEl = manageCategoryList.querySelector(`div[data-id="${category.id}"]`);
+        if (!categoryEl) return; const nameSpan = categoryEl.querySelector('span:first-child'); const kebabMenu = categoryEl.querySelector('.kebab-menu'); const input = document.createElement('input'); input.type = 'text';
+        input.value = category.name; input.className = 'editing-input'; const saveChanges = () => { const newName = input.value.trim();
+        if (newName && newName !== category.name) { updateCategoryName(category.id, category.name, newName); } setTimeout(displayCategories, 200); }; input.addEventListener('blur', saveChanges);
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } else if (e.key === 'Escape') { input.removeEventListener('blur', saveChanges); input.blur(); displayCategories(); } });
+        nameSpan.style.display = 'none'; kebabMenu.style.display = 'none'; categoryEl.insertBefore(input, kebabMenu); input.focus(); input.select();
+        }
         
         // --- FIXED: ฟังก์ชันใหม่สำหรับแก้ไข Header ---
         function enableHeaderEditing(headerId, currentText) {
@@ -769,7 +804,6 @@ function displayCategories() {
             input.type = 'text';
             input.value = currentText;
             input.className = 'w-full bg-gray-200 p-1 text-sm text-gray-800 border-blue-500 border-2 rounded';
-
             const saveChanges = () => {
                 const newText = input.value.trim();
                 if (newText && newText !== currentText) {
@@ -780,18 +814,19 @@ function displayCategories() {
                     cell.textContent = currentText; // Ensure text is correct
                 }
             };
-
             input.addEventListener('blur', saveChanges);
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     input.blur();
                 } else if (e.key === 'Escape') {
-                    input.removeEventListener('blur', saveChanges);
+             
+                   input.removeEventListener('blur', saveChanges);
                     input.blur();
                     cell.innerHTML = originalContent;
                     cell.textContent = currentText;
                 }
+            
             });
 
             cell.textContent = '';
@@ -800,54 +835,89 @@ function displayCategories() {
             input.select();
         }
         
-        function openItemSettingsModal(record) { const itemColumnName = Object.keys(appState.allRecords[0])[0] || ''; appState.currentEditingItemId = record[itemColumnName]; const settings = appState.itemSettings.get(appState.currentEditingItemId) || {}; modalItemName.textContent = `ตั้งค่า: ${appState.currentEditingItemId}`; reorderPointInput.value = settings.reorderPoint || ''; reorderQuantityInput.value = settings.reorderQuantity || ''; itemSettingsModal.classList.remove('hidden'); }
-        function closeItemSettingsModal() { itemSettingsModal.classList.add('hidden'); appState.currentEditingItemId = null; }
-        function openCategoryActionsModal(category) { appState.currentEditingCategory = category; categoryModalName.textContent = `จัดการหมวดหมู่: ${category.name}`; categoryActionsModal.classList.remove('hidden'); }
-        function closeCategoryActionsModal() { categoryActionsModal.classList.add('hidden'); appState.currentEditingCategory = null; }
-        function openAddHeaderModal(referenceId = null) { appState.insertHeaderAboveId = referenceId; headerInput.value = ''; addHeaderModal.classList.remove('hidden'); setTimeout(() => headerInput.focus(), 100); }
-        function closeAddHeaderModal() { addHeaderModal.classList.add('hidden'); appState.insertHeaderAboveId = null; }
-        function openHeaderActionsModal(id, text) { appState.currentEditingHeaderId = id; appState.currentEditingHeaderText = text; headerModalName.textContent = `จัดการหัวข้อ: "${text}"`; headerActionsModal.classList.remove('hidden'); }
-        function closeHeaderActionsModal() { headerActionsModal.classList.add('hidden'); appState.currentEditingHeaderId = null; appState.currentEditingHeaderText = null; }
-        function showConfirmModal(title, body, onConfirm) { confirmModalTitle.textContent = title; confirmModalBody.textContent = body; appState.confirmCallback = onConfirm; confirmModal.classList.remove('hidden'); }
-        function closeConfirmModal() { confirmModal.classList.add('hidden'); appState.confirmCallback = null; }
-        function openAppSettingsModal() { updateAppSettingsModalInputs(); appSettingsModal.classList.remove('hidden'); }
-        function closeAppSettingsModal() { appSettingsModal.classList.add('hidden'); }
-        function updateAppSettingsModalInputs() { settingTriggerColInput.value = appState.appSettings.triggerStockColumnName; settingCalcColInput.value = appState.appSettings.calculationStockColumnName; settingUnitColInput.value = appState.appSettings.unitColumnName; }
+        function openItemSettingsModal(record) { const itemColumnName = Object.keys(appState.allRecords[0])[0] ||
+        ''; appState.currentEditingItemId = record[itemColumnName]; const settings = appState.itemSettings.get(appState.currentEditingItemId) || {}; modalItemName.textContent = `ตั้งค่า: ${appState.currentEditingItemId}`; reorderPointInput.value = settings.reorderPoint || '';
+        reorderQuantityInput.value = settings.reorderQuantity || ''; itemSettingsModal.classList.remove('hidden'); }
+        function closeItemSettingsModal() { itemSettingsModal.classList.add('hidden');
+        appState.currentEditingItemId = null; }
+        function openCategoryActionsModal(category) { appState.currentEditingCategory = category;
+        categoryModalName.textContent = `จัดการหมวดหมู่: ${category.name}`; categoryActionsModal.classList.remove('hidden'); }
+        function closeCategoryActionsModal() { categoryActionsModal.classList.add('hidden'); appState.currentEditingCategory = null;
+        }
+        function openAddHeaderModal(referenceId = null) { appState.insertHeaderAboveId = referenceId; headerInput.value = ''; addHeaderModal.classList.remove('hidden');
+        setTimeout(() => headerInput.focus(), 100); }
+        function closeAddHeaderModal() { addHeaderModal.classList.add('hidden'); appState.insertHeaderAboveId = null;
+        }
+        function openHeaderActionsModal(id, text) { appState.currentEditingHeaderId = id; appState.currentEditingHeaderText = text;
+        headerModalName.textContent = `จัดการหัวข้อ: "${text}"`; headerActionsModal.classList.remove('hidden'); }
+        function closeHeaderActionsModal() { headerActionsModal.classList.add('hidden'); appState.currentEditingHeaderId = null;
+        appState.currentEditingHeaderText = null; }
+        function showConfirmModal(title, body, onConfirm) { confirmModalTitle.textContent = title;
+        confirmModalBody.textContent = body; appState.confirmCallback = onConfirm; confirmModal.classList.remove('hidden'); }
+        function closeConfirmModal() { confirmModal.classList.add('hidden');
+        appState.confirmCallback = null; }
+        function openAppSettingsModal() { updateAppSettingsModalInputs(); appSettingsModal.classList.remove('hidden');
+        }
+        function closeAppSettingsModal() { appSettingsModal.classList.add('hidden');
+        }
+        function updateAppSettingsModalInputs() { settingTriggerColInput.value = appState.appSettings.triggerStockColumnName; settingCalcColInput.value = appState.appSettings.calculationStockColumnName; settingUnitColInput.value = appState.appSettings.unitColumnName;
+        }
         function showNotification(message, isError = true) {
             if (appState.notificationTimeout) clearTimeout(appState.notificationTimeout);
             notificationMessage.textContent = message;
-            notificationToast.className = `fixed bottom-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            notificationToast.className = `fixed bottom-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${isError ?
+            'bg-red-500' : 'bg-green-500'}`;
             notificationToast.classList.remove('hidden', 'opacity-0');
             
             // ใช้ timeout เล็กน้อยเพื่อให้ browser render การเปลี่ยนแปลงก่อนเริ่ม transition
             setTimeout(() => {
                 notificationToast.classList.add('show');
             }, 10);
-
             appState.notificationTimeout = setTimeout(() => {
                 notificationToast.classList.remove('show');
                 setTimeout(() => notificationToast.classList.add('hidden'), 300); // ซ่อนหลังจาก animation จบ
             }, 1500);
         }
-        function switchView(viewName) { const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView }; const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; Object.values(views).forEach(v => v.classList.add('hidden')); categoryNavView.classList.add('hidden'); Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); views[viewName].classList.remove('hidden'); navs[viewName].classList.add('text-blue-600', 'border-blue-600'); navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); if (viewName === 'products') { categoryNavView.classList.remove('hidden'); if(appState.activeCategoryName === 'ทั้งหมด') { productSearchContainer.classList.remove('hidden'); } } else { productSearchContainer.classList.add('hidden'); } }
-        function showError(message) { errorMessageEl.textContent = `เกิดข้อผิดพลาด: ${message}`; errorEl.classList.remove('hidden'); }
-        function showNoData() { noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล'; noDataEl.classList.remove('hidden'); tableEl.classList.add('hidden'); }
+        function switchView(viewName) { const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView };
+        const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; Object.values(views).forEach(v => v.classList.add('hidden')); categoryNavView.classList.add('hidden');
+        Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); views[viewName].classList.remove('hidden'); navs[viewName].classList.add('text-blue-600', 'border-blue-600'); navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+        if (viewName === 'products') { categoryNavView.classList.remove('hidden'); if(appState.activeCategoryName === 'ทั้งหมด') { productSearchContainer.classList.remove('hidden'); } } else { productSearchContainer.classList.add('hidden');
+        } }
+        function showError(message) { errorMessageEl.textContent = `เกิดข้อผิดพลาด: ${message}`; errorEl.classList.remove('hidden');
+        }
+        function showNoData() { noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล'; noDataEl.classList.remove('hidden'); tableEl.classList.add('hidden');
+        }
         function openQuantityModal(item) {
-            const itemColumnName = Object.keys(appState.allRecords[0])[0] || '';
+            const itemColumnName = Object.keys(appState.allRecords[0])[0] ||
+            '';
             if (!item || !item[itemColumnName]) return;
             appState.itemForRequisition = item;
             quantityModalName.textContent = `ระบุจำนวนสำหรับ: ${item[itemColumnName]}`;
             quantityDisplay.textContent = '1';
             quantityModal.classList.remove('hidden');
         }
-        function closeQuantityModal() { quantityModal.classList.add('hidden'); appState.itemForRequisition = null; }
-        function openContextMenu(event, record) { const targetElement = event.target.closest('tr'); if (!targetElement) return; let mouseX, mouseY; if (event.clientX !== undefined && event.clientY !== undefined && event.clientX !== 0) { mouseX = event.clientX; mouseY = event.clientY; } else { const rect = targetElement.getBoundingClientRect(); mouseX = rect.left; mouseY = rect.top; } appState.contextMenuItemRecord = record; itemContextMenu.style.top = `${mouseY}px`; itemContextMenu.style.left = `${mouseX}px`; itemContextMenu.classList.remove('hidden'); const menuRect = itemContextMenu.getBoundingClientRect(); if (menuRect.bottom > window.innerHeight) { itemContextMenu.style.top = `${mouseY - menuRect.height}px`; } if (menuRect.right > window.innerWidth) { itemContextMenu.style.left = `${mouseX - menuRect.width}px`; } itemContextMenu.setAttribute('tabindex', '-1'); itemContextMenu.focus(); itemContextMenu.addEventListener('keydown', handleMenuKeyDown); const firstItem = itemContextMenu.querySelector('button[role="menuitem"]'); if(firstItem) firstItem.classList.add('menu-item-active'); }
-        function closeContextMenu() { if (itemContextMenu && !itemContextMenu.classList.contains('hidden')) { itemContextMenu.removeEventListener('keydown', handleMenuKeyDown); const activeItem = itemContextMenu.querySelector('.menu-item-active'); if (activeItem) activeItem.classList.remove('menu-item-active'); itemContextMenu.classList.add('hidden'); appState.contextMenuItemRecord = null; } }
-        function handleMenuKeyDown(event) { event.preventDefault(); event.stopPropagation(); const menuItems = Array.from(itemContextMenu.querySelectorAll('button[role="menuitem"]')); if (menuItems.length === 0) return; const activeItem = itemContextMenu.querySelector('.menu-item-active'); let currentIndex = activeItem ? menuItems.indexOf(activeItem) : -1; switch (event.key) { case 'ArrowDown': currentIndex = (currentIndex === -1 || currentIndex === menuItems.length - 1) ? 0 : currentIndex + 1; break; case 'ArrowUp': currentIndex = (currentIndex === -1 || currentIndex === 0) ? menuItems.length - 1 : currentIndex - 1; break; case 'Enter': case ' ': if (activeItem) activeItem.click(); return; case 'Escape': closeContextMenu(); return; } if(activeItem) activeItem.classList.remove('menu-item-active'); menuItems[currentIndex].classList.add('menu-item-active'); }
+        function closeQuantityModal() { quantityModal.classList.add('hidden'); appState.itemForRequisition = null;
+        }
+        function openContextMenu(event, record) { const targetElement = event.target.closest('tr'); if (!targetElement) return;
+        let mouseX, mouseY; if (event.clientX !== undefined && event.clientY !== undefined && event.clientX !== 0) { mouseX = event.clientX;
+        mouseY = event.clientY; } else { const rect = targetElement.getBoundingClientRect(); mouseX = rect.left; mouseY = rect.top; } appState.contextMenuItemRecord = record;
+        itemContextMenu.style.top = `${mouseY}px`; itemContextMenu.style.left = `${mouseX}px`; itemContextMenu.classList.remove('hidden'); const menuRect = itemContextMenu.getBoundingClientRect();
+        if (menuRect.bottom > window.innerHeight) { itemContextMenu.style.top = `${mouseY - menuRect.height}px`;
+        } if (menuRect.right > window.innerWidth) { itemContextMenu.style.left = `${mouseX - menuRect.width}px`; } itemContextMenu.setAttribute('tabindex', '-1'); itemContextMenu.focus(); itemContextMenu.addEventListener('keydown', handleMenuKeyDown);
+        const firstItem = itemContextMenu.querySelector('button[role="menuitem"]'); if(firstItem) firstItem.classList.add('menu-item-active'); }
+        function closeContextMenu() { if (itemContextMenu && !itemContextMenu.classList.contains('hidden')) { itemContextMenu.removeEventListener('keydown', handleMenuKeyDown);
+        const activeItem = itemContextMenu.querySelector('.menu-item-active'); if (activeItem) activeItem.classList.remove('menu-item-active'); itemContextMenu.classList.add('hidden'); appState.contextMenuItemRecord = null;
+        } }
+        function handleMenuKeyDown(event) { event.preventDefault(); event.stopPropagation(); const menuItems = Array.from(itemContextMenu.querySelectorAll('button[role="menuitem"]'));
+        if (menuItems.length === 0) return; const activeItem = itemContextMenu.querySelector('.menu-item-active'); let currentIndex = activeItem ? menuItems.indexOf(activeItem) : -1;
+        switch (event.key) { case 'ArrowDown': currentIndex = (currentIndex === -1 || currentIndex === menuItems.length - 1) ?
+        0 : currentIndex + 1; break; case 'ArrowUp': currentIndex = (currentIndex === -1 || currentIndex === 0) ?
+        menuItems.length - 1 : currentIndex - 1; break; case 'Enter': case ' ': if (activeItem) activeItem.click(); return; case 'Escape': closeContextMenu();
+        return; } if(activeItem) activeItem.classList.remove('menu-item-active'); menuItems[currentIndex].classList.add('menu-item-active'); }
 
         productSearchInput.addEventListener('input', () => { const searchTerm = productSearchInput.value.toLowerCase(); const itemColumnName = appState.allRecords.length > 0 ? Object.keys(appState.allRecords[0])[0] : ''; if (!itemColumnName) return; appState.currentFilteredRecords = searchTerm ? appState.allRecords.filter(record => record[itemColumnName] && record[itemColumnName].toLowerCase().includes(searchTerm)) : appState.allRecords; appState.currentPage = 1; displayData(); });
         categoryList.addEventListener('wheel', (event) => { if (window.matchMedia('(pointer: fine)').matches) { event.preventDefault(); categoryList.scrollLeft += event.deltaY; } }, { passive: false });
-        addCategoryBtn.addEventListener('click', addCategory); 
+        addCategoryBtn.addEventListener('click', addCategory);
         categoryInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addCategory(); });
         navProductsBtn.addEventListener('click', () => switchView('products'));
         navRequisitionBtn.addEventListener('click', () => switchView('requisition'));
@@ -864,22 +934,20 @@ function displayCategories() {
         headerModalCancelBtn.addEventListener('click', closeAddHeaderModal);
         headerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const headerText = headerInput.value.trim(); if (headerText) { addHeaderRow(headerText); closeAddHeaderModal(); } } });
         addHeaderModal.addEventListener('click', (e) => { if (e.target === addHeaderModal) { closeAddHeaderModal(); } });
-        
         // --- FIXED: อัปเดต event listener ให้เรียกใช้ฟังก์ชันแก้ไขใหม่ ---
-editHeaderBtn.addEventListener('click', () => {
-    if (appState.currentEditingHeaderId && appState.currentEditingHeaderText) {
-        // 1. เก็บค่า ID และ Text ไว้ในตัวแปรชั่วคราวก่อน
-        const idToEdit = appState.currentEditingHeaderId;
-        const textToEdit = appState.currentEditingHeaderText;
+        editHeaderBtn.addEventListener('click', () => {
+            if (appState.currentEditingHeaderId && appState.currentEditingHeaderText) {
+                // 1. เก็บค่า ID และ Text ไว้ในตัวแปรชั่วคราวก่อน
+                const idToEdit = appState.currentEditingHeaderId;
+                const textToEdit = appState.currentEditingHeaderText;
 
-        // 2. จากนั้นค่อยปิด Modal (ซึ่งจะล้างค่าใน appState)
-        closeHeaderActionsModal();
+                // 2. จากนั้นค่อยปิด Modal (ซึ่งจะล้างค่าใน appState)
+                closeHeaderActionsModal();
 
-        // 3. เรียกใช้ฟังก์ชันแก้ไข โดยใช้ค่าจากตัวแปรที่เก็บไว้
-        enableHeaderEditing(idToEdit, textToEdit);
-    }
-});
-        
+                // 3. เรียกใช้ฟังก์ชันแก้ไข โดยใช้ค่าจากตัวแปรที่เก็บไว้
+                enableHeaderEditing(idToEdit, textToEdit);
+            }
+        });
         deleteHeaderBtn.addEventListener('click', () => { if(appState.currentEditingHeaderId) { showConfirmModal('ยืนยันการลบ', `ต้องการลบหัวข้อ "${appState.currentEditingHeaderText}" หรือไม่?`, () => { deleteHeaderRow(appState.currentEditingHeaderId, appState.currentEditingHeaderText); closeHeaderActionsModal(); }); } });
         headerActionsCancelBtn.addEventListener('click', closeHeaderActionsModal);
         headerActionsModal.addEventListener('click', (e) => { if (e.target === headerActionsModal) { closeHeaderActionsModal(); }});
@@ -896,17 +964,20 @@ editHeaderBtn.addEventListener('click', () => {
                 const amount = parseInt(e.target.dataset.amount);
                 const display = requisitionListBody.querySelector(`span.requisition-quantity-display[data-id="${id}"]`);
                 if (display) {
+    
                     let newQuantity = parseInt(display.textContent) + amount;
                     if (newQuantity < 1) {
                         newQuantity = 1;
                     }
-                    display.textContent = newQuantity;
+         
+                   display.textContent = newQuantity;
                     updateRequisitionQuantity(id, newQuantity);
                 }
             } else if (e.target.classList.contains('delete-req-btn')) {
                 deleteRequisitionItem(e.target.dataset.id, e.target.dataset.name);
             }
-        });
+     
+           });
         
         confirmRequisitionBtn.addEventListener('click', confirmRequisition);
 
@@ -916,11 +987,11 @@ editHeaderBtn.addEventListener('click', () => {
             if (!row || appState.customRows.has(row.dataset.id)) return; // ไม่ทำงานกับแถว header
             const record = appState.allRecordsMap.get(row.dataset.id);
             if(record) {
-                e.preventDefault();
+             
+               e.preventDefault();
                 openContextMenu(e, record);
             }
         });
-
         tableBody.addEventListener('touchstart', e => {
             const row = e.target.closest('tr[data-id]');
             if (!row || appState.customRows.has(row.dataset.id)) return;
@@ -929,31 +1000,34 @@ editHeaderBtn.addEventListener('click', () => {
 
             const rowId = row.dataset.id;
             const currentTime = new Date().getTime();
-            const tapLength = currentTime - lastTap.time;
+      
+               const tapLength = currentTime - lastTap.time;
             
             if (tapLength < 400 && tapLength > 0 && lastTap.id === rowId) {
                 e.preventDefault();
                 const touch = e.touches[0];
-                const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY, target: e.target };
+                const fakeEvent 
+= { clientX: touch.clientX, clientY: touch.clientY, target: e.target };
                 openContextMenu(fakeEvent, record);
                 lastTap = { time: 0, id: null };
             } else {
                 lastTap = { time: currentTime, id: rowId };
             }
-        });
+   
+             });
 
         tableBody.addEventListener('keydown', e => {
              if (e.key === 'Enter' || e.key === ' ') {
                 const row = e.target.closest('tr[data-id]');
                 if (!row || appState.customRows.has(row.dataset.id)) return;
                 const record = appState.allRecordsMap.get(row.dataset.id);
-                if (record) {
+           
+                 if (record) {
                     e.preventDefault();
                     openContextMenu(e, record);
                 }
             }
         });
-
         window.addEventListener('click', (e) => { if (itemContextMenu && !itemContextMenu.classList.contains('hidden') && !itemContextMenu.contains(e.target)) { closeContextMenu(); } });
         window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !itemContextMenu.classList.contains('hidden')) closeContextMenu(); });
         contextMenuSettingsBtn.addEventListener('click', () => { if (appState.contextMenuItemRecord) openItemSettingsModal(appState.contextMenuItemRecord); closeContextMenu(); });
@@ -961,17 +1035,16 @@ editHeaderBtn.addEventListener('click', () => {
         const contextMenuRequisitionBtn = document.getElementById('context-menu-requisition');
         contextMenuRequisitionBtn.addEventListener('click', () => { if (appState.contextMenuItemRecord) { openQuantityModal(appState.contextMenuItemRecord); } closeContextMenu(); });
         contextMenuAddHeaderBtn.addEventListener('click', () => { const itemColumnName = appState.allRecords.length > 0 ? Object.keys(appState.allRecords[0])[0] : ''; if (appState.contextMenuItemRecord && itemColumnName) { openAddHeaderModal(appState.contextMenuItemRecord[itemColumnName]); } closeContextMenu(); });
-        
         quantityModalOkBtn.addEventListener('click', () => {
             const quantity = parseInt(quantityDisplay.textContent, 10);
             if (appState.itemForRequisition && quantity > 0) {
                 addManualRequisition(appState.itemForRequisition, quantity);
                 closeQuantityModal();
             } else {
+                
                 showNotification('กรุณาใส่จำนวนที่มากกว่า 0', true);
             }
         });
-
         quantityModalCancelBtn.addEventListener('click', closeQuantityModal);
 
         quantityModal.addEventListener('click', (e) => {
@@ -979,24 +1052,35 @@ editHeaderBtn.addEventListener('click', () => {
                 const amount = parseInt(e.target.dataset.amount);
                 let newQuantity = parseInt(quantityDisplay.textContent) + amount;
                 if (newQuantity < 1) {
-                    newQuantity = 1;
+                    newQuantity 
+= 1;
                 }
                 quantityDisplay.textContent = newQuantity;
             }
         });
-
-        function handleTableKeyDown(e) { const currentCell = e.target.closest('td, th'); if (!currentCell || !tableEl.contains(currentCell)) return; const currentRow = currentCell.parentElement; if (currentRow.tagName !== 'TR') return; const isDataRow = tableBody.contains(currentRow); const container = isDataRow ? tableBody : tableHead; const rows = Array.from(container.querySelectorAll('tr')); const currentCellIndex = Array.from(currentRow.children).indexOf(currentCell); const currentRowIndex = rows.indexOf(currentRow); let nextCell; switch (e.key) { case 'ArrowUp': e.preventDefault(); for (let i = currentRowIndex - 1; i >= 0; i--) { if (rows[i].children.length > 1) { nextCell = rows[i].children[currentCellIndex]; break; } } break; case 'ArrowDown': e.preventDefault(); for (let i = currentRowIndex + 1; i < rows.length; i++) { if (rows[i].children.length > 1) { nextCell = rows[i].children[currentCellIndex]; break; } } break; case 'ArrowLeft': e.preventDefault(); if (currentCellIndex > 0) nextCell = currentRow.children[currentCellIndex - 1]; break; case 'ArrowRight': e.preventDefault(); if (currentCellIndex < currentRow.children.length - 1) nextCell = currentRow.children[currentCellIndex + 1]; break; default: return; } if (nextCell) nextCell.focus(); }
+        function handleTableKeyDown(e) { const currentCell = e.target.closest('td, th'); if (!currentCell || !tableEl.contains(currentCell)) return; const currentRow = currentCell.parentElement;
+        if (currentRow.tagName !== 'TR') return; const isDataRow = tableBody.contains(currentRow); const container = isDataRow ? tableBody : tableHead;
+        const rows = Array.from(container.querySelectorAll('tr')); const currentCellIndex = Array.from(currentRow.children).indexOf(currentCell); const currentRowIndex = rows.indexOf(currentRow); let nextCell; switch (e.key) { case 'ArrowUp': e.preventDefault();
+        for (let i = currentRowIndex - 1; i >= 0; i--) { if (rows[i].children.length > 1) { nextCell = rows[i].children[currentCellIndex];
+        break; } } break; case 'ArrowDown': e.preventDefault(); for (let i = currentRowIndex + 1; i < rows.length; i++) { if (rows[i].children.length > 1) { nextCell = rows[i].children[currentCellIndex];
+        break; } } break; case 'ArrowLeft': e.preventDefault(); if (currentCellIndex > 0) nextCell = currentRow.children[currentCellIndex - 1]; break; case 'ArrowRight': e.preventDefault();
+        if (currentCellIndex < currentRow.children.length - 1) nextCell = currentRow.children[currentCellIndex + 1]; break; default: return; } if (nextCell) nextCell.focus();
+        }
         tableEl.addEventListener('keydown', handleTableKeyDown);
-        
-        function exportToExcelCompatibleCsv(filename, rows) { if (!rows || rows.length === 0) { showNotification("ไม่มีข้อมูลสำหรับ Export"); return; } const header = Object.keys(rows[0]).join(','); const csvContent = rows.map(row => Object.values(row).map(value => { const strValue = String(value || ''); return strValue.includes(',') || strValue.includes('"') || strValue.includes('\n') ? `"${strValue.replace(/"/g, '""')}"` : strValue; }).join(',')).join('\n'); const csv = `\uFEFF${header}\n${csvContent}`; const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); if (link.download !== undefined) { const url = URL.createObjectURL(blob); link.setAttribute('href', url); link.setAttribute('download', filename); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); } }
+        function exportToExcelCompatibleCsv(filename, rows) { if (!rows || rows.length === 0) { showNotification("ไม่มีข้อมูลสำหรับ Export"); return; } const header = Object.keys(rows[0]).join(',');
+        const csvContent = rows.map(row => Object.values(row).map(value => { const strValue = String(value || ''); return strValue.includes(',') || strValue.includes('"') || strValue.includes('\n') ? `"${strValue.replace(/"/g, '""')}"` : strValue; }).join(',')).join('\n');
+        const csv = `\uFEFF${header}\n${csvContent}`; const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a');
+        if (link.download !== undefined) { const url = URL.createObjectURL(blob); link.setAttribute('href', url); link.setAttribute('download', filename); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        } }
         historyListContainer.addEventListener('click', (e) => { const exportBtn = e.target.closest('.export-history-btn'); if (exportBtn) { const reqId = exportBtn.dataset.reqId; const historyItem = appState.historyList.find(item => item.id === reqId); if (historyItem) { exportToExcelCompatibleCsv(`${historyItem.requisitionNumber}.csv`, historyItem.items); } } });
-
         const navWrapper = document.getElementById('nav-toggle-wrapper'), navTrigger = document.getElementById('nav-trigger'), navIcon = document.getElementById('nav-trigger-icon'), navTabs = navWrapper.querySelector('nav');
         let isNavOpen = false;
         const openNav = () => { if (isNavOpen) return; isNavOpen = true; navWrapper.classList.remove('h-4'); navWrapper.classList.add('h-16'); navIcon.classList.add('rotate-180'); };
         const closeNav = () => { if (!isNavOpen) return; isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add('h-4'); navIcon.classList.remove('rotate-180'); };
-        if (navTabs) { navTabs.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { setTimeout(closeNav, 200); } }); }
-        if (window.matchMedia('(pointer: fine)').matches) { navWrapper.addEventListener('mouseenter', openNav); navWrapper.addEventListener('mouseleave', closeNav); } else { navTrigger.addEventListener('click', () => isNavOpen ? closeNav() : openNav()); }
+        if (navTabs) { navTabs.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { setTimeout(closeNav, 200); } });
+        }
+        if (window.matchMedia('(pointer: fine)').matches) { navWrapper.addEventListener('mouseenter', openNav); navWrapper.addEventListener('mouseleave', closeNav);
+        } else { navTrigger.addEventListener('click', () => isNavOpen ? closeNav() : openNav()); }
     });
 </script>
 
