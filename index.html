@@ -657,10 +657,13 @@ document.querySelectorAll('#category-list button').forEach(btn => { btn.classLis
         } } catch (error) { showError(error.message); } finally { loadingEl.classList.add('hidden');
         } }
 
-        function displayData() {
+function displayData() {
             tableHead.innerHTML = '';
             tableBody.innerHTML = '';
-            if (appState.sortableInstance) appState.sortableInstance.destroy();
+            if (appState.sortableInstance) {
+                appState.sortableInstance.destroy();
+                appState.sortableInstance = null;
+            }
 
             const records = appState.currentFilteredRecords;
             let recordsToDisplay = records;
