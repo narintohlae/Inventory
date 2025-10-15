@@ -533,59 +533,121 @@
         async function confirmRequisition() { if (!requisitionListCollectionRef || appState.requisitionList.length === 0) return; try { const reqNumber = await runTransaction(db, async (transaction) => { const counterSnap = await transaction.get(countersDocRef); const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0; const newCounter = currentCounter + 1; const now = new Date(); const generatedReqNumber = `REQ-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}-${newCounter.toString().padStart(4, '0')}`; const historyDocRef = doc(requisitionHistoryCollectionRef); transaction.set(historyDocRef, { requisitionNumber: generatedReqNumber, timestamp: Timestamp.now(), items: appState.requisitionList.map(({id, ...rest}) => rest) }); appState.requisitionList.forEach(item => { transaction.delete(doc(requisitionListCollectionRef, item.id)); }); transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true }); return generatedReqNumber; }); showNotification(`ยืนยันการเบิกของ ${reqNumber} เรียบร้อย`, false); } catch (error) { console.error("Transaction failed: ", error); showError("ยืนยันการเบิกของไม่สำเร็จ: " + error.message); } }
         async function addManualRequisition(item, quantity) { if (!requisitionListCollectionRef || !item || !quantity || quantity < 1) return; const itemColumnName = Object.keys(appState.allRecords[0])[0]; const unitColumnName = appState.appSettings.unitColumnName; const itemId = item[itemColumnName]; const itemName = item[itemColumnName]; const itemUnit = item[unitColumnName] || 'ชิ้น'; try { const docRef = doc(requisitionListCollectionRef, itemId); await setDoc(docRef, { name: itemName, quantity: quantity, unit: itemUnit }, { merge: true }); showNotification(`เพิ่ม/อัปเดต '${itemName}' จำนวน ${quantity} ${itemUnit}`, false); } catch (error) { showError("เพิ่มรายการเบิกไม่สำเร็จ: " + error.message); } }
 
-        function displayCategories() {
-            if (appState.categorySortableInstance) appState.categorySortableInstance.destroy();
-            categoryList.innerHTML = ''; manageCategoryList.innerHTML = '';
-            if (!appState.userId) return;
+function displayCategories() {
+    if (appState.categorySortableInstance) appState.categorySortableInstance.destroy(); [cite: 175]
+    categoryList.innerHTML = '';
+    manageCategoryList.innerHTML = ''; [cite: 176]
+    if (!appState.userId) return;
 
-            const navFragment = document.createDocumentFragment();
-            const manageFragment = document.createDocumentFragment();
+    const navFragment = document.createDocumentFragment();
+    const manageFragment = document.createDocumentFragment();
+    const allBtn = document.createElement('button'); [cite: 177]
+    allBtn.dataset.id = 'all';
+    allBtn.className = 'whitespace-nowrap py-4 px-2 font-bold text-sm focus:outline-none';
+    allBtn.textContent = 'ทั้งหมด'; [cite: 177]
+    allBtn.addEventListener('click', () => {
+        appState.currentPage = 1;
+        noDataEl.querySelector('p').textContent = 'ไม่พบสินค้า';
+        productSearchContainer.classList.remove('hidden');
+        productSearchInput.value = '';
+        appState.activeCategoryName = 'ทั้งหมด';
+        appState.currentFilteredRecords = [...appState.allRecords];
+        displayData();
+        document.querySelectorAll('#category-list button').forEach(btn => {
+            btn.classList.remove('text-blue-600');
+            btn.classList.add('text-gray-500', 'hover:text-gray-700');
+        });
+        allBtn.classList.add('text-blue-600');
+        allBtn.classList.remove('text-gray-500', 'hover:text-gray-700');
+    }); [cite: 178]
+    navFragment.appendChild(allBtn); [cite: 179]
 
-            const allBtn = document.createElement('button');
-            allBtn.dataset.id = 'all';
-            allBtn.className = 'whitespace-nowrap py-4 px-2 font-bold text-sm focus:outline-none';
-            allBtn.textContent = 'ทั้งหมด';
-            allBtn.addEventListener('click', () => { appState.currentPage = 1; noDataEl.querySelector('p').textContent = 'ไม่พบสินค้า'; productSearchContainer.classList.remove('hidden'); productSearchInput.value = ''; appState.activeCategoryName = 'ทั้งหมด'; appState.currentFilteredRecords = [...appState.allRecords]; displayData(); document.querySelectorAll('#category-list button').forEach(btn => { btn.classList.remove('text-blue-600'); btn.classList.add('text-gray-500', 'hover:text-gray-700'); }); allBtn.classList.add('text-blue-600'); allBtn.classList.remove('text-gray-500', 'hover:text-gray-700'); });
-            navFragment.appendChild(allBtn);
+    const sortedCategories = [...appState.categories].sort((a, b) => {
+        const indexA = appState.categoryOrder.indexOf(a.id);
+        const indexB = appState.categoryOrder.indexOf(b.id);
+        if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name, 'th');
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+    }); [cite: 179]
+    if (appState.categories.length === 0) {
+        manageCategoryList.innerHTML = '<p class="text-gray-500 text-sm">ยังไม่มีหมวดหมู่</p>';
+    } else {
+        allBtn.classList.add('text-blue-600'); [cite: 180]
+    }
+    if (appState.activeCategoryName === null && appState.categories.length > 0) {
+        appState.activeCategoryName = 'ทั้งหมด'; [cite: 181]
+    }
 
-            const sortedCategories = [...appState.categories].sort((a, b) => { const indexA = appState.categoryOrder.indexOf(a.id); const indexB = appState.categoryOrder.indexOf(b.id); if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name, 'th'); if (indexA === -1) return 1; if (indexB === -1) return -1; return indexA - indexB; });
-            if (appState.categories.length === 0) { manageCategoryList.innerHTML = '<p class="text-gray-500 text-sm">ยังไม่มีหมวดหมู่</p>';}
-            else { allBtn.classList.add('text-blue-600'); }
-            if (appState.activeCategoryName === null && appState.categories.length > 0) { appState.activeCategoryName = 'ทั้งหมด'; }
-            
-            sortedCategories.forEach((category) => {
-                const categoryBtn = document.createElement('button');
-                categoryBtn.dataset.id = category.id;
-                categoryBtn.className = 'whitespace-nowrap py-4 px-2 font-bold text-sm focus:outline-none';
-                categoryBtn.classList.toggle('text-blue-600', appState.activeCategoryName === category.name || appState.activeCategoryName === category.id);
-                categoryBtn.classList.toggle('text-gray-500', appState.activeCategoryName !== category.name);
-                categoryBtn.classList.toggle('hover:text-gray-700', appState.activeCategoryName !== category.name);
-                categoryBtn.textContent = category.name;
-                categoryBtn.addEventListener('click', () => { const itemColumnName = appState.allRecords.length > 0 ? Object.keys(appState.allRecords[0])[0] : ''; if (!itemColumnName) return; appState.currentPage = 1; productSearchContainer.classList.add('hidden'); productSearchInput.value = ''; appState.currentFilteredRecords = appState.allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase())); noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`; appState.activeCategoryName = category.name; displayData(); document.querySelectorAll('#category-list button').forEach(btn => { btn.classList.remove('text-blue-600'); btn.classList.add('text-gray-500', 'hover:text-gray-700'); }); categoryBtn.classList.add('text-blue-600'); categoryBtn.classList.remove('text-gray-500', 'hover:text-gray-700'); });
-                navFragment.appendChild(categoryBtn);
-                
-                const categoryEl = document.createElement('div');
-                categoryEl.dataset.id = category.id;
-                categoryEl.className = 'flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 transition-shadow duration-200 cursor-pointer select-none';
-                categoryEl.setAttribute('tabindex', '0');
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = category.name;
-                nameSpan.className = 'focus:outline-none';
-                const kebabMenu = document.createElement('span');
-                kebabMenu.innerHTML = '&#8942;';
-                kebabMenu.className = 'kebab-menu';
-                kebabMenu.title = 'ตัวเลือก';
-                categoryEl.appendChild(nameSpan);
-                categoryEl.appendChild(kebabMenu);
-                kebabMenu.addEventListener('click', (e) => { e.stopPropagation(); openCategoryActionsModal(category); });
-                categoryEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); openCategoryActionsModal(category); } });
-                manageFragment.appendChild(categoryEl);
+    sortedCategories.forEach((category) => {
+        const categoryBtn = document.createElement('button');
+        categoryBtn.dataset.id = category.id;
+        categoryBtn.className = 'whitespace-nowrap py-4 px-2 font-bold text-sm focus:outline-none'; [cite: 182]
+
+        categoryBtn.classList.toggle('text-blue-600', appState.activeCategoryName === category.name || appState.activeCategoryName === category.id); [cite: 183]
+        categoryBtn.classList.toggle('text-gray-500', appState.activeCategoryName !== category.name); [cite: 183]
+        categoryBtn.classList.toggle('hover:text-gray-700', appState.activeCategoryName !== category.name); [cite: 183]
+        categoryBtn.textContent = category.name;
+        categoryBtn.addEventListener('click', () => {
+            const itemColumnName = appState.allRecords.length > 0 ? Object.keys(appState.allRecords[0])[0] : '';
+            if (!itemColumnName) return;
+            appState.currentPage =
+                1; [cite: 183]
+            productSearchContainer.classList.add('hidden');
+            productSearchInput.value = '';
+            appState.currentFilteredRecords = appState.allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase()));
+            noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`;
+            appState.activeCategoryName = category.name;
+            displayData(); [cite: 184]
+            document.querySelectorAll('#category-list button').forEach(btn => {
+                btn.classList.remove('text-blue-600');
+                btn.classList.add('text-gray-500', 'hover:text-gray-700');
             });
+            categoryBtn.classList.add('text-blue-600');
+            categoryBtn.classList.remove('text-gray-500', 'hover:text-gray-700');
+        }); [cite: 185]
+        navFragment.appendChild(categoryBtn);
 
-            categoryList.appendChild(navFragment);
-            manageCategoryList.appendChild(manageFragment);
-            appState.categorySortableInstance = new Sortable(manageCategoryList, { animation: 150, ghostClass: 'sortable-ghost', delay: 200, delayOnTouchOnly: true, touchStartThreshold: 5, onEnd: (evt) => { const newOrder = Array.from(manageCategoryList.querySelectorAll('div')).map(el => el.dataset.id); saveCategoryOrder(newOrder); } });
+        const categoryEl = document.createElement('div');
+        categoryEl.dataset.id = category.id;
+        categoryEl.className = 'flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 transition-shadow duration-200 cursor-pointer select-none'; [cite: 186]
+        categoryEl.setAttribute('tabindex', '0');
+        const nameSpan = document.createElement('span'); [cite: 187]
+        nameSpan.textContent = category.name;
+        nameSpan.className = 'focus:outline-none';
+        const kebabMenu = document.createElement('span');
+        kebabMenu.innerHTML = '&#8942;';
+        kebabMenu.className = 'kebab-menu';
+        kebabMenu.title = 'ตัวเลือก'; [cite: 188]
+        categoryEl.appendChild(nameSpan);
+        categoryEl.appendChild(kebabMenu);
+        kebabMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openCategoryActionsModal(category);
+        });
+        categoryEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                openCategoryActionsModal(category);
+            }
+        }); [cite: 189]
+        manageFragment.appendChild(categoryEl);
+    });
+
+    categoryList.appendChild(navFragment);
+    manageCategoryList.appendChild(manageFragment);
+    appState.categorySortableInstance = new Sortable(manageCategoryList, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        delay: 200,
+        delayOnTouchOnly: true,
+        touchStartThreshold: 5,
+        onEnd: (evt) => {
+            const newOrder = Array.from(manageCategoryList.querySelectorAll('div')).map(el => el.dataset.id);
+            saveCategoryOrder(newOrder);
         }
+    }); [cite: 190]
+}
         
         async function fetchWithRetry(url, retries = 3, delay = 2000) { for (let i = 0; i < retries; i++) { try { const response = await fetch(url); if (!response.ok) throw new Error(`Network: ${response.statusText}`); return await response.json(); } catch (error) { if (i === retries - 1) throw error; console.warn(`Fetch attempt ${i + 1} failed for ${url}. Retrying in ${delay / 1000}s...`); showNotification(`เชื่อมต่อไม่ได้ กำลังลองใหม่... (ครั้งที่ ${i + 1})`, true); await new Promise(res => setTimeout(res, delay)); } } }
         async function fetchAllDataFromSheet() { if (appState.initialDataLoaded) return; try { loadingEl.classList.remove('hidden'); const data = await fetchWithRetry(sheetUrl); if (!Array.isArray(data.data) || data.data.length === 0) { showNoData(); return; } appState.allRecords = data.data; appState.currentFilteredRecords = [...appState.allRecords]; appState.initialDataLoaded = true; await categoriesLoadedPromise; const carnationCategory = appState.categories.find(c => c.name === 'Carnation'); if (carnationCategory) { const carnationButton = Array.from(categoryList.querySelectorAll('button')).find(btn => btn.textContent === 'Carnation'); if (carnationButton) carnationButton.click(); else displayData(); } else { displayData(); } } catch (error) { showError(error.message); } finally { loadingEl.classList.add('hidden'); } }
