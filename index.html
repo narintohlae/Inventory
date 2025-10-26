@@ -79,17 +79,10 @@
 }
 
 </style>
-<style>
-/* Auto-injected to keep bars visible */
-#category-nav-view { padding-bottom: max(env(safe-area-inset-bottom), 8px); position: fixed; bottom: 0; left: 0; right: 0; }
-#nav-trigger { display: none; }
-#app-container { padding-top: 64px; }
-html, body { height: 100%; }
-body { overscroll-behavior-y: none; }
-</style></head>
+</head>
 <body class="bg-gray-100 text-gray-800">
 
-<div id="nav-toggle-wrapper" class="fixed top-0 left-0 right-0 z-30 h-16 lg:h-16 bg-white shadow-md border-b lg:overflow-visible transition-all duration-300 ease-in-out overflow-visible">
+<div id="nav-toggle-wrapper" class="fixed top-0 left-0 right-0 z-30 h-4 lg:h-16 bg-white shadow-md border-b overflow-hidden lg:overflow-visible transition-all duration-300 ease-in-out">
     <div class="container mx-auto lg:w-1/2 h-full relative">
         <div class="border-b border-gray-200">
             <nav class="flex justify-center -mb-px space-x-2" aria-label="Tabs">
@@ -272,7 +265,7 @@ body { overscroll-behavior-y: none; }
     <footer class="text-center mt-8 text-gray-400 text-sm"><p>สร้างโดย Gemini</p></footer>
 </div>
 
-<div id="category-nav-view" class="fixed bottom-0 left-0 right-0 z-20 bg-white shadow-[0_-2px_10px_-3px_rgba(0,0,0,0.1)] border-t border-gray-200">
+<div id="category-nav-view" class="hidden fixed bottom-0 left-0 right-0 z-20 bg-white shadow-[0_-2px_10px_-3px_rgba(0,0,0,0.1)] border-t border-gray-200">
     <div class="container mx-auto lg:w-1/2">
         <nav id="category-list" class="flex gap-x-2 px-2 overflow-x-auto" aria-label="Category Tabs"></nav>
     </div>
@@ -498,7 +491,7 @@ JSON.parse(__firebase_config) : { apiKey: "AIzaSyDOx9RPxrG-vO59QHjkhJtGmyDRhdoVF
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 appState.userId = user.uid;
-                authContainer
+                authContainer.classList.add('hidden');
                 appContainer.classList.remove('hidden');
                 document.querySelectorAll('#user-email').forEach(el => el.textContent = user.email);
                 initializeListeners(appState.userId);
@@ -508,7 +501,7 @@ JSON.parse(__firebase_config) : { apiKey: "AIzaSyDOx9RPxrG-vO59QHjkhJtGmyDRhdoVF
                 appState.userId = null;
                 appState.initialDataLoaded = false;
                 authContainer.classList.remove('hidden');
-                appContainer
+                appContainer.classList.add('hidden');
                 appState.unsubscribes.forEach(unsub => unsub && unsub());
                 appState.unsubscribes = [];
                 Object.assign(appState, { allRecords: [], allRecordsMap: new Map(), categories: [], hiddenItemsMap: {}, sortOrdersMap: {}, categoryOrder: [], customRows: new Map(), itemSettings: 
@@ -548,8 +541,8 @@ new Map(), requisitionList: [], historyList: [] });
             appState.unsubscribes.push(onSnapshot(appSettingsDocRef, (snap) => { if (snap.exists()) { appState.appSettings = { ...appState.appSettings, ...snap.data() }; } updateAppSettingsModalInputs(); }, (err) => showError("โหลดการตั้งค่าแอปไม่สำเร็จ: " + err.message)));
         }
 
-        showRegisterBtn.addEventListener('click', () => { loginForm registerForm.classList.remove('hidden'); });
-        showLoginBtn.addEventListener('click', () => { registerForm loginForm.classList.remove('hidden'); });
+        showRegisterBtn.addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
+        showLoginBtn.addEventListener('click', () => { registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); });
         loginForm.addEventListener('submit', async (e) => { e.preventDefault(); loginErrorEl.textContent = ''; try { await signInWithEmailAndPassword(auth, loginEmailInput.value, loginPasswordInput.value); } catch (error) { loginErrorEl.textContent = "อีเมลหรือรหัสผ่านไม่ถูกต้อง"; } });
         registerForm.addEventListener('submit', async (e) => { e.preventDefault(); registerErrorEl.textContent = ''; try { await createUserWithEmailAndPassword(auth, registerEmailInput.value, registerPasswordInput.value); } catch (error) { if (error.code === 'auth/weak-password') registerErrorEl.textContent = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'; else if (error.code === 'auth/email-already-in-use') registerErrorEl.textContent = 'อีเมลนี้ถูกใช้งานแล้ว'; else registerErrorEl.textContent = 'เกิดข้อผิดพลาดในการสมัคร'; } });
         logoutBtn.addEventListener('click', async () => { try { await signOut(auth); } catch (error) { console.error("Logout failed:", error); } });
@@ -659,7 +652,7 @@ new Map(), requisitionList: [], historyList: [] });
                 categoryBtn.classList.toggle('hover:text-gray-700', appState.activeCategoryName !== category.name);
                 categoryBtn.textContent = category.name;
                 categoryBtn.addEventListener('click', () => { const itemColumnName = appState.allRecords.length > 0 ? Object.keys(appState.allRecords[0])[0] : ''; if (!itemColumnName) return; appState.currentPage = 
-1; productSearchContainer productSearchInput.value = ''; appState.currentFilteredRecords = appState.allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase())); noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`; appState.activeCategoryName = category.name; displayData();
+1; productSearchContainer.classList.add('hidden'); productSearchInput.value = ''; appState.currentFilteredRecords = appState.allRecords.filter(r => r[itemColumnName]?.toLowerCase().includes(category.name.toLowerCase())); noDataEl.querySelector('p').textContent = `ไม่พบสินค้าในหมวดหมู่ "${category.name}"`; appState.activeCategoryName = category.name; displayData();
 document.querySelectorAll('#category-list button').forEach(btn => { btn.classList.remove('text-blue-600'); btn.classList.add('text-gray-500', 'hover:text-gray-700'); }); categoryBtn.classList.add('text-blue-600'); categoryBtn.classList.remove('text-gray-500', 'hover:text-gray-700'); });
                 navFragment.appendChild(categoryBtn);
                 
@@ -694,7 +687,7 @@ document.querySelectorAll('#category-list button').forEach(btn => { btn.classLis
         try { loadingEl.classList.remove('hidden'); const data = await fetchWithRetry(sheetUrl); if (!Array.isArray(data.data) || data.data.length === 0) { showNoData(); return;
         } appState.allRecords = data.data; appState.currentFilteredRecords = [...appState.allRecords]; appState.initialDataLoaded = true; await categoriesLoadedPromise; const carnationCategory = appState.categories.find(c => c.name === 'Carnation');
         if (carnationCategory) { const carnationButton = Array.from(categoryList.querySelectorAll('button')).find(btn => btn.textContent === 'Carnation'); if (carnationButton) carnationButton.click(); else displayData(); } else { displayData();
-        } } catch (error) { showError(error.message); } finally { loadingEl
+        } } catch (error) { showError(error.message); } finally { loadingEl.classList.add('hidden');
         } }
 
 function displayData() {
@@ -723,9 +716,9 @@ function displayData() {
             const displayOrder = combinedOrder.filter(id => appState.customRows.has(id) || appState.allRecordsMap.has(id));
             const visibleIds = new Set(displayOrder.filter(id => !hiddenIdsForCurrentCategory.has(id)));
             const finalDisplayOrder = displayOrder.filter(id => (appState.customRows.has(id) && appState.customRows.get(id).categoryName === appState.activeCategoryName) || currentRecordIds.has(id));
-            if (finalDisplayOrder.filter(id => visibleIds.has(id)).length === 0) { tableEl noDataEl.classList.remove('hidden'); return;
+            if (finalDisplayOrder.filter(id => visibleIds.has(id)).length === 0) { tableEl.classList.add('hidden'); noDataEl.classList.remove('hidden'); return;
             }
-            noDataEl tableEl.classList.remove('hidden');
+            noDataEl.classList.add('hidden'); tableEl.classList.remove('hidden');
 
             const headers = Object.keys(appState.allRecords[0]);
             const headerRow = document.createElement('tr');
@@ -957,7 +950,7 @@ function displayData() {
       const tr = e.target.closest('tr');
       const id = tr?.dataset.id;
       const detail = bodyEl.querySelector(`tr[data-detail="${id}"]`);
-      if (detail) detail
+      if (detail) detail.classList.toggle('hidden');
     });
   });
 
@@ -1045,27 +1038,27 @@ function displayData() {
         function openItemSettingsModal(record) { const itemColumnName = Object.keys(appState.allRecords[0])[0] ||
         ''; appState.currentEditingItemId = record[itemColumnName]; const settings = appState.itemSettings.get(appState.currentEditingItemId) || {}; modalItemName.textContent = `ตั้งค่า: ${appState.currentEditingItemId}`; reorderPointInput.value = settings.reorderPoint || '';
         reorderQuantityInput.value = settings.reorderQuantity || ''; itemSettingsModal.classList.remove('hidden'); }
-        function closeItemSettingsModal() { itemSettingsModal
+        function closeItemSettingsModal() { itemSettingsModal.classList.add('hidden');
         appState.currentEditingItemId = null; }
         function openCategoryActionsModal(category) { appState.currentEditingCategory = category;
         categoryModalName.textContent = `จัดการหมวดหมู่: ${category.name}`; categoryActionsModal.classList.remove('hidden'); }
-        function closeCategoryActionsModal() { categoryActionsModal appState.currentEditingCategory = null;
+        function closeCategoryActionsModal() { categoryActionsModal.classList.add('hidden'); appState.currentEditingCategory = null;
         }
         function openAddHeaderModal(referenceId = null) { appState.insertHeaderAboveId = referenceId; headerInput.value = ''; addHeaderModal.classList.remove('hidden');
         setTimeout(() => headerInput.focus(), 100); }
-        function closeAddHeaderModal() { addHeaderModal appState.insertHeaderAboveId = null;
+        function closeAddHeaderModal() { addHeaderModal.classList.add('hidden'); appState.insertHeaderAboveId = null;
         }
         function openHeaderActionsModal(id, text) { appState.currentEditingHeaderId = id; appState.currentEditingHeaderText = text;
         headerModalName.textContent = `จัดการหัวข้อ: "${text}"`; headerActionsModal.classList.remove('hidden'); }
-        function closeHeaderActionsModal() { headerActionsModal appState.currentEditingHeaderId = null;
+        function closeHeaderActionsModal() { headerActionsModal.classList.add('hidden'); appState.currentEditingHeaderId = null;
         appState.currentEditingHeaderText = null; }
         function showConfirmModal(title, body, onConfirm) { confirmModalTitle.textContent = title;
         confirmModalBody.textContent = body; appState.confirmCallback = onConfirm; confirmModal.classList.remove('hidden'); }
-        function closeConfirmModal() { confirmModal
+        function closeConfirmModal() { confirmModal.classList.add('hidden');
         appState.confirmCallback = null; }
         function openAppSettingsModal() { updateAppSettingsModalInputs(); appSettingsModal.classList.remove('hidden');
         }
-        function closeAppSettingsModal() { appSettingsModal
+        function closeAppSettingsModal() { appSettingsModal.classList.add('hidden');
         }
         function updateAppSettingsModalInputs() { settingTriggerColInput.value = appState.appSettings.triggerStockColumnName; settingCalcColInput.value = appState.appSettings.calculationStockColumnName; settingUnitColInput.value = appState.appSettings.unitColumnName;
         }
@@ -1082,17 +1075,17 @@ function displayData() {
             }, 10);
             appState.notificationTimeout = setTimeout(() => {
                 notificationToast.classList.remove('show');
-                setTimeout(() => notificationToast, 300); // ซ่อนหลังจาก animation จบ
+                setTimeout(() => notificationToast.classList.add('hidden'), 300); // ซ่อนหลังจาก animation จบ
             }, 1500);
         }
         function switchView(viewName) { const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView };
-        const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; Object.values(views).forEach(v => v); categoryNavView
+        const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; Object.values(views).forEach(v => v.classList.add('hidden')); categoryNavView.classList.add('hidden');
         Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); views[viewName].classList.remove('hidden'); navs[viewName].classList.add('text-blue-600', 'border-blue-600'); navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
-        if (viewName === 'products') { categoryNavView.classList.remove('hidden'); if(appState.activeCategoryName === 'ทั้งหมด') { productSearchContainer.classList.remove('hidden'); } } else { productSearchContainer
+        if (viewName === 'products') { categoryNavView.classList.remove('hidden'); if(appState.activeCategoryName === 'ทั้งหมด') { productSearchContainer.classList.remove('hidden'); } } else { productSearchContainer.classList.add('hidden');
         } }
         function showError(message) { errorMessageEl.textContent = `เกิดข้อผิดพลาด: ${message}`; errorEl.classList.remove('hidden');
         }
-        function showNoData() { noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล'; noDataEl.classList.remove('hidden'); tableEl
+        function showNoData() { noDataEl.querySelector('p').textContent = 'ไม่พบข้อมูล'; noDataEl.classList.remove('hidden'); tableEl.classList.add('hidden');
         }
         function openQuantityModal(item) {
             const itemColumnName = Object.keys(appState.allRecords[0])[0] ||
@@ -1103,7 +1096,7 @@ function displayData() {
             quantityDisplay.textContent = '1';
             quantityModal.classList.remove('hidden');
         }
-        function closeQuantityModal() { quantityModal appState.itemForRequisition = null;
+        function closeQuantityModal() { quantityModal.classList.add('hidden'); appState.itemForRequisition = null;
         }
         function openContextMenu(event, record) { const targetElement = event.target.closest('tr'); if (!targetElement) return;
         let mouseX, mouseY; if (event.clientX !== undefined && event.clientY !== undefined && event.clientX !== 0) { mouseX = event.clientX;
@@ -1113,7 +1106,7 @@ function displayData() {
         } if (menuRect.right > window.innerWidth) { itemContextMenu.style.left = `${mouseX - menuRect.width}px`; } itemContextMenu.setAttribute('tabindex', '-1'); itemContextMenu.focus(); itemContextMenu.addEventListener('keydown', handleMenuKeyDown);
         const firstItem = itemContextMenu.querySelector('button[role="menuitem"]'); if(firstItem) firstItem.classList.add('menu-item-active'); }
         function closeContextMenu() { if (itemContextMenu && !itemContextMenu.classList.contains('hidden')) { itemContextMenu.removeEventListener('keydown', handleMenuKeyDown);
-        const activeItem = itemContextMenu.querySelector('.menu-item-active'); if (activeItem) activeItem.classList.remove('menu-item-active'); itemContextMenu appState.contextMenuItemRecord = null;
+        const activeItem = itemContextMenu.querySelector('.menu-item-active'); if (activeItem) activeItem.classList.remove('menu-item-active'); itemContextMenu.classList.add('hidden'); appState.contextMenuItemRecord = null;
         } }
         function handleMenuKeyDown(event) { event.preventDefault(); event.stopPropagation(); const menuItems = Array.from(itemContextMenu.querySelectorAll('button[role="menuitem"]'));
         if (menuItems.length === 0) return; const activeItem = itemContextMenu.querySelector('.menu-item-active'); let currentIndex = activeItem ? menuItems.indexOf(activeItem) : -1;
@@ -1281,9 +1274,9 @@ function displayData() {
         } }
         historyListContainer.addEventListener('click', (e) => { const exportBtn = e.target.closest('.export-history-btn'); if (exportBtn) { const reqId = exportBtn.dataset.reqId; const historyItem = appState.historyList.find(item => item.id === reqId); if (historyItem) { exportToExcelCompatibleCsv(`${historyItem.requisitionNumber}.csv`, historyItem.items); } } });
         const navWrapper = document.getElementById('nav-toggle-wrapper'), navTrigger = document.getElementById('nav-trigger'), navIcon = document.getElementById('nav-trigger-icon'), navTabs = navWrapper.querySelector('nav');
-        let isNavOpen = true;
+        let isNavOpen = false;
         const openNav = () => { if (isNavOpen) return; isNavOpen = true; navWrapper.classList.remove('h-4'); navWrapper.classList.add('h-16'); navIcon.classList.add('rotate-180'); };
-        const closeNav = () => { if (!isNavOpen) return; isNavOpen = true; navWrapper.classList.remove('h-16'); navWrapper.classList.add('h-4'); navIcon.classList.remove('rotate-180'); };
+        const closeNav = () => { if (!isNavOpen) return; isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add('h-4'); navIcon.classList.remove('rotate-180'); };
         if (navTabs) { navTabs.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { setTimeout(closeNav, 200); } });
         }
         if (window.matchMedia('(pointer: fine)').matches) { navWrapper.addEventListener('mouseenter', openNav); navWrapper.addEventListener('mouseleave', closeNav);
