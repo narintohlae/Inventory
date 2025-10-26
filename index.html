@@ -199,7 +199,7 @@
     <input type="date" id="history-date-start" class="border rounded p-2 text-sm">
     <input type="date" id="history-date-end" class="border rounded p-2 text-sm">
   </div>
-  <input type="text" id="history-search" placeholder="ค้นหาเลขที่/สินค้า/หมายเหตุ"
+  <input type="text" id="history-search" placeholder="ค้นหาเลขที่/สินค้า"
          class="flex-1 border rounded p-2 text-sm">
   <div class="flex gap-2">
     <button id="history-export" class="bg-gray-700 hover:bg-gray-800 text-white px-3 py-2 rounded text-sm">ส่งออก CSV</button>
@@ -214,8 +214,6 @@
         <th class="py-2 px-2 text-left text-xs font-medium text-gray-600 uppercase">เลขที่เบิก</th>
         <th class="py-2 px-2 text-left text-xs font-medium text-gray-600 uppercase">วันที่</th>
         <th class="py-2 px-2 text-center text-xs font-medium text-gray-600 uppercase">จำนวนรายการ</th>
-        <th class="py-2 px-2 text-center text-xs font-medium text-gray-600 uppercase">รวมจำนวน</th>
-        <th class="py-2 px-2 text-left text-xs font-medium text-gray-600 uppercase">หมายเหตุ</th>
         <th class="py-2 px-2 text-center text-xs font-medium text-gray-600 uppercase">จัดการ</th>
       </tr>
     </thead>
@@ -614,8 +612,6 @@ new Map(), requisitionList: [], historyList: [] });
         async function confirmRequisition() { if (!requisitionListCollectionRef || appState.requisitionList.length === 0) return;
         try { const reqNumber = await runTransaction(db, async (transaction) => { const counterSnap = await transaction.get(countersDocRef); const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0; const newCounter = currentCounter + 1; const now = new Date(); const generatedReqNumber = `REQ-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}-${newCounter.toString().padStart(4, '0')}`; const historyDocRef = doc(requisitionHistoryCollectionRef); transaction.set(historyDocRef, { requisitionNumber: generatedReqNumber, timestamp: Timestamp.now(), items: appState.requisitionList.map(({id, ...rest}) => rest),
         totalItems,
-        totalQty,
-        note: (typeof note !== 'undefined' ? note : ''),
 }); appState.requisitionList.forEach(item => { transaction.delete(doc(requisitionListCollectionRef, item.id)); }); transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true }); return generatedReqNumber; });
         showNotification(`ยืนยันการเบิกของ ${reqNumber} เรียบร้อย`, false); } catch (error) { console.error("Transaction failed: ", error); showError("ยืนยันการเบิกของไม่สำเร็จ: " + error.message);
         } }
@@ -857,7 +853,6 @@ function displayData() {
     if (!q) return true;
     const hay = [
       rec.requisitionNumber || '',
-      rec.note || '',
       ...(Array.isArray(rec.items) ? rec.items.map(i => `${i.name||''} ${i.unit||''}`) : [])
     ].join(' ').toLowerCase();
     return hay.includes(q.toLowerCase());
@@ -917,21 +912,19 @@ function displayData() {
 
   bodyEl.innerHTML = pageList.map(rec => {
     const totalItems = typeof rec.totalItems === 'number' ? rec.totalItems : (Array.isArray(rec.items) ? rec.items.length : 0);
-    const totalQty = typeof rec.totalQty === 'number' ? rec.totalQty : (Array.isArray(rec.items) ? rec.items.reduce((s, it)=>s + (parseInt(it.quantity,10)||0), 0) : 0);
+    // removed totalQtylQty : (Array.isArray(rec.items) ? rec.items.reduce((s, it)=>s + (parseInt(it.quantity,10)||0), 0) : 0);
     const rid = `row-${rec.id || rec.requisitionNumber || Math.random().toString(36).slice(2)}`;
     return `
       <tr data-id="${rid}" class="hover:bg-gray-50">
         <td class="p-2 text-sm font-medium text-blue-700">${rec.requisitionNumber||'-'}</td>
         <td class="p-2 text-sm">${rec.timestamp?.seconds ? fmtDate(rec.timestamp.seconds) : '-'}</td>
         <td class="p-2 text-center text-sm">${totalItems}</td>
-        <td class="p-2 text-center text-sm">${totalQty}</td>
-        <td class="p-2 text-sm">${rec.note||''}</td>
         <td class="p-2 text-center">
           <button class="hist-toggle px-2 py-1 border rounded text-xs">รายละเอียด</button>
         </td>
       </tr>
       <tr class="hidden" data-detail="${rid}">
-        <td colspan="6" class="p-0">
+        <td colspan="4" class="p-0">
           <table class="w-full">
             <thead class="bg-gray-100">
               <tr>
@@ -971,7 +964,7 @@ function displayData() {
     if (endEl) endEl.addEventListener('change', e => { window.__histFilters.end = e.target.value || null; window.__histFilters.page = 1; displayHistory(); });
     if (exportBtn) exportBtn.addEventListener('click', () => {
       const rows = applyFilters(all);
-      const header = ['requisitionNumber','timestamp','totalItems','totalQty','note'];
+      const header = ['requisitionNumber','timestamp','totalItems'];
       const csv = [ header.join(','), ...rows.map(r => {
         const t = r.timestamp?.seconds ? new Date(r.timestamp.seconds*1000).toISOString() : '';
         const ti = typeof r.totalItems === 'number' ? r.totalItems : (Array.isArray(r.items)?r.items.length:0);
@@ -979,9 +972,7 @@ function displayData() {
         return [
           `\"${(r.requisitionNumber||'').replace(/\"/g,'\"\"')}\"`,
           `\"${t}\"`,
-          ti,
-          tq,
-          `\"${(r.note||'').replace(/\"/g,'\"\"')}\"`
+          ti
         ].join(',');
       })].join('\\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
