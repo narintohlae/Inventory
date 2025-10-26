@@ -82,7 +82,7 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-<div id="nav-toggle-wrapper" class="fixed top-0 left-0 right-0 z-30 h-4 lg:h-16 bg-white shadow-md border-b overflow-hidden lg:overflow-visible transition-all duration-300 ease-in-out">
+<div class="fixed top-0 left-0 right-0 z-30 lg: bg-white shadow-md border-b lg:overflow-visible transition-all duration-300 ease-in-out h-14 lg:h-16">
     <div class="container mx-auto lg:w-1/2 h-full relative">
         <div class="border-b border-gray-200">
             <nav class="flex justify-center -mb-px space-x-2" aria-label="Tabs">
@@ -93,10 +93,7 @@
                 <button id="nav-account" class="whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">บัญชี</button>
             </nav>
         </div>
-        <div id="nav-trigger" class="absolute bottom-0 left-0 w-full h-4 bg-white cursor-pointer border-t border-gray-200 flex items-center justify-center lg:hidden">
-            <svg id="nav-trigger-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
         </div>
-    </div>
 </div>
 
 <div class="container mx-auto px-2 py-4 pt-20 sm:p-6 md:p-8 lg:w-1/2 pb-24">
@@ -1284,5 +1281,25 @@ function displayData() {
     });
 </script>
 
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var nav = document.getElementById('nav-toggle-wrapper');
+  if (nav) {
+    nav.classList.remove('overflow-hidden');
+    // normalize height classes
+    Array.from(nav.classList).forEach(function(c){
+      if (/^h-\d+$/.test(c)) nav.classList.remove(c);
+    });
+    nav.classList.add('h-14');
+    nav.classList.add('lg:h-16');
+    nav.classList.add('fixed','top-0','left-0','right-0','z-30');
+  }
+  var trigger = document.getElementById('nav-trigger');
+  if (trigger && trigger.parentNode) {
+    trigger.parentNode.removeChild(trigger);
+  }
+});
+</script>
 </body>
 </html>
