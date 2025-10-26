@@ -192,7 +192,40 @@
         <div id="history-view" class="hidden">
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
                 <h2 class="text-2xl font-bold text-gray-700 mb-4">ประวัติการเบิกของ</h2>
-                <div id="history-list-container" class="space-y-6"></div>
+                
+<!-- Upgraded History Toolbar + Table -->
+<div class="flex flex-col sm:flex-row gap-3 sm:items-end mb-4" id="history-toolbar">
+  <div class="flex gap-2">
+    <input type="date" id="history-date-start" class="border rounded p-2 text-sm">
+    <input type="date" id="history-date-end" class="border rounded p-2 text-sm">
+  </div>
+  <input type="text" id="history-search" placeholder="ค้นหาเลขที่/สินค้า/หมายเหตุ"
+         class="flex-1 border rounded p-2 text-sm">
+  <div class="flex gap-2">
+    <button id="history-export" class="bg-gray-700 hover:bg-gray-800 text-white px-3 py-2 rounded text-sm">ส่งออก CSV</button>
+    <button id="history-print" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm">พิมพ์</button>
+  </div>
+</div>
+
+<div class="overflow-x-auto">
+  <table id="history-table" class="w-full min-w-full table-auto show-grid">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="py-2 px-2 text-left text-xs font-medium text-gray-600 uppercase">เลขที่เบิก</th>
+        <th class="py-2 px-2 text-left text-xs font-medium text-gray-600 uppercase">วันที่</th>
+        <th class="py-2 px-2 text-center text-xs font-medium text-gray-600 uppercase">จำนวนรายการ</th>
+        <th class="py-2 px-2 text-center text-xs font-medium text-gray-600 uppercase">รวมจำนวน</th>
+        <th class="py-2 px-2 text-left text-xs font-medium text-gray-600 uppercase">หมายเหตุ</th>
+        <th class="py-2 px-2 text-center text-xs font-medium text-gray-600 uppercase">จัดการ</th>
+      </tr>
+    </thead>
+    <tbody id="history-table-body" class="bg-white divide-y divide-gray-200"></tbody>
+  </table>
+</div>
+
+<div id="history-pagination" class="mt-4 flex justify-between items-center"></div>
+<!-- End Upgraded History Toolbar + Table -->
+<div id="history-list-container" class="space-y-6" style="display:none"></div>
             </div>
         </div>
 
@@ -579,7 +612,11 @@ new Map(), requisitionList: [], historyList: [] });
         try { await deleteDoc(doc(requisitionListCollectionRef, id)); showNotification(`ลบ '${name}' ออกจากรายการเบิกแล้ว`, false); } catch (error) { showError("ลบรายการเบิกไม่สำเร็จ: " + error.message);
         } }
         async function confirmRequisition() { if (!requisitionListCollectionRef || appState.requisitionList.length === 0) return;
-        try { const reqNumber = await runTransaction(db, async (transaction) => { const counterSnap = await transaction.get(countersDocRef); const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0; const newCounter = currentCounter + 1; const now = new Date(); const generatedReqNumber = `REQ-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}-${newCounter.toString().padStart(4, '0')}`; const historyDocRef = doc(requisitionHistoryCollectionRef); transaction.set(historyDocRef, { requisitionNumber: generatedReqNumber, timestamp: Timestamp.now(), items: appState.requisitionList.map(({id, ...rest}) => rest) }); appState.requisitionList.forEach(item => { transaction.delete(doc(requisitionListCollectionRef, item.id)); }); transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true }); return generatedReqNumber; });
+        try { const reqNumber = await runTransaction(db, async (transaction) => { const counterSnap = await transaction.get(countersDocRef); const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0; const newCounter = currentCounter + 1; const now = new Date(); const generatedReqNumber = `REQ-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}-${newCounter.toString().padStart(4, '0')}`; const historyDocRef = doc(requisitionHistoryCollectionRef); transaction.set(historyDocRef, { requisitionNumber: generatedReqNumber, timestamp: Timestamp.now(), items: appState.requisitionList.map(({id, ...rest}) => rest),
+        totalItems,
+        totalQty,
+        note: (typeof note !== 'undefined' ? note : ''),
+}); appState.requisitionList.forEach(item => { transaction.delete(doc(requisitionListCollectionRef, item.id)); }); transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true }); return generatedReqNumber; });
         showNotification(`ยืนยันการเบิกของ ${reqNumber} เรียบร้อย`, false); } catch (error) { console.error("Transaction failed: ", error); showError("ยืนยันการเบิกของไม่สำเร็จ: " + error.message);
         } }
         async function addManualRequisition(item, quantity) { if (!requisitionListCollectionRef || !item || !quantity || quantity < 1) return;
@@ -782,11 +819,180 @@ function displayData() {
             });
             requisitionListBody.appendChild(fragment);
         }
-        function displayHistory() { historyListContainer.innerHTML = '';
-        if (appState.historyList.length === 0) { historyListContainer.innerHTML = '<p class="text-center py-4 text-gray-500">ยังไม่มีประวัติการเบิก</p>'; return; } const fragment = document.createDocumentFragment();
-        appState.historyList.forEach(historyItem => { const date = historyItem.timestamp.toDate(); const formattedDate = `${date.toLocaleDateString('th-TH')} ${date.toLocaleTimeString('th-TH')}`; const card = document.createElement('div'); card.className = 'bg-gray-50 rounded-lg p-4 shadow'; const tableRows = historyItem.items.map((item, index) => `<tr><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-600 text-center">${index + 1}</td><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-800 break-words">${item.name}</td><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-800 text-center">${item.quantity}</td><td class="py-1 px-1 sm:py-2 sm:px-2 text-xs sm:text-sm text-gray-600 text-center">${item.unit}</td></tr>`).join(''); card.innerHTML = `<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 gap-2"><div class="w-full sm:w-auto"><h3 class="font-semibold text-gray-800">${historyItem.requisitionNumber}</h3><span class="text-sm text-gray-500">${formattedDate}</span></div><div class="w-full sm:w-auto text-left sm:text-right"><button class="export-history-btn text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md mt-2 sm:mt-0" data-req-id="${historyItem.id}">Export to Excel</button></div></div><div class="overflow-x-auto"><table class="w-full table-auto show-grid"><thead><tr><th class="py-1 
-px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-center">ลำดับ</th><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-left">สินค้า</th><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-center">จำนวน</th><th class="py-1 px-1 sm:py-2 sm:px-2 bg-gray-200 text-[11px] sm:text-xs text-gray-600 font-medium text-center">หน่วย</th></tr></thead><tbody class="divide-y divide-gray-200">${tableRows}</tbody></table></div>`;
-        fragment.appendChild(card); }); historyListContainer.appendChild(fragment); }
+        function displayHistory() {
+  // Ensure toolbar exists
+  const bodyEl = document.getElementById('history-table-body');
+  const pagEl = document.getElementById('history-pagination');
+  const searchEl = document.getElementById('history-search');
+  const startEl = document.getElementById('history-date-start');
+  const endEl = document.getElementById('history-date-end');
+  const exportBtn = document.getElementById('history-export');
+  const printBtn = document.getElementById('history-print');
+
+  // Fallback to old container if new UI missing
+  if (!bodyEl || !pagEl) {
+    // fallback: do nothing, keep old renderer
+    return;
+  }
+
+  // Initialize state singletons
+  if (!window.__histFilters) {
+    window.__histFilters = { q: '', start: null, end: null, page: 1, pageSize: 20 };
+  }
+  const F = window.__histFilters;
+
+  function parseDateOnly(tsSeconds) {
+    const d = new Date((tsSeconds || 0) * 1000);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  function inRange(tsSeconds, start, end) {
+    const d = parseDateOnly(tsSeconds);
+    if (start && d < start) return false;
+    if (end && d > end) return false;
+    return true;
+  }
+
+  function matchQuery(rec, q) {
+    if (!q) return true;
+    const hay = [
+      rec.requisitionNumber || '',
+      rec.note || '',
+      ...(Array.isArray(rec.items) ? rec.items.map(i => `${i.name||''} ${i.unit||''}`) : [])
+    ].join(' ').toLowerCase();
+    return hay.includes(q.toLowerCase());
+  }
+
+  function applyFilters(list) {
+    const start = F.start ? new Date(F.start) : null;
+    const end = F.end ? new Date(F.end) : null;
+    const startDay = start ? new Date(start.getFullYear(), start.getMonth(), start.getDate()) : null;
+    const endDay = end ? new Date(end.getFullYear(), end.getMonth(), end.getDate()) : null;
+    return list.filter(h => inRange(h.timestamp?.seconds || 0, startDay, endDay) && matchQuery(h, F.q));
+  }
+
+  function fmtDate(tsSeconds) {
+    const d = new Date((tsSeconds || 0) * 1000);
+    const pad = n => n.toString().padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function renderPagination(total) {
+    const pages = Math.max(1, Math.ceil(total / F.pageSize));
+    if (F.page > pages) F.page = pages;
+    pagEl.innerHTML = `
+      <div class="text-sm text-gray-600">รวม ${total} รายการ • หน้า ${F.page}/${pages}</div>
+      <div class="flex gap-2">
+        <button id="hist-prev" class="px-3 py-1 border rounded ${F.page<=1?'opacity-50 cursor-not-allowed':''}">ก่อนหน้า</button>
+        <button id="hist-next" class="px-3 py-1 border rounded ${F.page>=pages?'opacity-50 cursor-not-allowed':''}">ถัดไป</button>
+      </div>
+    `;
+    const prev = document.getElementById('hist-prev');
+    const next = document.getElementById('hist-next');
+    prev && prev.addEventListener('click', () => { if (F.page>1){F.page--; displayHistory();} });
+    next && next.addEventListener('click', () => { const p = Math.max(1, Math.ceil(total / F.pageSize)); if (F.page<p){F.page++; displayHistory();} });
+  }
+
+  function buildDetailRows(items) {
+    if (!Array.isArray(items) || items.length === 0) {
+      return `<tr class="bg-gray-50"><td colspan="6" class="p-3 text-sm text-gray-500">ไม่มีรายการ</td></tr>`;
+    }
+    return items.map((it, idx) => `
+      <tr class="bg-gray-50">
+        <td class="p-2 pl-6 text-xs text-gray-500">#${idx+1}</td>
+        <td class="p-2 text-sm">${it.name||''}</td>
+        <td class="p-2 text-center text-sm">${it.quantity||0}</td>
+        <td class="p-2 text-center text-sm">${it.unit||''}</td>
+        <td class="p-2 text-sm" colspan="2"></td>
+      </tr>
+    `).join('');
+  }
+
+  // Data source
+  const all = Array.isArray(appState?.historyList) ? appState.historyList.slice() : [];
+
+  const filtered = applyFilters(all);
+  const startIdx = (F.page - 1) * F.pageSize;
+  const pageList = filtered.slice(startIdx, startIdx + F.pageSize);
+
+  bodyEl.innerHTML = pageList.map(rec => {
+    const totalItems = typeof rec.totalItems === 'number' ? rec.totalItems : (Array.isArray(rec.items) ? rec.items.length : 0);
+    const totalQty = typeof rec.totalQty === 'number' ? rec.totalQty : (Array.isArray(rec.items) ? rec.items.reduce((s, it)=>s + (parseInt(it.quantity,10)||0), 0) : 0);
+    const rid = `row-${rec.id || rec.requisitionNumber || Math.random().toString(36).slice(2)}`;
+    return `
+      <tr data-id="${rid}" class="hover:bg-gray-50">
+        <td class="p-2 text-sm font-medium text-blue-700">${rec.requisitionNumber||'-'}</td>
+        <td class="p-2 text-sm">${rec.timestamp?.seconds ? fmtDate(rec.timestamp.seconds) : '-'}</td>
+        <td class="p-2 text-center text-sm">${totalItems}</td>
+        <td class="p-2 text-center text-sm">${totalQty}</td>
+        <td class="p-2 text-sm">${rec.note||''}</td>
+        <td class="p-2 text-center">
+          <button class="hist-toggle px-2 py-1 border rounded text-xs">รายละเอียด</button>
+        </td>
+      </tr>
+      <tr class="hidden" data-detail="${rid}">
+        <td colspan="6" class="p-0">
+          <table class="w-full">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="p-2 pl-6 text-left text-xs text-gray-600 uppercase">#</th>
+                <th class="p-2 text-left text-xs text-gray-600 uppercase">สินค้า</th>
+                <th class="p-2 text-center text-xs text-gray-600 uppercase">จำนวน</th>
+                <th class="p-2 text-center text-xs text-gray-600 uppercase">หน่วย</th>
+                <th class="p-2 text-left text-xs text-gray-600 uppercase" colspan="2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${buildDetailRows(rec.items)}
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Toggle details
+  bodyEl.querySelectorAll('.hist-toggle').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const tr = e.target.closest('tr');
+      const id = tr?.dataset.id;
+      const detail = bodyEl.querySelector(`tr[data-detail="${id}"]`);
+      if (detail) detail.classList.toggle('hidden');
+    });
+  });
+
+  renderPagination(filtered.length);
+
+  // One-time event bindings
+  if (!window.__histBound) {
+    window.__histBound = true;
+    if (searchEl) searchEl.addEventListener('input', e => { window.__histFilters.q = e.target.value.trim(); window.__histFilters.page = 1; displayHistory(); });
+    if (startEl) startEl.addEventListener('change', e => { window.__histFilters.start = e.target.value || null; window.__histFilters.page = 1; displayHistory(); });
+    if (endEl) endEl.addEventListener('change', e => { window.__histFilters.end = e.target.value || null; window.__histFilters.page = 1; displayHistory(); });
+    if (exportBtn) exportBtn.addEventListener('click', () => {
+      const rows = applyFilters(all);
+      const header = ['requisitionNumber','timestamp','totalItems','totalQty','note'];
+      const csv = [ header.join(','), ...rows.map(r => {
+        const t = r.timestamp?.seconds ? new Date(r.timestamp.seconds*1000).toISOString() : '';
+        const ti = typeof r.totalItems === 'number' ? r.totalItems : (Array.isArray(r.items)?r.items.length:0);
+        const tq = typeof r.totalQty === 'number' ? r.totalQty : (Array.isArray(r.items)?r.items.reduce((s,it)=>s+(parseInt(it.quantity,10)||0),0):0);
+        return [
+          `\"${(r.requisitionNumber||'').replace(/\"/g,'\"\"')}\"`,
+          `\"${t}\"`,
+          ti,
+          tq,
+          `\"${(r.note||'').replace(/\"/g,'\"\"')}\"`
+        ].join(',');
+      })].join('\\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'requisition_history.csv';
+      link.click();
+    });
+    if (printBtn) printBtn.addEventListener('click', () => window.print());
+  }
+}
 
         function enableCategoryEditing(category) { const categoryEl = manageCategoryList.querySelector(`div[data-id="${category.id}"]`);
         if (!categoryEl) return; const nameSpan = categoryEl.querySelector('span:first-child'); const kebabMenu = categoryEl.querySelector('.kebab-menu'); const input = document.createElement('input'); input.type = 'text';
