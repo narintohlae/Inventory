@@ -735,7 +735,6 @@ itemColumnName = appState.allRecords.length > 0 ? Object.keys(appState.allRecord
         } } catch (error) { showError(error.message); } finally { loadingEl.classList.add('hidden');
         } }
         
-        // --- NEW: Function to check for updates from Google Sheets ---
         async function startSheetPolling() {
             setInterval(async () => {
                 try {
@@ -746,12 +745,13 @@ itemColumnName = appState.allRecords.length > 0 ? Object.keys(appState.allRecord
                     const json = await response.json();
                     if (!json.data || !Array.isArray(json.data)) return;
 
-                    // Compare with current data (JSON string comparison is simple and effective for this size)
+                    // Compare with current data
                     const currentDataStr = JSON.stringify(appState.allRecords);
                     const newDataStr = JSON.stringify(json.data);
 
                     if (currentDataStr !== newDataStr && appState.allRecords.length > 0) {
-                        showNotification('พบข้อมูลใหม่จาก Google Sheets! กรุณารีเฟรช', 'info');
+                        // ส่ง duration = 0 เพื่อให้แจ้งเตือนค้างไว้จนกว่าจะกดปิดหรือรีเฟรช
+                        showNotification('พบข้อมูลใหม่จาก Google Sheets! กรุณารีเฟรช', 'info', 0);
                     }
                 } catch (err) {
                     // Silent fail for background checks
@@ -1140,16 +1140,16 @@ text-gray-600 uppercase" colspan="2"></th>
         function updateAppSettingsModalInputs() { settingTriggerColInput.value = appState.appSettings.triggerStockColumnName; settingCalcColInput.value = appState.appSettings.calculationStockColumnName; settingUnitColInput.value = appState.appSettings.unitColumnName;
         }
 
-        // --- NEW: Updated Show Notification Function ---
-        function showNotification(message, type = 'success') { // type: 'success', 'error', 'info'
+        function showNotification(message, type = 'success', duration = 3000) { 
+            // type: 'success', 'error', 'info'
+            // duration: เวลาเป็น ms (ค่า default 3000), ใส่ 0 เพื่อให้แสดงค้างไว้
+            
             if (appState.notificationTimeout) clearTimeout(appState.notificationTimeout);
 
-            // กำหนดสีและไอคอนตาม Type
             let bgClass = '';
             let iconHtml = '';
             
-            // แปลง parameter เดิม (true/false) เป็น type ใหม่เผื่อโค้ดเก่าเรียกใช้
-            if (type === true) type = 'error'; 
+            if (type === true) type = 'error';
             if (type === false) type = 'success';
 
             switch(type) {
@@ -1172,10 +1172,16 @@ text-gray-600 uppercase" colspan="2"></th>
             const msgEl = document.getElementById('notification-message');
             const iconEl = document.getElementById('notification-icon');
 
-            // Reset Classes
-            toast.className = 'fixed z-50 flex items-center gap-2 px-6 py-3 rounded-full shadow-lg transition-all duration-300 transform translate-y-full opacity-0';
-            toast.classList.add(bgClass); // ใส่สี
+            // Reset Classes & Setup Click to Close
+            toast.className = 'fixed z-50 flex items-center gap-2 px-6 py-3 rounded-full shadow-lg transition-all duration-300 transform translate-y-full opacity-0 cursor-pointer';
+            toast.classList.add(bgClass); 
             toast.classList.remove('hidden');
+            
+            // เพิ่ม: คลิกที่ตัวแจ้งเตือนเพื่อปิดได้ทันที
+            toast.onclick = function() {
+                toast.classList.remove('show');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            };
 
             msgEl.textContent = message;
             if(iconEl) iconEl.innerHTML = iconHtml;
@@ -1185,13 +1191,14 @@ text-gray-600 uppercase" colspan="2"></th>
                 toast.classList.add('show');
             });
 
-            // Auto Hide
-            appState.notificationTimeout = setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.classList.add('hidden'), 300);
-            }, 3000); // แสดงนาน 3 วินาที (เพิ่มเวลาให้ทันอ่าน)
+            // Auto Hide Logic (ทำงานเฉพาะเมื่อ duration > 0)
+            if (duration > 0) {
+                appState.notificationTimeout = setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.classList.add('hidden'), 300);
+                }, duration);
+            }
         }
-
         function switchView(viewName) { const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView };
         const navs = { products: navProductsBtn, requisition: navRequisitionBtn, history: navHistoryBtn, manage: navManageBtn, account: navAccountBtn }; Object.values(views).forEach(v => v.classList.add('hidden')); categoryNavView.classList.add('hidden');
         Object.values(navs).forEach(n => { n.classList.remove('text-blue-600', 'border-blue-600'); n.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent'); }); views[viewName].classList.remove('hidden'); navs[viewName].classList.add('text-blue-600', 'border-blue-600'); navs[viewName].classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
