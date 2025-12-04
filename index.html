@@ -741,20 +741,25 @@ async function fetchAllDataFromSheet() {
             if (appState.initialDataLoaded) return;
             try { 
                 loadingEl.classList.remove('hidden'); 
-                const response = await fetchWithRetry(sheetUrl); // แก้ให้รับ response เต็มๆ ก่อน
-
-                console.log("ข้อมูลที่ได้จาก Google:", response);
+                const response = await fetchWithRetry(sheetUrl);
                 
-                // ตรวจสอบโครงสร้างข้อมูล
+                // Debug: ดูค่าที่ Google ส่งกลับมาใน Console (กด F12 ดูได้)
+                console.log("Response from Google:", response);
+
+                // --- เพิ่มการเช็ค Error จากฝั่ง Google Script ---
+                if (response && response.status === 'error') {
+                    throw new Error("Google Script Error: " + response.message);
+                }
+                // ------------------------------------------
+
                 let dataRows = [];
                 let lastUpdated = null;
 
-                // รองรับทั้งแบบเก่า (Array) และแบบใหม่ (Object)
                 if (Array.isArray(response)) {
-                    dataRows = response; // กรณี Google Script ยังไม่แก้
+                    dataRows = response; // แบบเก่า
                 } else if (response.data) {
-                    dataRows = response.data;
-                    lastUpdated = response.lastUpdated; // รับค่าเวลาจาก Google Script
+                    dataRows = response.data; // แบบใหม่
+                    lastUpdated = response.lastUpdated;
                 }
 
                 if (!Array.isArray(dataRows) || dataRows.length === 0) { 
@@ -766,9 +771,7 @@ async function fetchAllDataFromSheet() {
                 appState.currentFilteredRecords = [...appState.allRecords]; 
                 appState.initialDataLoaded = true; 
                 
-                // --- เรียกใช้ฟังก์ชันแสดงเวลา โดยส่งค่าเวลาจาก Sheet ไป ---
                 updateLastSavedTime(lastUpdated); 
-                // ---------------------------------------------------
 
                 await categoriesLoadedPromise; 
                 const carnationCategory = appState.categories.find(c => c.name === 'Carnation');
@@ -780,6 +783,7 @@ async function fetchAllDataFromSheet() {
                     displayData();
                 } 
             } catch (error) { 
+                // แสดง Error สีแดงชัดเจน
                 showError(error.message); 
             } finally { 
                 loadingEl.classList.add('hidden');
