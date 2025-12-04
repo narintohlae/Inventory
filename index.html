@@ -23,7 +23,7 @@
             cursor: grab;
         }
         
-        /* --- Notification Toast Styles (New Pill Design) --- */
+        /* --- Notification Toast Styles (Pill Design) --- */
         #notification-toast {
             bottom: 30px;
             left: 50%;
@@ -501,6 +501,10 @@
                 initializeListeners(appState.userId);
                 switchView('products');
                 if(!appState.initialDataLoaded) fetchAllDataFromSheet(); 
+                
+                // --- NEW: Start polling for sheet updates ---
+                startSheetPolling();
+
             } else {
                 appState.userId = null;
                 appState.initialDataLoaded = false;
@@ -730,6 +734,31 @@ itemColumnName = appState.allRecords.length > 0 ? Object.keys(appState.allRecord
         if (carnationCategory) { const carnationButton = Array.from(categoryList.querySelectorAll('button')).find(btn => btn.textContent === 'Carnation'); if (carnationButton) carnationButton.click(); else displayData(); } else { displayData();
         } } catch (error) { showError(error.message); } finally { loadingEl.classList.add('hidden');
         } }
+        
+        // --- NEW: Function to check for updates from Google Sheets ---
+        async function startSheetPolling() {
+            setInterval(async () => {
+                try {
+                    // Fetch without UI blocking/Loading indicator
+                    const response = await fetch(sheetUrl);
+                    if (!response.ok) return; // Silent fail
+                    
+                    const json = await response.json();
+                    if (!json.data || !Array.isArray(json.data)) return;
+
+                    // Compare with current data (JSON string comparison is simple and effective for this size)
+                    const currentDataStr = JSON.stringify(appState.allRecords);
+                    const newDataStr = JSON.stringify(json.data);
+
+                    if (currentDataStr !== newDataStr && appState.allRecords.length > 0) {
+                        showNotification('พบข้อมูลใหม่จาก Google Sheets! กรุณารีเฟรช', 'info');
+                    }
+                } catch (err) {
+                    // Silent fail for background checks
+                    console.warn("Background sheet check failed:", err);
+                }
+            }, 30000); // Check every 30 seconds
+        }
 
 function displayData() {
             tableHead.innerHTML = '';
@@ -1160,7 +1189,7 @@ text-gray-600 uppercase" colspan="2"></th>
             appState.notificationTimeout = setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => toast.classList.add('hidden'), 300);
-            }, 2000); // แสดงนาน 2 วินาที
+            }, 3000); // แสดงนาน 3 วินาที (เพิ่มเวลาให้ทันอ่าน)
         }
 
         function switchView(viewName) { const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView };
