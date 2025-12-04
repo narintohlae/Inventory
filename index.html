@@ -737,12 +737,52 @@ itemColumnName = appState.allRecords.length > 0 ? Object.keys(appState.allRecord
         if (!response.ok) throw new Error(`Network: ${response.statusText}`); return await response.json(); } catch (error) { if (i === retries - 1) throw error;
         console.warn(`Fetch attempt ${i + 1} failed for ${url}. Retrying in ${delay / 1000}s...`); showNotification(`เชื่อมต่อไม่ได้ กำลังลองใหม่... (ครั้งที่ ${i + 1})`, true);
         await new Promise(res => setTimeout(res, delay)); } } }
-        async function fetchAllDataFromSheet() { if (appState.initialDataLoaded) return;
-        try { loadingEl.classList.remove('hidden'); const data = await fetchWithRetry(sheetUrl); if (!Array.isArray(data.data) || data.data.length === 0) { showNoData(); return;
-        } appState.allRecords = data.data; appState.currentFilteredRecords = [...appState.allRecords]; appState.initialDataLoaded = true; updateLastSavedTime(); await categoriesLoadedPromise; const carnationCategory = appState.categories.find(c => c.name === 'Carnation');
-        if (carnationCategory) { const carnationButton = Array.from(categoryList.querySelectorAll('button')).find(btn => btn.textContent === 'Carnation'); if (carnationButton) carnationButton.click(); else displayData(); } else { displayData();
-        } } catch (error) { showError(error.message); } finally { loadingEl.classList.add('hidden');
-        } }
+async function fetchAllDataFromSheet() { 
+            if (appState.initialDataLoaded) return;
+            try { 
+                loadingEl.classList.remove('hidden'); 
+                const response = await fetchWithRetry(sheetUrl); // แก้ให้รับ response เต็มๆ ก่อน
+                
+                // ตรวจสอบโครงสร้างข้อมูล
+                let dataRows = [];
+                let lastUpdated = null;
+
+                // รองรับทั้งแบบเก่า (Array) และแบบใหม่ (Object)
+                if (Array.isArray(response)) {
+                    dataRows = response; // กรณี Google Script ยังไม่แก้
+                } else if (response.data) {
+                    dataRows = response.data;
+                    lastUpdated = response.lastUpdated; // รับค่าเวลาจาก Google Script
+                }
+
+                if (!Array.isArray(dataRows) || dataRows.length === 0) { 
+                    showNoData(); 
+                    return;
+                } 
+
+                appState.allRecords = dataRows; 
+                appState.currentFilteredRecords = [...appState.allRecords]; 
+                appState.initialDataLoaded = true; 
+                
+                // --- เรียกใช้ฟังก์ชันแสดงเวลา โดยส่งค่าเวลาจาก Sheet ไป ---
+                updateLastSavedTime(lastUpdated); 
+                // ---------------------------------------------------
+
+                await categoriesLoadedPromise; 
+                const carnationCategory = appState.categories.find(c => c.name === 'Carnation');
+                if (carnationCategory) { 
+                    const carnationButton = Array.from(categoryList.querySelectorAll('button')).find(btn => btn.textContent === 'Carnation'); 
+                    if (carnationButton) carnationButton.click(); 
+                    else displayData(); 
+                } else { 
+                    displayData();
+                } 
+            } catch (error) { 
+                showError(error.message); 
+            } finally { 
+                loadingEl.classList.add('hidden');
+            } 
+        }
         
         async function startSheetPolling() {
             setInterval(async () => {
@@ -1209,23 +1249,27 @@ text-gray-600 uppercase" colspan="2"></th>
             }
         }
 
-        // ฟังก์ชันสำหรับอัปเดตเวลาล่าสุด
-function updateLastSavedTime() {
+// ฟังก์ชันแสดงเวลา (แก้ให้รับ parameter 'serverTime')
+function updateLastSavedTime(serverTime) {
     const statusText = document.getElementById('last-update-text');
     if (!statusText) return;
 
-    const now = new Date();
-    // จัดรูปแบบเวลาแบบไทย เช่น 14:30 น.
-    const timeString = now.toLocaleTimeString('th-TH', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false 
-    });
-    
+    let timeString = 'ไม่ทราบเวลา';
+
+    if (serverTime) {
+        const dateObj = new Date(serverTime);
+        // แปลงเป็นเวลาไทย
+        timeString = dateObj.toLocaleTimeString('th-TH', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+        }) + ' น.';
+    }
+
     // อัปเดตข้อความ
     statusText.innerHTML = `
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        <span>อัปเดตล่าสุด: ${timeString} น.</span>
+        <span>อัปเดตล่าสุด (Sheets): ${timeString}</span>
     `;
 }
         function switchView(viewName) { const views = { products: productListView, requisition: requisitionView, history: historyView, manage: manageView, account: accountView };
