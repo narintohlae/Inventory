@@ -742,6 +742,8 @@ async function fetchAllDataFromSheet() {
             try { 
                 loadingEl.classList.remove('hidden'); 
                 const response = await fetchWithRetry(sheetUrl); // แก้ให้รับ response เต็มๆ ก่อน
+
+                console.log("ข้อมูลที่ได้จาก Google:", response);
                 
                 // ตรวจสอบโครงสร้างข้อมูล
                 let dataRows = [];
