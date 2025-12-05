@@ -1265,12 +1265,14 @@ function updateLastSavedTime(serverTime) {
     if (serverTime) {
         const dateObj = new Date(serverTime);
         // แปลงเป็นเวลาไทย
-        timeString = dateObj.toLocaleTimeString('th-TH', { 
+            timeString = dateObj.toLocaleString('th-TH', { 
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
             hour: '2-digit', 
             minute: '2-digit',
             hour12: false 
         }) + ' น.';
-    }
 
     // อัปเดตข้อความ
     statusText.innerHTML = `
