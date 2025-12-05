@@ -815,90 +815,153 @@ async function fetchAllDataFromSheet() {
             }, 30000); // Check every 30 seconds
         }
 
+// ค้นหา function displayData() แล้วแทนที่ด้วยโค้ดชุดนี้ครับ
 function displayData() {
-            tableHead.innerHTML = '';
-            tableBody.innerHTML = '';
-            if (appState.sortableInstance) {
-                appState.sortableInstance.destroy();
-                appState.sortableInstance = null;
+    tableHead.innerHTML = '';
+    tableBody.innerHTML = '';
+    
+    // เคลียร์ Sortable เก่าเพื่อป้องกัน Memory Leak
+    if (appState.sortableInstance) {
+        appState.sortableInstance.destroy();
+        appState.sortableInstance = null;
+    }
+
+    const records = appState.currentFilteredRecords;
+    let recordsToDisplay = records;
+    
+    // Logic การแบ่งหน้า (Pagination)
+    const shouldPaginate = appState.activeCategoryName === 'ทั้งหมด';
+    if (shouldPaginate) {
+        const startIndex = (appState.currentPage - 1) * CONSTANTS.ITEMS_PER_PAGE;
+        const endIndex = startIndex + CONSTANTS.ITEMS_PER_PAGE;
+        recordsToDisplay = records.slice(startIndex, endIndex);
+        renderPagination(records.length);
+    } else {
+        clearPagination();
+    }
+
+    if (appState.allRecords.length === 0) {
+        showNoData();
+        return;
+    }
+
+    const itemColumnName = Object.keys(appState.allRecords[0])[0] || '';
+    
+    // --- แก้ไขจุดที่ 1: บังคับให้ Key เป็น String ทั้งหมด ---
+    appState.allRecordsMap = new Map(appState.allRecords.map(r => [String(r[itemColumnName]).trim(), r]));
+    
+    // ดึงรายการ ID ของสินค้าที่จะแสดงผล (แปลงเป็น String ให้หมด)
+    const currentRecordIds = new Set(recordsToDisplay.map(r => String(r[itemColumnName]).trim()));
+    
+    const sortKey = appState.activeCategoryName || CONSTANTS.SORT_KEY_GLOBAL;
+    const hiddenIdsForCurrentCategory = appState.hiddenItemsMap[sortKey] || new Set();
+    
+    // รายการที่จัดเรียงไว้ (Saved Order)
+    const currentItemOrder = appState.sortOrdersMap[sortKey] || [];
+
+    // --- แก้ไขจุดที่ 2: รวมรายการ โดยแปลงรายการใหม่จาก Sheet เป็น String ด้วย ---
+    // เอาลำดับที่บันทึกไว้เป็นหลัก + ต่อด้วยสินค้าใหม่ที่ยังไม่มีในบันทึก
+    const combinedOrder = [...new Set([...currentItemOrder, ...records.map(r => String(r[itemColumnName]).trim())])];
+
+    // กรองเอาเฉพาะตัวที่มีอยู่จริงใน Sheet หรือเป็นหัวข้อ (Custom Row)
+    const displayOrder = combinedOrder.filter(id => appState.customRows.has(id) || appState.allRecordsMap.has(id));
+
+    // กรองตัวที่ซ่อนออก
+    const visibleIds = new Set(displayOrder.filter(id => !hiddenIdsForCurrentCategory.has(id)));
+
+    // กรองให้เหลือเฉพาะ Category ปัจจุบัน (สำหรับ Custom Rows) และ สินค้าในหน้าปัจจุบัน (Pagination)
+    const finalDisplayOrder = displayOrder.filter(id => {
+        // กรณีเป็นหัวข้อ
+        if (appState.customRows.has(id)) {
+            return appState.customRows.get(id).categoryName === appState.activeCategoryName;
+        }
+        // กรณีเป็นสินค้า (ต้องอยู่ในหน้าปัจจุบัน)
+        return currentRecordIds.has(id);
+    });
+
+    if (finalDisplayOrder.filter(id => visibleIds.has(id)).length === 0) {
+        tableEl.classList.add('hidden');
+        noDataEl.classList.remove('hidden');
+        return;
+    }
+    
+    noDataEl.classList.add('hidden');
+    tableEl.classList.remove('hidden');
+
+    // สร้าง Header ตาราง
+    const headers = Object.keys(appState.allRecords[0]);
+    const headerRow = document.createElement('tr');
+    headers.forEach(header => {
+        const th = document.createElement('th');
+        th.scope = 'col';
+        const narrowColumns = ['รวม', 'หน่วย', CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK];
+        let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left';
+        let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6';
+        th.className = `${padding} py-1 ${alignment} text-sm font-medium text-gray-500 uppercase ${header === itemColumnName ? 'w-full' : ''}`;
+        th.textContent = header.replace(/_/g, ' ');
+        headerRow.appendChild(th);
+    });
+    tableHead.appendChild(headerRow);
+
+    // สร้างเนื้อหาตาราง
+    const bodyFragment = document.createDocumentFragment();
+    finalDisplayOrder.forEach(id => {
+        if (!visibleIds.has(id)) return;
+        
+        const row = document.createElement('tr');
+        row.dataset.id = id; // id ตรงนี้เป็น String แน่นอนแล้ว
+
+        if (appState.customRows.has(id)) {
+            // ... (ส่วนแสดงผลหัวข้อ เหมือนเดิม) ...
+            const rowData = appState.customRows.get(id);
+            if (rowData.categoryName === appState.activeCategoryName) {
+                row.className = 'bg-gray-200 font-bold';
+                const cell = document.createElement('td');
+                cell.colSpan = headers.length;
+                cell.className = 'px-4 py-0.5 text-gray-800 text-sm text-left cursor-move'; // เพิ่ม cursor-move ให้รู้ว่าลากได้
+                cell.textContent = rowData.text;
+                cell.setAttribute('tabindex', '-1');
+                row.addEventListener('dblclick', () => {
+                    openHeaderActionsModal(id, rowData.text);
+                });
+                row.appendChild(cell);
+                bodyFragment.appendChild(row);
             }
+        } else if (appState.allRecordsMap.has(id)) {
+            // ... (ส่วนแสดงผลสินค้า) ...
+            const record = appState.allRecordsMap.get(id);
+            row.className = 'hover:bg-gray-50';
+            row.setAttribute('tabindex', '0');
 
-            const records = appState.currentFilteredRecords;
-            let recordsToDisplay = records;
-            const shouldPaginate = appState.activeCategoryName === 'ทั้งหมด';
-            if (shouldPaginate) { const startIndex = (appState.currentPage - 1) * CONSTANTS.ITEMS_PER_PAGE; const endIndex = startIndex + CONSTANTS.ITEMS_PER_PAGE;
-            recordsToDisplay = records.slice(startIndex, endIndex); renderPagination(records.length); } else { clearPagination(); }
-            if (appState.allRecords.length === 0) { showNoData();
-            return; }
-
-            const itemColumnName = Object.keys(appState.allRecords[0])[0] || '';
-            appState.allRecordsMap = new Map(appState.allRecords.map(r => [r[itemColumnName], r]));
-            const currentRecordIds = new Set(recordsToDisplay.map(r => r[itemColumnName]));
-            const sortKey = appState.activeCategoryName || CONSTANTS.SORT_KEY_GLOBAL;
-            const hiddenIdsForCurrentCategory = appState.hiddenItemsMap[sortKey] || new Set();
-            const currentItemOrder = appState.sortOrdersMap[sortKey] || [];
-            const combinedOrder = [...new Set([...currentItemOrder, ...records.map(r => r[itemColumnName])])];
-            const displayOrder = combinedOrder.filter(id => appState.customRows.has(id) || appState.allRecordsMap.has(id));
-            const visibleIds = new Set(displayOrder.filter(id => !hiddenIdsForCurrentCategory.has(id)));
-            const finalDisplayOrder = displayOrder.filter(id => (appState.customRows.has(id) && appState.customRows.get(id).categoryName === appState.activeCategoryName) || currentRecordIds.has(id));
-            if (finalDisplayOrder.filter(id => visibleIds.has(id)).length === 0) { tableEl.classList.add('hidden'); noDataEl.classList.remove('hidden'); return;
-            }
-            noDataEl.classList.add('hidden'); tableEl.classList.remove('hidden');
-
-            const headers = Object.keys(appState.allRecords[0]);
-            const headerRow = document.createElement('tr');
-            headers.forEach(header => { const th = document.createElement('th'); th.scope = 'col'; const narrowColumns = ['รวม', 'หน่วย', CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK]; let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left'; let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6'; th.className = `${padding} py-1 ${alignment} text-sm font-medium text-gray-500 uppercase ${header === itemColumnName ? 'w-full' : ''}`; th.textContent = header.replace(/_/g, ' '); headerRow.appendChild(th); });
-            tableHead.appendChild(headerRow);
-
-            const bodyFragment = document.createDocumentFragment();
-            finalDisplayOrder.forEach(id => { 
-                if (!visibleIds.has(id)) return; 
-                const row = document.createElement('tr'); 
-                row.dataset.id = id; 
-                if(appState.customRows.has(id)){ 
-                   const rowData = appState.customRows.get(id); 
-                    if (rowData.categoryName === appState.activeCategoryName) { 
-                        row.className = 'bg-gray-200 font-bold'; 
-                        
-                        const cell = document.createElement('td'); 
-            
-                        cell.colSpan = headers.length; 
-                        cell.className = 'px-4 py-0.5 text-gray-800 text-sm text-left'; 
-                        cell.textContent = 
-                        rowData.text; 
-                        cell.setAttribute('tabindex', '-1'); 
- 
-                       row?.addEventListener('dblclick', () => { 
-                            openHeaderActionsModal(id, rowData.text); 
-                        }); 
-                  
-               row.appendChild(cell);
-               bodyFragment.appendChild(row); 
-                    } 
-                } else if (appState.allRecordsMap.has(id)) { 
-                    const record = appState.allRecordsMap.get(id);
-                    row.className = 'hover:bg-gray-50'; 
-                    row.setAttribute('tabindex', '0');
-                    
-                    headers.forEach(header => { 
-                        const td = document.createElement('td'); 
-                        td.setAttribute('tabindex', '-1'); 
-                        const narrowColumns = ['รวม', 'หน่วย', CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK]; 
-       
-                         let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left'; 
-                        let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6'; 
-                        td.className = `${padding} py-1 ${alignment} text-sm text-gray-700 break-words ${header === 
-                        itemColumnName ? 'w-full' : ''}`; 
-   
-                         td.textContent = record[header]; 
-                        row.appendChild(td); 
-                    });
-                    bodyFragment.appendChild(row); 
-                } 
+            headers.forEach(header => {
+                const td = document.createElement('td');
+                td.setAttribute('tabindex', '-1');
+                const narrowColumns = ['รวม', 'หน่วย', CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK];
+                let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left';
+                let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6';
+                td.className = `${padding} py-1 ${alignment} text-sm text-gray-700 break-words ${header === itemColumnName ? 'w-full' : ''}`;
+                td.textContent = record[header];
+                row.appendChild(td);
             });
-            tableBody.appendChild(bodyFragment);
-            appState.sortableInstance = new Sortable(tableBody, { animation: 150, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen', delay: 200, touchStartThreshold: 5, onEnd: (evt) => { const newOrder = Array.from(tableBody.querySelectorAll('tr')).map(row => row.dataset.id); saveCurrentSortOrder(newOrder); } });
-            }
+            bodyFragment.appendChild(row);
+        }
+    });
+    tableBody.appendChild(bodyFragment);
+
+    // สร้าง Sortable ใหม่
+    appState.sortableInstance = new Sortable(tableBody, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        delay: 200,
+        touchStartThreshold: 5,
+        onEnd: (evt) => {
+            // บันทึกโดยใช้ ID ที่เป็น String
+            const newOrder = Array.from(tableBody.querySelectorAll('tr')).map(row => row.dataset.id);
+            saveCurrentSortOrder(newOrder);
+        }
+    });
+}
 
         function renderPagination(totalItems) { clearPagination(); const totalPages = Math.ceil(totalItems / CONSTANTS.ITEMS_PER_PAGE);
         if (totalPages <= 1) return; const prevButton = document.createElement('button'); prevButton.textContent = 'ก่อนหน้า'; prevButton.className = 'px-4 py-2 bg-gray-300 text-gray-800 rounded-md disabled:opacity-50';
