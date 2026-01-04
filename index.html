@@ -1531,6 +1531,33 @@ function updateLastSavedTime(serverTime) {
         headerModalCancelBtn?.addEventListener('click', closeAddHeaderModal);
         headerInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const headerText = headerInput.value.trim(); if (headerText) { addHeaderRow(headerText); closeAddHeaderModal(); } } });
         addHeaderModal?.addEventListener('click', (e) => { if (e.target === addHeaderModal) { closeAddHeaderModal(); } });
+
+        // ฟังก์ชันส่งข้อความไปที่ LINE Group
+async function sendLineMessage(reqNumber, items) {
+    const LINE_TOKEN = 'LVYF+0mbL7RSwwtbY6bwl9dtiaOTe4vBaI9RA+I3qT196Zz7xzUUD4pa41xK3Sbv8ro9mFXrPFXUwZoPxg2q4SOUVHiZt5/bAmotWxbp/puinybZAgRhtMcHwimbzCtxQcH4/254U8jlTZFnhiU3tgdB04t89/1O/w1cDnyilFU=';
+    const GROUP_ID = 'C9720dae16795d18cd7d49637a143d499';
+
+    // สร้างข้อความรายการสินค้า
+    let itemDetails = items.map((it, idx) => `${idx + 1}. ${it.name} จำนวน ${it.quantity} ${it.unit || ''}`).join('\n');
+    let messageText = `📦 มีรายการเบิกใหม่!\nเลขที่: ${reqNumber}\n------------------\n${itemDetails}\n------------------\nตรวจสอบได้ในระบบ`;
+
+    try {
+        await fetch('https://api.line.me/v2/bot/message/push', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${LINE_TOKEN}`
+            },
+            body: JSON.stringify({
+                to: GROUP_ID,
+                messages: [{ type: 'text', text: messageText }]
+            })
+        });
+        console.log("LINE Message sent successfully");
+    } catch (error) {
+        console.error("Error sending LINE message:", error);
+    }
+},
         // --- FIXED: อัปเดต event listener ให้เรียกใช้ฟังก์ชันแก้ไขใหม่ ---
         editHeaderBtn?.addEventListener('click', () => {
             if (appState.currentEditingHeaderId && appState.currentEditingHeaderText) {
@@ -1752,6 +1779,9 @@ isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add
         transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true });
         return generatedReqNumber;
       });
+        if (reqNumber && window.appState.requisitionList.length > 0) {
+    await sendLineMessage(reqNumber, window.appState.requisitionList);
+}
 
       if (typeof showNotification === 'function') showNotification(`ยืนยันการเบิกของ ${reqNumber} เรียบร้อย`, false);
     } catch (error) {
