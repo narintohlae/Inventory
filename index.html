@@ -1726,91 +1726,105 @@ isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add
       navTrigger?.addEventListener('click', () => isNavOpen ? closeNav() : openNav());
 }
   });
-// ==========================================
-// 1. ฟังก์ชันส่งไลน์ (เพิ่มใหม่)
-// ==========================================
+
+    /**
+ * ฟังก์ชันสำหรับส่งข้อมูลไปแจ้งเตือนทาง LINE ผ่าน Google Apps Script
+ */
 async function sendLineNotification(reqNumber, items, totalQty) {
-    // ⚠️ สำคัญ: ใส่ URL ที่ได้จาก Google Apps Script ตรงนี้ ⚠️
+    // ⚠️⚠️ แก้ไขตรงนี้: ใส่ Web App URL ของคุณที่ได้จาก Google Apps Script (ที่ลงท้ายด้วย /exec) ⚠️⚠️
     const GAS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyXG7hJ96TrzH6h6I1y7aAAkl3TCVg06fgiamD9fiqNvtBN2YMnS2pMJEKwyKsOtNP6/exec"; 
 
+    // เตรียมข้อมูล Payload ที่จะส่ง
     const payload = {
         reqNumber: reqNumber,
         items: items,
         totalQty: totalQty
     };
 
+    console.log("🚀 กำลังส่งข้อมูลไปที่ LINE Notify...", payload);
+
     try {
-        // ใช้ mode: 'no-cors' เพื่อส่งข้อมูลข้าม Domain โดยไม่ติด Error ใน Console
+        // ใช้ fetch เพื่อส่งข้อมูลไปยัง Google Apps Script
+        // ใช้ mode: 'no-cors' เพื่อป้องกัน Browser บล็อกการส่งข้ามโดเมน 
+        // (ข้อเสียคือเราจะไม่เห็น Response ตอบกลับ แต่ถ้า URL ถูก ข้อความจะเข้าแน่นอน)
         await fetch(GAS_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',
-            redirect: "follow",
-            headers: { 'Content-Type': 'application/json' },
+            mode: 'no-cors', 
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(payload)
         });
-        console.log("✅ ส่งข้อมูลไป Line Notify แล้ว");
+        
+        console.log("✅ คำสั่งส่ง LINE ถูกส่งออกไปแล้ว");
     } catch (error) {
-        console.error("❌ ไม่สามารถส่ง Line Notify ได้:", error);
+        console.error("❌ เกิดข้อผิดพลาดในการส่ง LINE:", error);
     }
 }
 
-// ==========================================
-// 2. ฟังก์ชันยืนยันการเบิก (แก้ไขแล้ว)
-// ==========================================
 async function confirmRequisition() {
+    // 1. ตรวจสอบว่ามีรายการสินค้าหรือไม่
     if (window.appState.requisitionList.length === 0) {
       if (typeof showNotification === 'function') showNotification("ไม่มีรายการในใบเบิก", true);
       return;
     }
 
-    // เรียกใช้ตัวแปร Firebase จาก window.firebaseModules
+    // 2. ดึง module Firebase ที่จำเป็นมาใช้งาน
     const { db, collection, doc, runTransaction, Timestamp } = window.firebaseModules;
     
+    // อ้างอิง Collection ต่างๆ ใน Firestore
     const requisitionListCollectionRef = collection(db, "requisitionList");
     const requisitionHistoryCollectionRef = collection(db, "requisitionHistory");
     const countersDocRef = doc(db, "counters", "requisition");
 
     try {
+      // 3. คำนวณยอดรวมสินค้า
       const totalItems = window.appState.requisitionList.length;
       const totalQty = window.appState.requisitionList.reduce((sum, it) => sum + (parseInt(it.quantity, 10) || 0), 0);
 
-      // เริ่ม Transaction ของ Firebase
+      // 4. เริ่มกระบวนการ Transaction (บันทึกข้อมูลลงฐานข้อมูล)
       const reqNumber = await runTransaction(db, async (transaction) => {
+        // 4.1 อ่านเลขที่เอกสารล่าสุด
         const counterSnap = await transaction.get(countersDocRef);
         const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0;
         const newCounter = currentCounter + 1;
         
+        // 4.2 สร้างเลขที่ใบเบิกใหม่ (Format: REQ-YYYYMM-XXXX)
         const now = new Date();
-        // สร้างเลขที่ใบเบิก เช่น REQ-202310-0001
         const generatedReqNumber = `REQ-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}-${String(newCounter).padStart(4,'0')}`;
         
+        // 4.3 เตรียมข้อมูลที่จะบันทึกลงประวัติ (History)
         const historyDocRef = doc(requisitionHistoryCollectionRef);
-        
-        // บันทึกลง History
         transaction.set(historyDocRef, {
           requisitionNumber: generatedReqNumber,
           timestamp: (typeof Timestamp !== 'undefined' && Timestamp.now) ? Timestamp.now() : new Date(),
-          items: window.appState.requisitionList.map(({ id, ...rest }) => rest), // ตัด field id ออกก่อนบันทึกประวัติ
+          items: window.appState.requisitionList.map(({ id, ...rest }) => rest), // ตัด field id ออกก่อนบันทึก
           totalItems,
           totalQty
         });
 
-        // ลบรายการออกจาก List ชั่วคราว (Requisition List)
+        // 4.4 ลบรายการออกจากตะกร้า (Requisition List)
         window.appState.requisitionList.forEach(item => transaction.delete(doc(requisitionListCollectionRef, item.id)));
         
-        // อัปเดตเลข Counter
+        // 4.5 อัปเดตเลข Counter ล่าสุด
         transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true });
         
+        // ส่งเลขที่ใบเบิกกลับมาเพื่อใช้ต่อ
         return generatedReqNumber;
       });
 
-      // ---------------------------------------------------------
-      // [ส่วนที่เพิ่มใหม่] ส่งแจ้งเตือน Line หลังจากบันทึกสำเร็จ
-      // ---------------------------------------------------------
-      // เราส่งข้อมูลรายการสินค้าปัจจุบัน (window.appState.requisitionList) ไปแจ้งเตือน
+      // ============================================================
+      // 5. [ส่วนสำคัญ] เรียกฟังก์ชันส่งแจ้งเตือน LINE หลังจากบันทึกสำเร็จ
+      // ============================================================
+      console.log("Transaction สำเร็จ! ได้เลขที่ใบเบิก: " + reqNumber);
+      console.log("กำลังเรียกแจ้งเตือน LINE...");
+      
+      // ส่งข้อมูลรายการสินค้าปัจจุบันไปแจ้งเตือน
       await sendLineNotification(reqNumber, window.appState.requisitionList, totalQty);
-      // ---------------------------------------------------------
+      
+      // ============================================================
 
+      // 6. แจ้งเตือนผู้ใช้บนหน้าเว็บว่าสำเร็จ
       if (typeof showNotification === 'function') showNotification(`ยืนยันการเบิกของ ${reqNumber} เรียบร้อย`, false);
 
     } catch (error) {
