@@ -1743,7 +1743,8 @@ async function sendLineNotification(reqNumber, items, totalQty) {
         // ใช้ mode: 'no-cors' เพื่อส่งข้อมูลข้าม Domain โดยไม่ติด Error ใน Console
         await fetch(GAS_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors', 
+            mode: 'no-cors',
+            redirect: "follow",
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
