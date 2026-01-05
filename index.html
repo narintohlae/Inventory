@@ -1726,39 +1726,97 @@ isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add
       navTrigger?.addEventListener('click', () => isNavOpen ? closeNav() : openNav());
 }
   });
+// ==========================================
+// 1. ฟังก์ชันส่งไลน์ (เพิ่มใหม่)
+// ==========================================
+async function sendLineNotification(reqNumber, items, totalQty) {
+    // ⚠️ สำคัญ: ใส่ URL ที่ได้จาก Google Apps Script ตรงนี้ ⚠️
+    const GAS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw98mzlgt2ykIqVmHn-wSLQy5ey2FR499YsyVrEqQaZE9bXv6pQFgLtCa9kIsNQ6T8/exec"; 
 
-  // Override confirmRequisition with a safer version
-  window.confirmRequisition = async function confirmRequisition() {
+    const payload = {
+        reqNumber: reqNumber,
+        items: items,
+        totalQty: totalQty
+    };
+
     try {
-      if (!window.requisitionListCollectionRef || !window.appState || !Array.isArray(window.appState.requisitionList) || window.appState.requisitionList.length === 0) return;
+        // ใช้ mode: 'no-cors' เพื่อส่งข้อมูลข้าม Domain โดยไม่ติด Error ใน Console
+        await fetch(GAS_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        console.log("✅ ส่งข้อมูลไป Line Notify แล้ว");
+    } catch (error) {
+        console.error("❌ ไม่สามารถส่ง Line Notify ได้:", error);
+    }
+}
+
+// ==========================================
+// 2. ฟังก์ชันยืนยันการเบิก (แก้ไขแล้ว)
+// ==========================================
+async function confirmRequisition() {
+    if (window.appState.requisitionList.length === 0) {
+      if (typeof showNotification === 'function') showNotification("ไม่มีรายการในใบเบิก", true);
+      return;
+    }
+
+    // เรียกใช้ตัวแปร Firebase จาก window.firebaseModules
+    const { db, collection, doc, runTransaction, Timestamp } = window.firebaseModules;
+    
+    const requisitionListCollectionRef = collection(db, "requisitionList");
+    const requisitionHistoryCollectionRef = collection(db, "requisitionHistory");
+    const countersDocRef = doc(db, "counters", "requisition");
+
+    try {
       const totalItems = window.appState.requisitionList.length;
-      const totalQty = window.appState.requisitionList.reduce((s, it) => s + (parseInt(it.quantity, 10) || 0), 0);
+      const totalQty = window.appState.requisitionList.reduce((sum, it) => sum + (parseInt(it.quantity, 10) || 0), 0);
+
+      // เริ่ม Transaction ของ Firebase
       const reqNumber = await runTransaction(db, async (transaction) => {
         const counterSnap = await transaction.get(countersDocRef);
         const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0;
         const newCounter = currentCounter + 1;
+        
         const now = new Date();
+        // สร้างเลขที่ใบเบิก เช่น REQ-202310-0001
         const generatedReqNumber = `REQ-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}-${String(newCounter).padStart(4,'0')}`;
+        
         const historyDocRef = doc(requisitionHistoryCollectionRef);
+        
+        // บันทึกลง History
         transaction.set(historyDocRef, {
-       
           requisitionNumber: generatedReqNumber,
           timestamp: (typeof Timestamp !== 'undefined' && Timestamp.now) ? Timestamp.now() : new Date(),
-          items: window.appState.requisitionList.map(({ id, ...rest }) => rest),
+          items: window.appState.requisitionList.map(({ id, ...rest }) => rest), // ตัด field id ออกก่อนบันทึกประวัติ
           totalItems,
           totalQty
         });
+
+        // ลบรายการออกจาก List ชั่วคราว (Requisition List)
         window.appState.requisitionList.forEach(item => transaction.delete(doc(requisitionListCollectionRef, item.id)));
+        
+        // อัปเดตเลข Counter
         transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true });
+        
         return generatedReqNumber;
       });
 
+      // ---------------------------------------------------------
+      // [ส่วนที่เพิ่มใหม่] ส่งแจ้งเตือน Line หลังจากบันทึกสำเร็จ
+      // ---------------------------------------------------------
+      // เราส่งข้อมูลรายการสินค้าปัจจุบัน (window.appState.requisitionList) ไปแจ้งเตือน
+      await sendLineNotification(reqNumber, window.appState.requisitionList, totalQty);
+      // ---------------------------------------------------------
+
       if (typeof showNotification === 'function') showNotification(`ยืนยันการเบิกของ ${reqNumber} เรียบร้อย`, false);
+
     } catch (error) {
       console.error("Transaction failed: ", error);
       if (typeof showError === 'function') showError("ยืนยันการเบิกของไม่สำเร็จ: " + error.message);
     }
-  };
+}
 })();
 </script>
 </html>
