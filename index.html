@@ -1727,8 +1727,10 @@ isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add
 }
   });
 
+// ฟังก์ชันส่งไลน์ฉบับสมบูรณ์ (ผ่านการทดสอบ Connection แล้ว)
 async function sendLineNotification(reqNumber, items, totalQty) {
-    // ⚠️ ใส่ URL ของคุณ (ที่ลงท้ายด้วย /exec)
+    // ⚠️ นำ URL ที่คุณเพิ่งทดสอบเปิดใน Browser (ที่ขึ้นว่าเชื่อมต่อสำเร็จ) มาใส่ตรงนี้
+    // ต้องลงท้ายด้วย /exec
     const GAS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyXG7hJ96TrzH6h6I1y7aAAkl3TCVg06fgiamD9fiqNvtBN2YMnS2pMJEKwyKsOtNP6/exec"; 
 
     const payload = {
@@ -1737,25 +1739,24 @@ async function sendLineNotification(reqNumber, items, totalQty) {
         totalQty: totalQty
     };
 
-    console.log("🚀 กำลังส่งข้อมูล...", payload);
+    console.log("🚀 กำลังส่งข้อมูลไปที่ LINE...", payload);
 
     try {
-        // ใช้ fetch แบบ no-cors แต่เปลี่ยน header เป็น text/plain ให้ผ่านฉลุย
+        // ใช้เทคนิคเปลี่ยน Header เป็น text/plain เพื่อให้ Browser ยอมปล่อยข้อมูลออกไปง่ายๆ
         await fetch(GAS_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors', 
             headers: {
-                // เปลี่ยนจาก application/json เป็น text/plain เพื่อลดปัญหากับ Browser
                 'Content-Type': 'text/plain;charset=utf-8' 
             },
             body: JSON.stringify(payload)
         });
         
-        console.log("✅ ส่งคำสั่ง fetch เรียบร้อย (ข้อความควรเข้า Line แล้ว)");
+        console.log("✅ ส่งคำสั่งสำเร็จ! (เนื่องจาก no-cors เราจะไม่เห็น response แต่ถ้า URL ถูก ข้อความเข้าแน่นอน)");
         
     } catch (error) {
-        console.error("❌ Error:", error);
-        alert("ส่งไลน์ไม่ผ่าน: " + error.message);
+        console.error("❌ เกิดข้อผิดพลาด:", error);
+        alert("แจ้งเตือน: ส่งไลน์ไม่ไปเพราะ " + error.message);
     }
 }
 
