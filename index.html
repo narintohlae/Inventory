@@ -1727,107 +1727,86 @@ isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add
 }
   });
 
-// ฟังก์ชันส่งไลน์ฉบับสมบูรณ์ (ผ่านการทดสอบ Connection แล้ว)
+// ============================================
+// 1. ฟังก์ชันส่งไลน์ (แบบมี Alert แจ้งเตือนทุกขั้นตอน)
+// ============================================
 async function sendLineNotification(reqNumber, items, totalQty) {
-    // ⚠️ นำ URL ที่คุณเพิ่งทดสอบเปิดใน Browser (ที่ขึ้นว่าเชื่อมต่อสำเร็จ) มาใส่ตรงนี้
-    // ต้องลงท้ายด้วย /exec
-    const GAS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyXG7hJ96TrzH6h6I1y7aAAkl3TCVg06fgiamD9fiqNvtBN2YMnS2pMJEKwyKsOtNP6/exec"; 
+    // ⚠️ ตรวจสอบ URL อีกครั้ง (ต้องลงท้ายด้วย /exec)
+    const GAS_SCRIPT_URL = "https://script.google.com/macros/s/xxxxxxxxxxxxxxxxxxxxxxxx/exec"; 
 
-    const payload = {
-        reqNumber: reqNumber,
-        items: items,
-        totalQty: totalQty
-    };
-
-    console.log("🚀 กำลังส่งข้อมูลไปที่ LINE...", payload);
+    alert(`🚩 จุดที่ 3: กำลังจะส่งข้อมูลไป Line...\nเลขที่: ${reqNumber}\nจำนวน: ${totalQty}`);
 
     try {
-        // ใช้เทคนิคเปลี่ยน Header เป็น text/plain เพื่อให้ Browser ยอมปล่อยข้อมูลออกไปง่ายๆ
+        // ลองส่งแบบไม่ระบุ mode เพื่อดู error เต็มๆ ก่อน (ถ้าติด CORS ค่อยว่ากัน)
         await fetch(GAS_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors', 
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8' 
-            },
-            body: JSON.stringify(payload)
+            mode: 'no-cors', // ใส่ไว้เพื่อกัน Browser บล็อก
+            headers: { 'Content-Type': 'text/plain' }, // ใช้ text/plain เพื่อให้ส่งง่ายที่สุด
+            body: JSON.stringify({ reqNumber, items, totalQty })
         });
         
-        console.log("✅ ส่งคำสั่งสำเร็จ! (เนื่องจาก no-cors เราจะไม่เห็น response แต่ถ้า URL ถูก ข้อความเข้าแน่นอน)");
+        alert("✅ จุดที่ 4: คำสั่ง fetch ทำงานจบแล้ว! (รอดูใน Line ได้เลย)");
         
     } catch (error) {
-        console.error("❌ เกิดข้อผิดพลาด:", error);
-        alert("แจ้งเตือน: ส่งไลน์ไม่ไปเพราะ " + error.message);
+        alert("❌ Error ในการส่ง Line: " + error.message);
     }
 }
 
+// ============================================
+// 2. ฟังก์ชันยืนยันการเบิก (แบบมี Alert ดักทุกจุด)
+// ============================================
 async function confirmRequisition() {
-    // 1. ตรวจสอบว่ามีรายการสินค้าหรือไม่
+    alert("🚩 จุดที่ 1: กดปุ่มยืนยันแล้ว (ฟังก์ชันเริ่มทำงาน)");
+
     if (window.appState.requisitionList.length === 0) {
-      if (typeof showNotification === 'function') showNotification("ไม่มีรายการในใบเบิก", true);
+      alert("❌ หยุด: ไม่มีรายการสินค้า");
       return;
     }
 
-    // 2. ดึง module Firebase ที่จำเป็นมาใช้งาน
     const { db, collection, doc, runTransaction, Timestamp } = window.firebaseModules;
     
-    // อ้างอิง Collection ต่างๆ ใน Firestore
-    const requisitionListCollectionRef = collection(db, "requisitionList");
-    const requisitionHistoryCollectionRef = collection(db, "requisitionHistory");
-    const countersDocRef = doc(db, "counters", "requisition");
-
     try {
-      // 3. คำนวณยอดรวมสินค้า
       const totalItems = window.appState.requisitionList.length;
       const totalQty = window.appState.requisitionList.reduce((sum, it) => sum + (parseInt(it.quantity, 10) || 0), 0);
+      
+      // Copy รายการสินค้าเก็บไว้ก่อน (กันข้อมูลหายหลัง Transaction)
+      const currentItems = [...window.appState.requisitionList]; 
 
-      // 4. เริ่มกระบวนการ Transaction (บันทึกข้อมูลลงฐานข้อมูล)
+      // เริ่มบันทึกลง Firebase
       const reqNumber = await runTransaction(db, async (transaction) => {
-        // 4.1 อ่านเลขที่เอกสารล่าสุด
+        const countersDocRef = doc(db, "counters", "requisition");
         const counterSnap = await transaction.get(countersDocRef);
-        const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0;
-        const newCounter = currentCounter + 1;
+        const newCounter = (counterSnap.exists() ? counterSnap.data().requisitionNumber : 0) + 1;
         
-        // 4.2 สร้างเลขที่ใบเบิกใหม่ (Format: REQ-YYYYMM-XXXX)
         const now = new Date();
         const generatedReqNumber = `REQ-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}-${String(newCounter).padStart(4,'0')}`;
         
-        // 4.3 เตรียมข้อมูลที่จะบันทึกลงประวัติ (History)
-        const historyDocRef = doc(requisitionHistoryCollectionRef);
-        transaction.set(historyDocRef, {
+        // บันทึกลง History
+        const historyRef = doc(collection(db, "requisitionHistory"));
+        transaction.set(historyRef, {
           requisitionNumber: generatedReqNumber,
-          timestamp: (typeof Timestamp !== 'undefined' && Timestamp.now) ? Timestamp.now() : new Date(),
-          items: window.appState.requisitionList.map(({ id, ...rest }) => rest), // ตัด field id ออกก่อนบันทึก
-          totalItems,
-          totalQty
+          timestamp: (Timestamp && Timestamp.now) ? Timestamp.now() : new Date(),
+          items: currentItems.map(({ id, ...rest }) => rest),
+          totalItems, totalQty
         });
 
-        // 4.4 ลบรายการออกจากตะกร้า (Requisition List)
-        window.appState.requisitionList.forEach(item => transaction.delete(doc(requisitionListCollectionRef, item.id)));
-        
-        // 4.5 อัปเดตเลข Counter ล่าสุด
+        // ลบจากตะกร้า
+        currentItems.forEach(item => transaction.delete(doc(collection(db, "requisitionList"), item.id)));
         transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true });
         
-        // ส่งเลขที่ใบเบิกกลับมาเพื่อใช้ต่อ
         return generatedReqNumber;
       });
 
-      // ============================================================
-      // 5. [ส่วนสำคัญ] เรียกฟังก์ชันส่งแจ้งเตือน LINE หลังจากบันทึกสำเร็จ
-      // ============================================================
-      console.log("Transaction สำเร็จ! ได้เลขที่ใบเบิก: " + reqNumber);
-      console.log("กำลังเรียกแจ้งเตือน LINE...");
-      
-      // ส่งข้อมูลรายการสินค้าปัจจุบันไปแจ้งเตือน
-      await sendLineNotification(reqNumber, window.appState.requisitionList, totalQty);
-      
-      // ============================================================
+      alert(`🚩 จุดที่ 2: บันทึก Firebase สำเร็จ! ได้เลข ${reqNumber}`);
 
-      // 6. แจ้งเตือนผู้ใช้บนหน้าเว็บว่าสำเร็จ
-      if (typeof showNotification === 'function') showNotification(`ยืนยันการเบิกของ ${reqNumber} เรียบร้อย`, false);
+      // ส่ง Line
+      await sendLineNotification(reqNumber, currentItems, totalQty);
+
+      if (typeof showNotification === 'function') showNotification(`เบิกสำเร็จ ${reqNumber}`, false);
 
     } catch (error) {
-      console.error("Transaction failed: ", error);
-      if (typeof showError === 'function') showError("ยืนยันการเบิกของไม่สำเร็จ: " + error.message);
+      alert("❌ Error ใหญ่ (Transaction Failed): " + error.message);
+      console.error(error);
     }
 }
 })();
