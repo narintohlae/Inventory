@@ -1728,29 +1728,34 @@ isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add
   });
 
 async function sendLineNotification(reqNumber, items, totalQty) {
-    // ⚠️ อย่าลืมเอา URL ที่เพิ่งแก้สิทธิ์เป็น "Anyone" มาใส่ตรงนี้
+    // ⚠️ ใส่ URL ของคุณ (ที่ลงท้ายด้วย /exec)
     const GAS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyXG7hJ96TrzH6h6I1y7aAAkl3TCVg06fgiamD9fiqNvtBN2YMnS2pMJEKwyKsOtNP6/exec"; 
 
     const payload = {
-        reqNumber: reqNumber,  // ตรงกับ data.reqNumber ใน GAS
-        items: items,          // ตรงกับ data.items ใน GAS
-        totalQty: totalQty     // ตรงกับ data.totalQty ใน GAS
+        reqNumber: reqNumber,
+        items: items,
+        totalQty: totalQty
     };
 
-    console.log("🚀 กำลังส่งข้อมูลไป Google Script...", payload);
+    console.log("🚀 กำลังส่งข้อมูล...", payload);
 
     try {
+        // ใช้ fetch แบบ no-cors แต่เปลี่ยน header เป็น text/plain ให้ผ่านฉลุย
         await fetch(GAS_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',  // สำคัญ: ต้องใส่ no-cors
+            mode: 'no-cors', 
             headers: {
-                'Content-Type': 'application/json'
+                // เปลี่ยนจาก application/json เป็น text/plain เพื่อลดปัญหากับ Browser
+                'Content-Type': 'text/plain;charset=utf-8' 
             },
             body: JSON.stringify(payload)
         });
-        console.log("✅ ส่งคำสั่งไปแล้ว (ถ้า URL ถูกและเปิดสิทธิ์ Anyone ข้อความจะเด้ง)");
+        
+        console.log("✅ ส่งคำสั่ง fetch เรียบร้อย (ข้อความควรเข้า Line แล้ว)");
+        
     } catch (error) {
-        console.error("❌ Error sending line:", error);
+        console.error("❌ Error:", error);
+        alert("ส่งไลน์ไม่ผ่าน: " + error.message);
     }
 }
 
