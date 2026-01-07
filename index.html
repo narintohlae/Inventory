@@ -747,34 +747,31 @@ async function saveCurrentSortOrder(newVisibleOrder) {
         } try { const batch = writeBatch(db); itemsToRequisition.forEach(item => { const docRef = doc(requisitionListCollectionRef, item.id); batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit }); });
         await batch.commit(); showNotification(`เพิ่ม ${itemsToRequisition.length} รายการในรายการเบิกของสำเร็จ!`, false); switchView('requisition'); } catch (error) { showError("สร้างรายการเบิกอัตโนมัติไม่สำเร็จ: " + error.message);
         } }
-// --- ฟังก์ชันใหม่: ตรวจสอบและเบิกของอัตโนมัติ (เช็คเฉพาะเมื่อข้อมูลเปลี่ยน) ---
+
+// --- ฟังก์ชันใหม่: ตรวจสอบและ "ยืนยันการเบิก" ทันที (Direct Confirm) ---
 async function autoCheckRequisition(dataTimestamp) {
     // 1. ตรวจสอบข้อมูลเบื้องต้น
     if (!appState.allRecords.length || !appState.appSettings) return;
 
-    // 2. เช็คว่าข้อมูลชุดนี้ "เคยถูกตรวจสอบไปแล้วหรือยัง" โดยดูจากเวลาอัปเดต (Timestamp)
+    // 2. เช็ค timestamp เพื่อไม่ให้ทำงานซ้ำตอนรีเฟรชหน้าจอ
     const lastCheckedTime = localStorage.getItem('lastAutoReqTimestamp');
-    
-    // ถ้ามีเวลาส่งมา และเวลานั้นตรงกับที่เคยเช็คไปแล้ว -> ให้จบการทำงานทันที (ไม่เบิกซ้ำ)
     if (dataTimestamp && lastCheckedTime === dataTimestamp) {
-        console.log("ข้อมูลเป็นเวอร์ชันเดิม (เช็คไปแล้ว) -> ข้ามการเบิกอัตโนมัติ");
+        console.log("ข้อมูลเป็นเวอร์ชันเดิม -> ข้ามการเบิกอัตโนมัติ");
         return;
     }
 
     const itemsToRequisition = [];
     const itemColumnName = Object.keys(appState.allRecords[0])[0]; 
 
-    // 3. วนลูปตรวจสอบสินค้า (Logic เดิม)
+    // 3. วนลูปหาสินค้าที่ต้องเบิก
     appState.allRecords.forEach(record => {
         const itemId = record[itemColumnName];
-        
-        // ถ้ามีในตะกร้าเบิกอยู่แล้ว ให้ข้าม
-        if (appState.requisitionList.some(req => req.id === itemId)) return;
-
         const settings = appState.itemSettings.get(itemId);
+        
         if (settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number') {
             const triggerStock = parseInt(record[appState.appSettings.triggerStockColumnName] || 0, 10);
             
+            // ถ้าสต็อกต่ำกว่าจุดสั่งซื้อ
             if (!isNaN(triggerStock) && triggerStock <= settings.reorderPoint) {
                 const calculationStock = parseInt(record[appState.appSettings.calculationStockColumnName], 10);
                 if (!isNaN(calculationStock) && calculationStock > 2) { 
@@ -799,24 +796,50 @@ async function autoCheckRequisition(dataTimestamp) {
         }
     });
 
-    // 4. บันทึกและแจ้งเตือน
+    // 4. ถ้ามีรายการต้องเบิก -> "สร้างใบเบิกทันที" (Transaction)
     if (itemsToRequisition.length > 0) {
         try {
-            const batch = writeBatch(db);
-            itemsToRequisition.forEach(item => {
-                const docRef = doc(requisitionListCollectionRef, item.id);
-                batch.set(docRef, { name: item.name, quantity: item.quantity, unit: item.unit });
+            await runTransaction(db, async (transaction) => {
+                // A. ดึงเลขใบเบิกล่าสุด
+                const counterSnap = await transaction.get(countersDocRef);
+                const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0;
+                const newCounter = currentCounter + 1;
+                
+                // B. สร้างเลขใบเบิกใหม่ (เช่น REQ-202401-0001)
+                const now = new Date();
+                const generatedReqNumber = `REQ-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}-${String(newCounter).padStart(4,'0')}`;
+
+                // C. สร้างเอกสารใน History
+                const historyDocRef = doc(requisitionHistoryCollectionRef);
+                transaction.set(historyDocRef, {
+                    requisitionNumber: generatedReqNumber,
+                    timestamp: (typeof Timestamp !== 'undefined' && Timestamp.now) ? Timestamp.now() : new Date(),
+                    items: itemsToRequisition,
+                    totalItems: itemsToRequisition.length,
+                    totalQty: itemsToRequisition.reduce((sum, item) => sum + item.quantity, 0),
+                    type: 'auto' // (Optional) ระบุว่าเป็น auto เผื่ออยากแยกดูทีหลัง
+                });
+
+                // D. อัปเดตเลขรัน
+                transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true });
+
+                // E. (สำคัญ) ลบรายการเหล่านี้ออกจากตะกร้าเบิกของ (ถ้ามีค้างอยู่) เพื่อกันเบิกซ้ำซ้อน
+                itemsToRequisition.forEach(item => {
+                    const basketRef = doc(requisitionListCollectionRef, item.id);
+                    transaction.delete(basketRef);
+                });
             });
-            await batch.commit();
-            if (typeof showNotification === 'function') {
-                showNotification(`⚡ มีข้อมูลใหม่: เบิกอัตโนมัติ ${itemsToRequisition.length} รายการ`, false);
-            }
+
+            // แจ้งเตือนผู้ใช้
+            showNotification(`✅ เบิกอัตโนมัติสำเร็จ: ${itemsToRequisition.length} รายการ`, false);
+
         } catch (error) {
-            console.error("Auto requisition failed:", error);
+            console.error("Auto requisition transaction failed:", error);
+            showNotification("เกิดข้อผิดพลาดในการเบิกอัตโนมัติ", true);
         }
     }
 
-    // 5. สำคัญ: บันทึกว่าเราเช็คข้อมูลรอบเวลานี้ไปเรียบร้อยแล้ว
+    // 5. บันทึก Timestamp ว่าทำรอบนี้เสร็จแล้ว
     if (dataTimestamp) {
         localStorage.setItem('lastAutoReqTimestamp', dataTimestamp);
     }
