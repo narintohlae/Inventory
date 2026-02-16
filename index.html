@@ -258,6 +258,20 @@
                     <div id="manage-category-list" class="flex flex-wrap gap-2 items-center"></div>
                 </div>
             </div>
+            <div class="mt-8 border-t pt-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-gray-700">สินค้าที่ถูกซ่อน (Hidden Items)</h2>
+        <button id="refresh-hidden-btn" class="text-sm text-blue-500 hover:text-blue-700 underline">
+            รีเฟรชรายการ
+        </button>
+    </div>
+    
+    <div class="bg-gray-50 rounded-lg border p-4">
+        <div id="hidden-items-list" class="space-y-2">
+            <p class="text-gray-500 text-sm text-center py-4">ไม่มีสินค้าที่ถูกซ่อน</p>
+        </div>
+    </div>
+</div>
         </div>
         
         <div id="account-view" class="hidden">
@@ -583,7 +597,9 @@
             appSettingsDocRef = doc(db, `${userPath}/settings`, CONSTANTS.FIRESTORE_PATHS.APP_SETTINGS);
 
             appState.unsubscribes.push(onSnapshot(categoriesCollectionRef, (snap) => { appState.categories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); displayCategories(); if (appState.categoriesFirstLoad && appState.resolveCategoriesLoaded) { appState.categoriesFirstLoad = false; appState.resolveCategoriesLoaded(); } }, (err) => showError("โหลดหมวดหมู่ไม่สำเร็จ: " + err.message)));
-            appState.unsubscribes.push(onSnapshot(hiddenItemsDocRef, (docSnap) => { const data = docSnap.exists() ? docSnap.data() : {}; appState.hiddenItemsMap = {}; for (const categoryName in data) { if (Array.isArray(data[categoryName])) { appState.hiddenItemsMap[categoryName] = new Set(data[categoryName]); } } if (appState.allRecords.length > 0) { displayData(); } }, (err) => showError("โหลดรายการที่ซ่อนไม่สำเร็จ: " + err.message)));
+            appState.unsubscribes.push(onSnapshot(hiddenItemsDocRef, (docSnap) => { const data = docSnap.exists() ? docSnap.data() : {}; appState.hiddenItemsMap = {}; for (const categoryName in data) { if (Array.isArray(data[categoryName])) { appState.hiddenItemsMap[categoryName] = new Set(data[categoryName]); } } if (!document.getElementById('manage-view').classList.contains('hidden')) {
+         renderHiddenItemsList();
+    } if (appState.allRecords.length > 0) { displayData(); } }, (err) => showError("โหลดรายการที่ซ่อนไม่สำเร็จ: " + err.message)));
             appState.unsubscribes.push(onSnapshot(sortOrdersDocRef, (snap) => { appState.sortOrdersMap = (snap.exists() && snap.data().orders) ? snap.data().orders : {}; if (appState.allRecords.length > 0) displayData(); }, (err) => showError("โหลดลำดับจัดเรียงไม่สำเร็จ: " + err.message)));
             appState.unsubscribes.push(onSnapshot(categoryOrderDocRef, (snap) => { appState.categoryOrder = (snap.exists() && snap.data().order) ? snap.data().order : []; if (appState.categories.length > 0) displayCategories(); }, (err) => showError("โหลดลำดับหมวดหมู่ไม่สำเร็จ: " + err.message)));
             appState.unsubscribes.push(onSnapshot(customRowsCollectionRef, (snap) => { appState.customRows.clear(); snap.docs.forEach(doc => appState.customRows.set(doc.id, doc.data())); if (appState.allRecords.length > 0) displayData(); }, (err) => showError("โหลดหัวข้อไม่สำเร็จ: " + err.message)));
@@ -605,6 +621,94 @@
             appState.unsubscribes.push(onSnapshot(requisitionHistoryCollectionRef, (snap) => { appState.historyList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => b.timestamp.seconds - a.timestamp.seconds); displayHistory(); }, (err) => showError("โหลดประวัติไม่สำเร็จ: " + err.message)));
             appState.unsubscribes.push(onSnapshot(appSettingsDocRef, (snap) => { if (snap.exists()) { appState.appSettings = { ...appState.appSettings, ...snap.data() }; } updateAppSettingsModalInputs(); }, (err) => showError("โหลดการตั้งค่าแอปไม่สำเร็จ: " + err.message)));
         }
+        // --- ฟังก์ชันสำหรับแสดงรายการที่ซ่อน ---
+function renderHiddenItemsList() {
+    const container = document.getElementById('hidden-items-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    let hasHiddenItems = false;
+
+    // ตรวจสอบว่ามีข้อมูลสินค้าหรือยัง
+    if (appState.allRecords.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-sm text-center">กำลังโหลดข้อมูลสินค้า...</p>';
+        return;
+    }
+
+    // วนลูปดูทุกหมวดหมู่ที่มีการซ่อน
+    for (const [categoryName, hiddenSet] of Object.entries(appState.hiddenItemsMap)) {
+        if (hiddenSet.size > 0) {
+            hasHiddenItems = true;
+            
+            // สร้างหัวข้อหมวดหมู่
+            const catHeader = document.createElement('div');
+            catHeader.className = 'font-bold text-xs text-gray-500 uppercase tracking-wider mt-3 mb-1 ml-1';
+            catHeader.textContent = categoryName === '__global__' ? 'ทั่วไป' : categoryName;
+            container.appendChild(catHeader);
+
+            // วนลูปสินค้าในหมวดหมู่นั้น
+            hiddenSet.forEach(itemId => {
+                // พยายามหาชื่อสินค้าจาก ID
+                const record = appState.allRecordsMap.get(itemId);
+                const itemName = record ? record[Object.keys(record)[0]] : `สินค้า ID: ${itemId} (ไม่พบข้อมูล)`;
+
+                const itemRow = document.createElement('div');
+                itemRow.className = 'flex justify-between items-center bg-white p-3 rounded shadow-sm border border-gray-100 hover:border-blue-300 transition-colors';
+                
+                itemRow.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a9.97 9.97 0 01-1.563 3.029m0 0l-2.14 2.14"></path></svg>
+                        <span class="text-sm font-medium text-gray-700">${itemName}</span>
+                    </div>
+                    <button class="unhide-btn text-xs bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded hover:bg-green-100 transition-colors flex items-center gap-1" 
+                            data-cat="${categoryName}" data-id="${itemId}">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        แสดงสินค้า
+                    </button>
+                `;
+                container.appendChild(itemRow);
+            });
+        }
+    }
+
+    if (!hasHiddenItems) {
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-6 text-gray-400">
+                <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <p class="text-sm">ไม่มีสินค้าที่ถูกซ่อนอยู่</p>
+            </div>
+        `;
+    }
+
+    // เพิ่ม Event Listener ให้ปุ่ม Unhide
+    container.querySelectorAll('.unhide-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            // ป้องกันการกดรัวๆ
+            const button = e.currentTarget;
+            button.disabled = true;
+            button.textContent = 'กำลังทำรายการ...';
+            
+            const cat = button.dataset.cat;
+            const id = button.dataset.id;
+            await unhideItem(cat, id);
+        });
+    });
+}
+
+// --- ฟังก์ชัน Unhide (ยกเลิกการซ่อน) ---
+async function unhideItem(categoryName, itemId) {
+    if (!hiddenItemsDocRef) return;
+    try {
+        await updateDoc(hiddenItemsDocRef, {
+            [categoryName]: arrayRemove(itemId)
+        });
+        showNotification(`แสดงสินค้านี้แล้ว`, false);
+        // หน้าจอจะอัปเดตเองเพราะมี listener อยู่แล้ว
+    } catch (error) {
+        showNotification("เกิดข้อผิดพลาด: " + error.message, true);
+        renderHiddenItemsList(); // รีโหลดลิสต์คืนสถานะปุ่ม
+    }
+}
 
         showRegisterBtn?.addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); });
         showLoginBtn?.addEventListener('click', () => { registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); });
@@ -1621,7 +1725,18 @@ function updateLastSavedTime(serverTime) {
         navRequisitionBtn?.addEventListener('click', () => switchView('requisition'));
         navHistoryBtn?.addEventListener('click', () => switchView('history'));
         navManageBtn?.addEventListener('click', () => switchView('manage'));
-        navAccountBtn?.addEventListener('click', () => switchView('account'));
+        navAccountBtn?.addEventListener('click', () => switchView('account')); // --- วางโค้ดส่วนนี้เพิ่มเข้าไปครับ (จุดที่ 1) ---
+        
+        // 1. ปุ่มรีเฟรชรายการซ่อน
+        document.getElementById('refresh-hidden-btn')?.addEventListener('click', renderHiddenItemsList);
+
+        // 2. อัปเดตปุ่มเมนู "จัดการ" ให้โหลดรายการซ่อนด้วยเมื่อกด
+        navManageBtn?.addEventListener('click', () => { 
+            switchView('manage'); 
+            renderHiddenItemsList(); // เพิ่มคำสั่งนี้เพื่อให้โหลดข้อมูลทันที
+        });
+
+        // ---------------------------------------------
         modalOkBtn?.addEventListener('click', saveItemSettings);
         modalCancelBtn?.addEventListener('click', closeItemSettingsModal);
         editCategoryBtn?.addEventListener('click', () => { if (appState.currentEditingCategory) { enableCategoryEditing(appState.currentEditingCategory); closeCategoryActionsModal(); } });
