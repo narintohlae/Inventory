@@ -93,6 +93,21 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
+<div id="force-refresh-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 backdrop-blur-sm h-full w-full flex items-center justify-center z-[9999]">
+    <div class="relative mx-auto p-8 border w-11/12 max-w-sm shadow-2xl rounded-xl bg-white text-center">
+        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-6">
+            <svg class="h-8 w-8 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">มีข้อมูลอัปเดตใหม่!</h3>
+        <p class="text-gray-600 mb-6">มีการเปลี่ยนแปลงข้อมูลในระบบ<br>กรุณากดรีเฟรชเพื่อโหลดข้อมูลล่าสุด</p>
+        <button id="force-refresh-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200">
+            รีเฟรชข้อมูลเดี๋ยวนี้
+        </button>
+    </div>
+</div>
+
 <div class="fixed top-0 left-0 right-0 z-30 lg: bg-white shadow-md border-b lg:overflow-visible transition-all duration-300 ease-in-out h-14 lg:h-16">
     <div class="container mx-auto lg:w-1/2 h-full relative">
         <div class="border-b border-gray-200">
@@ -1115,27 +1130,29 @@ async function fetchAllDataFromSheet() {
 async function startSheetPolling() {
     setInterval(async () => {
         try {
-            // เรียกข้อมูลแบบเงียบๆ
             const response = await fetch(sheetUrl);
             if (!response.ok) return; 
             
             const json = await response.json();
             if (!json.data || !Array.isArray(json.data)) return;
 
-            // เปรียบเทียบข้อมูล
             const currentDataStr = JSON.stringify(appState.allRecords);
             const newDataStr = JSON.stringify(json.data);
 
             if (currentDataStr !== newDataStr && appState.allRecords.length > 0) {
-                // --- แก้ไขตรงนี้ครับ ---
-                appState.hasPendingUpdate = true; // ล็อกสถานะไว้ ไม่ให้ข้อความอื่นมาแทรก
-                showNotification('พบข้อมูลใหม่จาก Google Sheets! กรุณารีเฟรช', 'info', 0);
+                appState.hasPendingUpdate = true;
+                
+                // ---- เปลี่ยนโค้ดตรงนี้ ----
+                // ปิดการแจ้งเตือนแบบเดิม
+                // showNotification('พบข้อมูลใหม่จาก Google Sheets! กรุณารีเฟรช', 'info', 0);
+                
+                // เปิด Modal บังคับหน้าจอแทน
+                document.getElementById('force-refresh-modal').classList.remove('hidden');
             }
         } catch (err) {
-            // เงียบไว้ถ้าเช็คไม่ได้ (เช่น เน็ตหลุดชั่วคราว)
             console.warn("Background sheet check failed:", err);
         }
-    }, 30000); // เช็คทุก 30 วินาที
+    }, 30000); 
 }
 
 function displayData() {
@@ -1793,6 +1810,11 @@ function updateLastSavedTime(serverTime) {
      
            });
         confirmRequisitionBtn?.addEventListener('click', confirmRequisition);
+
+        // กดปุ่มรีเฟรชแล้วทำการโหลดหน้าเว็บใหม่ทั้งหมด เพื่อเคลียร์ State และดึงข้อมูลใหม่
+document.getElementById('force-refresh-btn')?.addEventListener('click', () => {
+    window.location.reload();
+});
 
         // --- IMPROVEMENT: Event Delegation สำหรับ table body ---
         tableBody?.addEventListener('contextmenu', e => {
