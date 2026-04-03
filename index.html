@@ -2051,8 +2051,7 @@ isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add
                 showNotification('เปิดกล้องไม่สำเร็จ: ตรวจสอบการอนุญาตกล้อง หรือต้องรันบน HTTPS', 'error');
             });
         });
-
-        closeScannerBtn?.addEventListener('click', () => {
+closeScannerBtn?.addEventListener('click', () => {
             if (html5QrCode) {
                 html5QrCode.stop().then(() => {
                     html5QrCode.clear();
@@ -2066,11 +2065,33 @@ isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add
             }
         });
 
-    }); // 🔴 เพิ่มบรรทัดนี้: เพื่อปิด document.addEventListener('DOMContentLoaded', () => { ของสคริปต์หลัก
+    }); // 🔴 ปิดวงเล็บของ DOMContentLoaded ในสคริปต์หลัก
 </script>
 
 <script>
 (function(){
+  // ส่วน Navigation Menu
+  document.addEventListener('DOMContentLoaded', function(){
+    const navWrapper = document.getElementById('nav-toggle-wrapper');
+    const navTrigger = document.getElementById('nav-trigger');
+    const navIcon    = document.getElementById('nav-trigger-icon');
+    const navTabs    = navWrapper ? navWrapper.querySelector('nav') : null;
+    if (!navWrapper) return;
+    
+    let isNavOpen = false;
+    const openNav = () => { if (isNavOpen) return; isNavOpen = true; navWrapper.classList.remove('h-4'); navWrapper.classList.add('h-16'); if (navIcon) navIcon.classList.add('rotate-180'); };
+    const closeNav = () => { if (!isNavOpen) return; isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add('h-4'); if (navIcon) navIcon.classList.remove('rotate-180'); };
+    
+    if (navTabs) navTabs?.addEventListener('click', e => { if (e.target && e.target.tagName === 'BUTTON') setTimeout(closeNav, 200); });
+    
+    if (window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
+      navWrapper?.addEventListener('mouseenter', openNav);
+      navWrapper?.addEventListener('mouseleave', closeNav);
+    } else if (navTrigger) {
+      navTrigger?.addEventListener('click', () => isNavOpen ? closeNav() : openNav());
+    }
+  });
+
   // Override confirmRequisition with a safer version
   window.confirmRequisition = async function confirmRequisition() {
     try {
@@ -2085,7 +2106,6 @@ isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add
         const generatedReqNumber = `REQ-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}-${String(newCounter).padStart(4,'0')}`;
         const historyDocRef = doc(requisitionHistoryCollectionRef);
         transaction.set(historyDocRef, {
-       
           requisitionNumber: generatedReqNumber,
           timestamp: (typeof Timestamp !== 'undefined' && Timestamp.now) ? Timestamp.now() : new Date(),
           items: window.appState.requisitionList.map(({ id, ...rest }) => rest),
