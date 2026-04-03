@@ -2065,65 +2065,76 @@ closeScannerBtn?.addEventListener('click', () => {
             }
         });
 
+        // -----------------------------------------------------------------
+        // 🔴 ย้ายโค้ด Navigation และ ยืนยันการเบิก เข้ามาไว้ใน Scope เดียวกันทั้งหมด
+        // -----------------------------------------------------------------
+
+        // 1. ส่วน Navigation Menu
+        const navWrapper = document.getElementById('nav-toggle-wrapper');
+        const navTrigger = document.getElementById('nav-trigger');
+        const navIcon    = document.getElementById('nav-trigger-icon');
+        const navTabs    = navWrapper ? navWrapper.querySelector('nav') : null;
+        
+        let isNavOpen = false;
+        const openNav = () => { if (isNavOpen) return; isNavOpen = true; navWrapper.classList.remove('h-4'); navWrapper.classList.add('h-16'); if (navIcon) navIcon.classList.add('rotate-180'); };
+        const closeNav = () => { if (!isNavOpen) return; isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add('h-4'); if (navIcon) navIcon.classList.remove('rotate-180'); };
+        
+        if (navTabs) navTabs?.addEventListener('click', e => { if (e.target && e.target.tagName === 'BUTTON') setTimeout(closeNav, 200); });
+        
+        if (window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
+            navWrapper?.addEventListener('mouseenter', openNav);
+            navWrapper?.addEventListener('mouseleave', closeNav);
+        } else if (navTrigger) {
+            navTrigger?.addEventListener('click', () => isNavOpen ? closeNav() : openNav());
+        }
+
+        // 2. ฟังก์ชัน ยืนยันการเบิก (เขียนทับฟังก์ชันเดิมใน Scope นี้เลย)
+        // หมายเหตุ: ตัดคำว่า window. ออก เปลี่ยนให้เรียกใช้ตัวแปร appState โดยตรง
+        async function confirmRequisition() {
+            try {
+                if (!requisitionListCollectionRef || !appState || !Array.isArray(appState.requisitionList) || appState.requisitionList.length === 0) return;
+                
+                const totalItems = appState.requisitionList.length;
+                const totalQty = appState.requisitionList.reduce((s, it) => s + (parseInt(it.quantity, 10) || 0), 0);
+                
+                const reqNumber = await runTransaction(db, async (transaction) => {
+                    const counterSnap = await transaction.get(countersDocRef);
+                    const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0;
+                    const newCounter = currentCounter + 1;
+                    const now = new Date();
+                    const generatedReqNumber = `REQ-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}-${String(newCounter).padStart(4,'0')}`;
+                    const historyDocRef = doc(requisitionHistoryCollectionRef);
+                    
+                    transaction.set(historyDocRef, {
+                        requisitionNumber: generatedReqNumber,
+                        timestamp: (typeof Timestamp !== 'undefined' && Timestamp.now) ? Timestamp.now() : new Date(),
+                        items: appState.requisitionList.map(({ id, ...rest }) => rest),
+                        totalItems,
+                        totalQty
+                    });
+                    
+                    appState.requisitionList.forEach(item => transaction.delete(doc(requisitionListCollectionRef, item.id)));
+                    transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true });
+                    
+                    return generatedReqNumber;
+                });
+
+                showNotification(`ยืนยันการเบิกของ ${reqNumber} เรียบร้อย`, false);
+            } catch (error) {
+                console.error("Transaction failed: ", error);
+                showError("ยืนยันการเบิกของไม่สำเร็จ: " + error.message);
+            }
+        }
+        
+        // ผูกฟังก์ชันนี้เข้ากับปุ่มยืนยันอีกครั้งเพื่อให้แน่ใจว่าใช้เวอร์ชันล่าสุด
+        const confirmRequisitionBtnReal = document.getElementById('confirm-requisition-btn');
+        if (confirmRequisitionBtnReal) {
+            // ลบ Event เดิมก่อน (ถ้ามี) แล้วใส่ใหม่
+            confirmRequisitionBtnReal.removeEventListener('click', confirmRequisition);
+            confirmRequisitionBtnReal.addEventListener('click', confirmRequisition);
+        }
+
     }); // 🔴 ปิดวงเล็บของ DOMContentLoaded ในสคริปต์หลัก
-</script>
-
-<script>
-(function(){
-  // ส่วน Navigation Menu
-  document.addEventListener('DOMContentLoaded', function(){
-    const navWrapper = document.getElementById('nav-toggle-wrapper');
-    const navTrigger = document.getElementById('nav-trigger');
-    const navIcon    = document.getElementById('nav-trigger-icon');
-    const navTabs    = navWrapper ? navWrapper.querySelector('nav') : null;
-    if (!navWrapper) return;
-    
-    let isNavOpen = false;
-    const openNav = () => { if (isNavOpen) return; isNavOpen = true; navWrapper.classList.remove('h-4'); navWrapper.classList.add('h-16'); if (navIcon) navIcon.classList.add('rotate-180'); };
-    const closeNav = () => { if (!isNavOpen) return; isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add('h-4'); if (navIcon) navIcon.classList.remove('rotate-180'); };
-    
-    if (navTabs) navTabs?.addEventListener('click', e => { if (e.target && e.target.tagName === 'BUTTON') setTimeout(closeNav, 200); });
-    
-    if (window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
-      navWrapper?.addEventListener('mouseenter', openNav);
-      navWrapper?.addEventListener('mouseleave', closeNav);
-    } else if (navTrigger) {
-      navTrigger?.addEventListener('click', () => isNavOpen ? closeNav() : openNav());
-    }
-  });
-
-  // Override confirmRequisition with a safer version
-  window.confirmRequisition = async function confirmRequisition() {
-    try {
-      if (!window.requisitionListCollectionRef || !window.appState || !Array.isArray(window.appState.requisitionList) || window.appState.requisitionList.length === 0) return;
-      const totalItems = window.appState.requisitionList.length;
-      const totalQty = window.appState.requisitionList.reduce((s, it) => s + (parseInt(it.quantity, 10) || 0), 0);
-      const reqNumber = await runTransaction(db, async (transaction) => {
-        const counterSnap = await transaction.get(countersDocRef);
-        const currentCounter = counterSnap.exists() ? (counterSnap.data().requisitionNumber || 0) : 0;
-        const newCounter = currentCounter + 1;
-        const now = new Date();
-        const generatedReqNumber = `REQ-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}-${String(newCounter).padStart(4,'0')}`;
-        const historyDocRef = doc(requisitionHistoryCollectionRef);
-        transaction.set(historyDocRef, {
-          requisitionNumber: generatedReqNumber,
-          timestamp: (typeof Timestamp !== 'undefined' && Timestamp.now) ? Timestamp.now() : new Date(),
-          items: window.appState.requisitionList.map(({ id, ...rest }) => rest),
-          totalItems,
-          totalQty
-        });
-        window.appState.requisitionList.forEach(item => transaction.delete(doc(requisitionListCollectionRef, item.id)));
-        transaction.set(countersDocRef, { requisitionNumber: newCounter }, { merge: true });
-        return generatedReqNumber;
-      });
-
-      if (typeof showNotification === 'function') showNotification(`ยืนยันการเบิกของ ${reqNumber} เรียบร้อย`, false);
-    } catch (error) {
-      console.error("Transaction failed: ", error);
-      if (typeof showError === 'function') showError("ยืนยันการเบิกของไม่สำเร็จ: " + error.message);
-    }
-  };
-})();
 </script>
 </body>
 </html>
