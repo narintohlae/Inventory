@@ -2066,6 +2066,11 @@ isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add
             }
         });
 
+    }); // 🔴 เพิ่มบรรทัดนี้: เพื่อปิด document.addEventListener('DOMContentLoaded', () => { ของสคริปต์หลัก
+</script>
+
+<script>
+(function(){
   // Override confirmRequisition with a safer version
   window.confirmRequisition = async function confirmRequisition() {
     try {
@@ -2100,4 +2105,5 @@ isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add
   };
 })();
 </script>
+</body>
 </html>
