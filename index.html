@@ -481,7 +481,9 @@ button, input, a {
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-        <div id="reader" class="w-full bg-black rounded-lg overflow-hidden"></div>
+        <div id="reader" class="w-full rounded-lg overflow-hidden min-h-[300px] flex items-center justify-center bg-gray-100">
+    <span id="reader-loading" class="text-gray-500">กำลังเปิดกล้อง...</span>
+</div>
     </div>
 </div>
 <div id="notification-toast" class="hidden fixed z-50 flex items-center gap-2 px-6 py-3 rounded-full shadow-lg transition-all duration-300 transform translate-y-full opacity-0">
@@ -1998,57 +2000,71 @@ isNavOpen = false; navWrapper.classList.remove('h-16'); navWrapper.classList.add
 } else if (navTrigger) {
       navTrigger?.addEventListener('click', () => isNavOpen ? closeNav() : openNav());
 }
-      // --- ส่วนเสริม: ระบบสแกนบาร์โค้ด ---
+// --- ระบบสแกนบาร์โค้ด (เวอร์ชันรองรับ iOS อย่างสมบูรณ์) ---
         const scanBtn = document.getElementById('scan-barcode-btn');
         const scannerModal = document.getElementById('scanner-modal');
         const closeScannerBtn = document.getElementById('close-scanner-btn');
-        let html5QrcodeScanner = null;
+        const readerLoading = document.getElementById('reader-loading');
+        let html5QrCode = null; // ใช้ตัว Core แทน Scanner
 
         function onScanSuccess(decodedText, decodedResult) {
-            // เมื่อสแกนสำเร็จ
-            // 1. ปิดกล้อง
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear();
-                html5QrcodeScanner = null;
+            // เมื่อสแกนสำเร็จ สั่งปิดกล้องทันที
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                    scannerModal.classList.add('hidden');
+                }).catch(err => console.error("Failed to stop camera:", err));
             }
-            scannerModal.classList.add('hidden');
             
-            // 2. นำรหัสที่ได้ไปใส่ในช่องค้นหา
+            // นำรหัสที่ได้ไปใส่ในช่องค้นหา
             productSearchInput.value = decodedText;
-            
-            // 3. สั่งให้ระบบค้นหาทำงานทันที
-            productSearchInput.dispatchEvent(new Event('input'));
+            productSearchInput.dispatchEvent(new Event('input')); // ทริกเกอร์ให้ระบบค้นหาทำงาน
             
             showNotification('สแกนสำเร็จ: ' + decodedText, 'success');
         }
 
         scanBtn?.addEventListener('click', () => {
             scannerModal.classList.remove('hidden');
+            if (readerLoading) readerLoading.style.display = 'block';
             
-            // ตั้งค่า Scanner
-            html5QrcodeScanner = new Html5QrcodeScanner(
-                "reader",
-                { 
-                    fps: 10, 
-                    qrbox: {width: 250, height: 150}, // ขนาดกรอบสแกนเน้นความกว้างสำหรับบาร์โค้ด
-                    rememberLastUsedCamera: true,
-                    supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+            // สร้าง Instance ใหม่
+            html5QrCode = new Html5Qrcode("reader");
+            
+            // สั่งเริ่มกล้องทันที (บังคับใช้กล้องหลัง facingMode: "environment")
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 150 }, // ตีกรอบให้เหมาะกับบาร์โค้ดแนวยาว
+                    aspectRatio: 1.0 // ช่วยป้องกันภาพเบี้ยวบนหน้าจอ iPhone บางรุ่น
                 },
-                /* verbose= */ false
-            );
-            html5QrcodeScanner.render(onScanSuccess, (error) => {
-                // Ignore scan errors, it throws them continuously while looking for a code
+                onScanSuccess,
+                (errorMessage) => {
+                    // ไม่ต้องทำอะไรตรงนี้ มันจะ Log ถี่มากเวลากำลังหาโฟกัส
+                }
+            ).then(() => {
+                // กล้องเปิดสำเร็จ ซ่อนข้อความโหลด
+                if (readerLoading) readerLoading.style.display = 'none';
+            }).catch((err) => {
+                console.error("Camera start failed", err);
+                scannerModal.classList.add('hidden');
+                showNotification('เปิดกล้องไม่สำเร็จ: ตรวจสอบการอนุญาตกล้อง หรือต้องรันบน HTTPS', 'error');
             });
         });
 
         closeScannerBtn?.addEventListener('click', () => {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear();
-                html5QrcodeScanner = null;
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                    scannerModal.classList.add('hidden');
+                }).catch(err => {
+                    console.error("Failed to stop camera on close:", err);
+                    scannerModal.classList.add('hidden');
+                });
+            } else {
+                scannerModal.classList.add('hidden');
             }
-            scannerModal.classList.add('hidden');
         });
-  });
 
   // Override confirmRequisition with a safer version
   window.confirmRequisition = async function confirmRequisition() {
