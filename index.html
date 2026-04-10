@@ -515,13 +515,6 @@ button, input, a {
 </div>
 
 <script type="module">
-    // --- ส่วนเสริม: ทำให้ใช้ลูกกลิ้งเมาส์เลื่อนแท็บหมวดหมู่แนวนอนบนเดสท็อปได้ ---
-        categoryList?.addEventListener('wheel', (evt) => {
-            // ป้องกันไม่ให้หน้าเว็บเลื่อนขึ้นลง
-            evt.preventDefault(); 
-            // แปลงค่าการกลิ้งเมาส์แนวตั้ง ให้เป็นการเลื่อนแนวนอนแทน
-            categoryList.scrollLeft += evt.deltaY;
-        }, { passive: false });
     // Firebase Imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
@@ -1786,6 +1779,15 @@ function updateLastSavedTime(serverTime) {
         navManageBtn?.addEventListener('click', () => switchView('manage'));
         navAccountBtn?.addEventListener('click', () => switchView('account')); // --- วางโค้ดส่วนนี้เพิ่มเข้าไปครับ (จุดที่ 1) ---
         
+        // --- เริ่มส่วนเสริม: ใช้ลูกกลิ้งเมาส์เลื่อนแท็บแนวนอน ---
+        categoryList?.addEventListener('wheel', (evt) => {
+            // ป้องกันไม่ให้หน้าเว็บเลื่อนขึ้นลง
+            evt.preventDefault(); 
+            // เลื่อนแนวนอนตามแรงกลิ้งเมาส์
+            categoryList.scrollLeft += evt.deltaY;
+        }, { passive: false });
+        // --- จบส่วนเสริม ---
+
         // 1. ปุ่มรีเฟรชรายการซ่อน
         document.getElementById('refresh-hidden-btn')?.addEventListener('click', renderHiddenItemsList);
 
