@@ -515,6 +515,13 @@ button, input, a {
 </div>
 
 <script type="module">
+    // --- ส่วนเสริม: ทำให้ใช้ลูกกลิ้งเมาส์เลื่อนแท็บหมวดหมู่แนวนอนบนเดสท็อปได้ ---
+        categoryList?.addEventListener('wheel', (evt) => {
+            // ป้องกันไม่ให้หน้าเว็บเลื่อนขึ้นลง
+            evt.preventDefault(); 
+            // แปลงค่าการกลิ้งเมาส์แนวตั้ง ให้เป็นการเลื่อนแนวนอนแทน
+            categoryList.scrollLeft += evt.deltaY;
+        }, { passive: false });
     // Firebase Imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
