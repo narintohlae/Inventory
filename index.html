@@ -1293,16 +1293,45 @@ const headers = Object.keys(appState.allRecords[0]).filter(header => header !== 
                     row.className = 'hover:bg-gray-50';
                     row.setAttribute('tabindex', '0');
 
-                    headers.forEach(header => {
-                        const td = document.createElement('td');
-                        td.setAttribute('tabindex', '-1');
-                        const narrowColumns = ['รวม', 'หน่วย', CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK];
-                        let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left';
-                        let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6';
-                        td.className = `${padding} py-1 ${alignment} text-sm text-gray-700 break-words ${header === itemColumnName ? 'w-full' : ''}`;
-                        td.textContent = record[header];
-                        row.appendChild(td);
-                    });
+headers.forEach(header => {
+    const td = document.createElement('td');
+    td.setAttribute('tabindex', '-1');
+    const narrowColumns = ['รวม', 'หน่วย', CONSTANTS.SHEET_COLUMN_NAMES.TRIGGER_STOCK, CONSTANTS.SHEET_COLUMN_NAMES.CALCULATION_STOCK];
+    let alignment = narrowColumns.includes(header) ? 'text-center' : 'text-left';
+    let padding = narrowColumns.includes(header) ? 'px-1' : 'px-2 sm:px-6';
+    td.className = `${padding} py-1 ${alignment} text-sm text-gray-700 break-words ${header === itemColumnName ? 'w-full' : ''}`;
+    
+    // --- จุดที่แก้ไข: เช็คว่าเป็นคอลัมน์ชื่อสินค้าหรือไม่ ---
+    if (header === itemColumnName) {
+        // ดึงการตั้งค่าของสินค้านี้ออกมา
+        const settings = appState.itemSettings.get(id);
+        // เช็คว่ามีการตั้งค่าจุดเบิกของ (reorderPoint) และจำนวน (reorderQuantity) หรือไม่
+        const isConfigured = settings && typeof settings.reorderPoint === 'number' && typeof settings.reorderQuantity === 'number';
+        
+        if (isConfigured) {
+            // ถ้ามีการตั้งค่า ให้ใส่จุดสีเขียวมินิมอล (ใช้ Flexbox จัดให้ตรงกัน)
+            td.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 shadow-sm flex-shrink-0" title="ตั้งค่าเบิกอัตโนมัติแล้ว"></span>
+                    <span>${record[header]}</span>
+                </div>
+            `;
+        } else {
+            // ถ้าไม่มีการตั้งค่า ก็แสดงแค่ชื่อสินค้าปกติ
+            td.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 flex-shrink-0"></span> <!-- Placeholder ไว้ดันให้ชื่อตรงกับตัวที่มีจุด -->
+                    <span>${record[header]}</span>
+                </div>
+            `;
+        }
+    } else {
+        td.textContent = record[header];
+    }
+    // ---------------------------------------------
+    
+    row.appendChild(td);
+});
                     bodyFragment.appendChild(row);
                 }
             });
